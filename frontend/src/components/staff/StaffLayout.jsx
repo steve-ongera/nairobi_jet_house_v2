@@ -1,0 +1,1 @@
+export { StaffLayout as default } from '../portals'
