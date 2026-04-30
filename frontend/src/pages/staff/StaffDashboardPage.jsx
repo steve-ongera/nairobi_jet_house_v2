@@ -1,133 +1,186 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// STAFF DASHBOARD PAGE
+// STAFF DASHBOARD PAGE - Clean & Simple
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { adminAPI } from '../../services/api'
-import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
+import { useAuth } from '../../hooks/useAuth'
+
+function StatCard({ icon, label, value, color = '', sub = '' }) {
+  return (
+    <div className={`stat-card${color ? ' ' + color : ''}`}>
+      <div className="stat-card-icon"><i className={`bi ${icon}`} /></div>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value ?? '—'}</div>
+      {sub && <div className="text-xs text-muted" style={{ marginTop: '0.25rem' }}>{sub}</div>}
+    </div>
+  )
+}
 
 export function StaffDashboardPage() {
   const { user } = useAuth()
   const [overview, setOverview] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [recentActivity, setRecentActivity] = useState([])
 
   useEffect(() => {
-    adminAPI.overview()
-      .then(setOverview)
-      .finally(() => setLoading(false))
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const response = await adminAPI.overview()
+        const data = response?.data || response
+        setOverview(data)
+        
+        // Mock recent activity - replace with actual API call when available
+        setRecentActivity([
+          { id: 1, type: 'booking', message: 'New booking request from John Doe', time: '5 minutes ago' },
+          { id: 2, type: 'inquiry', message: 'Inquiry from Sarah Smith about yacht charter', time: '1 hour ago' },
+          { id: 3, type: 'booking', message: 'Flight NJH-123 confirmed', time: '3 hours ago' },
+        ])
+      } catch (err) {
+        console.error('Failed to load staff dashboard:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
   }, [])
 
-  const fmt = (n) => n != null ? `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'
+  const formatCurrency = (value) => {
+    if (!value) return '—'
+    return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+  }
+
+  const quickActions = [
+    { 
+      to: '/staff/bookings', 
+      icon: 'bi-airplane', 
+      title: 'Manage Bookings', 
+      desc: 'View and process flight bookings',
+      color: 'var(--navy)'
+    },
+    { 
+      to: '/staff/inquiries', 
+      icon: 'bi-envelope-open', 
+      title: 'View Inquiries', 
+      desc: 'Respond to customer inquiries',
+      color: 'var(--navy)'
+    },
+    { 
+      to: '/staff/email', 
+      icon: 'bi-send', 
+      title: 'Send Email', 
+      desc: 'Compose and send customer emails',
+      color: 'var(--navy)'
+    },
+    { 
+      to: '/staff/operators', 
+      icon: 'bi-building', 
+      title: 'Manage Operators', 
+      desc: 'Review operator listings and requests',
+      color: 'var(--navy)'
+    },
+  ]
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <div className="spinner-ring" />
+      <div className="table-empty">
+        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
+        <p>Loading dashboard...</p>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Staff Dashboard</h2>
-          <p>Welcome, {user?.first_name || user?.username} — here's what needs attention today</p>
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <div className="welcome-title">
+          Welcome back, {user?.first_name || user?.username || 'Staff'}!
+        </div>
+        <div className="welcome-subtitle">
+          Here's what's happening on the platform today
         </div>
       </div>
 
+      {/* Stats Grid */}
       <div className="stat-grid" style={{ marginBottom: '2rem' }}>
-        <div className="stat-card">
-          <div className="stat-card-icon"><i className="bi bi-currency-dollar" /></div>
-          <div className="stat-label">Total Revenue</div>
-          <div className="stat-value">{fmt(overview?.total_platform_revenue)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-icon"><i className="bi bi-percent" /></div>
-          <div className="stat-label">Commissions</div>
-          <div className="stat-value">{fmt(overview?.total_commissions)}</div>
-        </div>
-        <div className="stat-card navy">
-          <div className="stat-card-icon"><i className="bi bi-people" /></div>
-          <div className="stat-label">Active Members</div>
-          <div className="stat-value">{overview?.total_members ?? '—'}</div>
-        </div>
-        <div className={`stat-card ${overview?.open_disputes > 0 ? 'red' : ''}`}>
-          <div className="stat-card-icon"><i className="bi bi-exclamation-triangle" /></div>
-          <div className="stat-label">Open Disputes</div>
-          <div className="stat-value">{overview?.open_disputes ?? '—'}</div>
-        </div>
+        <StatCard 
+          icon="bi-currency-dollar" 
+          label="Total Revenue" 
+          value={formatCurrency(overview?.total_platform_revenue)} 
+          color="gold"
+        />
+        <StatCard 
+          icon="bi-percent" 
+          label="Total Commissions" 
+          value={formatCurrency(overview?.total_commissions)} 
+        />
+        <StatCard 
+          icon="bi-people" 
+          label="Active Members" 
+          value={overview?.total_members ?? '—'} 
+          color="navy"
+        />
+        <StatCard 
+          icon="bi-exclamation-triangle" 
+          label="Open Disputes" 
+          value={overview?.open_disputes ?? '—'} 
+          color={overview?.open_disputes > 0 ? 'red' : ''}
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <a 
-          href="/staff/bookings" 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.75rem', 
-            background: 'var(--white)', 
-            border: '1px solid var(--gray-100)', 
-            borderRadius: 'var(--radius)', 
-            padding: '1rem 1.25rem', 
-            textDecoration: 'none', 
-            color: 'var(--navy)', 
-            fontWeight: 500, 
-            fontSize: '0.875rem', 
-            boxShadow: 'var(--shadow-xs)', 
-            transition: 'var(--transition)' 
-          }}
-          onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-          onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-xs)'}
-        >
-          <i className="bi bi-airplane" style={{ color: 'var(--gold)', fontSize: '1.1rem' }} />
-          View Bookings
-        </a>
-        <a 
-          href="/staff/inquiries" 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.75rem', 
-            background: 'var(--white)', 
-            border: '1px solid var(--gray-100)', 
-            borderRadius: 'var(--radius)', 
-            padding: '1rem 1.25rem', 
-            textDecoration: 'none', 
-            color: 'var(--navy)', 
-            fontWeight: 500, 
-            fontSize: '0.875rem', 
-            boxShadow: 'var(--shadow-xs)', 
-            transition: 'var(--transition)' 
-          }}
-          onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-          onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-xs)'}
-        >
-          <i className="bi bi-envelope-open" style={{ color: 'var(--gold)', fontSize: '1.1rem' }} />
-          View Inquiries
-        </a>
-        <a 
-          href="/staff/email" 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.75rem', 
-            background: 'var(--white)', 
-            border: '1px solid var(--gray-100)', 
-            borderRadius: 'var(--radius)', 
-            padding: '1rem 1.25rem', 
-            textDecoration: 'none', 
-            color: 'var(--navy)', 
-            fontWeight: 500, 
-            fontSize: '0.875rem', 
-            boxShadow: 'var(--shadow-xs)', 
-            transition: 'var(--transition)' 
-          }}
-          onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-          onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-xs)'}
-        >
-          <i className="bi bi-send" style={{ color: 'var(--gold)', fontSize: '1.1rem' }} />
-          Send Email
-        </a>
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        {quickActions.map(action => (
+          <Link key={action.to} to={action.to} className="quick-action-card">
+            <div className="quick-action-icon">
+              <i className={`bi ${action.icon}`} />
+            </div>
+            <div className="quick-action-content">
+              <div className="quick-action-title">{action.title}</div>
+              <div className="quick-action-desc">{action.desc}</div>
+            </div>
+            <i className="bi bi-chevron-right" style={{ color: 'var(--gray-300)', fontSize: '0.9rem' }} />
+          </Link>
+        ))}
+      </div>
+
+      {/* Recent Activity Section (Optional) */}
+      {recentActivity.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <div className="dash-header" style={{ marginBottom: '1rem', paddingBottom: '0.5rem' }}>
+            <div className="dash-header-left">
+              <h3 style={{ fontSize: '1rem', margin: 0 }}>Recent Activity</h3>
+            </div>
+            <Link to="/staff/activity" className="btn btn-ghost btn-sm">View All</Link>
+          </div>
+          <div className="table-card">
+            <div className="settings-card-body" style={{ padding: 0 }}>
+              {recentActivity.map(activity => (
+                <div key={activity.id} className="detail-item" style={{ padding: '0.875rem 1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="quick-action-icon" style={{ width: '32px', height: '32px' }}>
+                      <i className={`bi ${activity.type === 'booking' ? 'bi-airplane' : 'bi-envelope'}`} style={{ fontSize: '0.9rem' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--navy)' }}>{activity.message}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>{activity.time}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Helpful Tips */}
+      <div className="alert alert-info" style={{ marginTop: '1.5rem', fontSize: '0.8rem' }}>
+        <i className="bi bi-lightbulb" />
+        <div>
+          <strong>Staff Tip:</strong> Need to process a refund or adjust a booking? Contact the admin team for assistance.
+        </div>
       </div>
     </div>
   )
