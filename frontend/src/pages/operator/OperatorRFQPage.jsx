@@ -1,208 +1,361 @@
-import { useState, useEffect } from 'react';
-import { operatorAPI } from '../../services/api';
+// ═══════════════════════════════════════════════════════════════════════════════
+// OPERATOR RFQ PAGE - Clean & Simple
+// ═══════════════════════════════════════════════════════════════════════════════
+import { useState, useEffect, useCallback } from 'react'
+import { operatorAPI } from '../../services/api'
 
-const STATUS_COLORS = {
-  submitted:   '#ffb74d',
-  shortlisted: '#64b5f6',
-  accepted:    '#81c784',
-  rejected:    '#ef9a9a',
-  expired:     '#888',
-};
+function Badge({ s }) {
+  const STATUS_COLORS = {
+    submitted: 'amber',
+    shortlisted: 'navy',
+    accepted: 'green',
+    rejected: 'red',
+    expired: 'gray'
+  }
+  const colorClass = STATUS_COLORS[s] || 'gray'
+  const displayText = s?.replace(/_/g, ' ') || '—'
+  return <span className={`badge badge-${colorClass}`}>{displayText}</span>
+}
+
+function Modal({ open, onClose, title, children }) {
+  if (!open) return null
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal modal-lg">
+        <div className="modal-header">
+          <div className="modal-title">{title}</div>
+          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+    </div>
+  )
+}
 
 export function OperatorRFQPage() {
-  const [bids, setBids]           = useState([]);
-  const [myAircraft, setMyAircraft] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [activeBid, setActiveBid] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [bids, setBids] = useState([])
+  const [myAircraft, setMyAircraft] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeBid, setActiveBid] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [message, setMessage] = useState({ text: '', type: '' })
+  
   const [bidForm, setBidForm] = useState({
-    operator_price_usd: '', estimated_hours: '',
-    positioning_cost: 0, catering_cost: 0, overnight_cost: 0,
-    notes: '', aircraft: '',
-  });
+    operator_price_usd: '',
+    estimated_hours: '',
+    positioning_cost: 0,
+    catering_cost: 0,
+    overnight_cost: 0,
+    notes: '',
+    aircraft: '',
+  })
 
-  const load = () => {
-    setLoading(true);
-    Promise.all([
-      operatorAPI.rfqBids(),
-      operatorAPI.myAircraft({ status: 'available', is_approved: true }),
-    ])
-      .then(([b, ac]) => {
-        setBids(b.data.results || b.data);
-        setMyAircraft(ac.data.results || ac.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  };
-  useEffect(load, []);
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [bidsRes, aircraftRes] = await Promise.all([
+        operatorAPI.rfqBids(),
+        operatorAPI.myAircraft({ status: 'available', is_approved: true }),
+      ])
+      
+      const bidsData = bidsRes?.data?.results || bidsRes?.data || bidsRes || []
+      const aircraftData = aircraftRes?.data?.results || aircraftRes?.data || aircraftRes || []
+      
+      setBids(bidsData)
+      setMyAircraft(aircraftData)
+    } catch (err) {
+      console.error('Failed to load RFQ data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const openBid = bid => {
-    setActiveBid(bid);
-    setBidForm(f => ({ ...f, aircraft: myAircraft[0]?.id || '' }));
-  };
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const handleSubmitBid = async e => {
-    e.preventDefault();
-    setSubmitting(true);
+  const openBid = (bid) => {
+    setActiveBid(bid)
+    setBidForm({
+      operator_price_usd: bid.operator_price_usd || '',
+      estimated_hours: bid.estimated_hours || '',
+      positioning_cost: bid.positioning_cost || 0,
+      catering_cost: bid.catering_cost || 0,
+      overnight_cost: bid.overnight_cost || 0,
+      notes: bid.notes || '',
+      aircraft: myAircraft[0]?.id || '',
+    })
+    setMessage({ text: '', type: '' })
+  }
+
+  const handleSubmitBid = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setMessage({ text: '', type: '' })
     try {
       await operatorAPI.submitBid({
         ...bidForm,
-        booking:  activeBid.booking,
+        booking: activeBid.booking,
         operator: activeBid.operator_id,
-      });
-      setActiveBid(null);
-      load();
+      })
+      setMessage({ text: 'Bid submitted successfully!', type: 'success' })
+      setActiveBid(null)
+      await load()
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000)
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to submit bid.');
+      const data = err?.response?.data
+      setMessage({ text: data?.detail || 'Failed to submit bid.', type: 'error' })
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
-  const setB = patch => setBidForm(f => ({ ...f, ...patch }));
+  const formatCurrency = (value) => {
+    if (!value && value !== 0) return '—'
+    return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+  }
 
-  const openBids = bids.filter(b => b.status === 'submitted');
-  const pastBids = bids.filter(b => b.status !== 'submitted');
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
 
-  return (
-    <div style={pageStyle}>
-      <h1 style={pageTitle}>RFQ Bids</h1>
-      <p style={{ ...muted, marginBottom: '1.75rem' }}>
-        View Request For Quote invitations from NJH and submit competitive bids for flight bookings.
-      </p>
+  const openBids = bids.filter(b => b.status === 'submitted')
+  const pastBids = bids.filter(b => b.status !== 'submitted')
 
-      {loading ? (
-        <p style={muted}>Loading...</p>
-      ) : (
-        <>
-          {/* ── Open RFQs ── */}
-          <Section title={`Open RFQs (${openBids.length})`}>
-            {openBids.length === 0 ? (
-              <p style={muted}>No open RFQs at the moment.</p>
-            ) : (
-              openBids.map(bid => (
-                <div key={bid.id} style={rowCard}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, color: '#fff' }}>
-                      Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
-                    </p>
-                    <p style={{ margin: '0.2rem 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>
-                      Your bid: ${bid.operator_price_usd ? Number(bid.operator_price_usd).toLocaleString() : '—'}{' '}
-                      · Status: {bid.status}
-                      {bid.valid_until && ` · Valid until ${bid.valid_until.slice(0, 10)}`}
-                    </p>
-                  </div>
-                  <button onClick={() => openBid(bid)} style={goldBtn}>
-                    Submit / Update Bid
-                  </button>
-                </div>
-              ))
-            )}
-          </Section>
+  const stats = {
+    total: bids.length,
+    open: openBids.length,
+    shortlisted: bids.filter(b => b.status === 'shortlisted').length,
+    accepted: bids.filter(b => b.status === 'accepted').length
+  }
 
-          {/* ── Bid Modal ── */}
-          {activeBid && (
-            <div style={modalOverlay}>
-              <div style={modalBox}>
-                <h3 style={{ color: 'var(--gold,#C9A84C)', marginBottom: '1.25rem' }}>Submit Bid</h3>
-                <form onSubmit={handleSubmitBid}>
-                  <div style={grid2}>
-                    <div>
-                      <label style={lbl}>Assign Aircraft</label>
-                      <select value={bidForm.aircraft} onChange={e => setB({ aircraft: e.target.value })} style={inp}>
-                        <option value="">Select aircraft</option>
-                        {myAircraft.map(a => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <F label="Your Price (USD)"       name="operator_price_usd" type="number" value={bidForm.operator_price_usd} onChange={e => setB({ operator_price_usd: e.target.value })} required />
-                    <F label="Estimated Hours"        name="estimated_hours"    type="number" value={bidForm.estimated_hours}    onChange={e => setB({ estimated_hours: e.target.value })} />
-                    <F label="Positioning Cost (USD)" name="positioning_cost"   type="number" value={bidForm.positioning_cost}   onChange={e => setB({ positioning_cost: e.target.value })} />
-                    <F label="Catering Cost (USD)"    name="catering_cost"      type="number" value={bidForm.catering_cost}      onChange={e => setB({ catering_cost: e.target.value })} />
-                    <F label="Overnight Cost (USD)"   name="overnight_cost"     type="number" value={bidForm.overnight_cost}     onChange={e => setB({ overnight_cost: e.target.value })} />
-                  </div>
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={lbl}>Notes</label>
-                    <textarea rows={3} value={bidForm.notes} onChange={e => setB({ notes: e.target.value })} style={{ ...inp, resize: 'vertical' }} placeholder="Any notes for the NJH team..." />
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button type="submit" disabled={submitting} style={goldBtn}>
-                      {submitting ? 'Submitting...' : 'Submit Bid'}
-                    </button>
-                    <button type="button" onClick={() => setActiveBid(null)} style={outlineBtn}>
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+  if (loading) {
+    return (
+      <div className="table-empty">
+        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
+        <p>Loading RFQ bids...</p>
+      </div>
+    )
+  }
 
-          {/* ── Previous Bids ── */}
-          <Section title="Previous Bids">
-            {pastBids.length === 0 ? (
-              <p style={muted}>No previous bids.</p>
-            ) : (
-              pastBids.map(bid => (
-                <div key={bid.id} style={rowCard}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <p style={{ margin: 0, color: '#fff', fontSize: '0.9rem' }}>
-                        Booking {String(bid.booking).slice(0, 8).toUpperCase()}
-                      </p>
-                      <span style={{ ...badge, color: STATUS_COLORS[bid.status], background: `${STATUS_COLORS[bid.status]}22` }}>
-                        {bid.status}
-                      </span>
-                    </div>
-                    <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>
-                      Bid: ${Number(bid.operator_price_usd || 0).toLocaleString()} USD
-                      {bid.njh_client_price && ` · Client price: $${Number(bid.njh_client_price).toLocaleString()}`}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </Section>
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ── Sub-components ── */
-function Section({ title, children }) {
-  return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h2 style={{ color: '#fff', fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
-
-function F({ label, name, type = 'text', value, onChange, required, placeholder }) {
   return (
     <div>
-      <label style={lbl}>{label}{required && <span style={{ color: 'var(--gold,#C9A84C)' }}> *</span>}</label>
-      <input name={name} type={type} value={value} onChange={onChange} required={required} placeholder={placeholder} style={inp} />
+      <div className="dash-header">
+        <div className="dash-header-left">
+          <h2>RFQ Bids</h2>
+          <p>View Request For Quote invitations and submit competitive bids</p>
+        </div>
+        <div className="admin-actions-right">
+          <button className="btn btn-outline-navy btn-sm" onClick={load}>
+            <i className="bi bi-arrow-clockwise" /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="operator-stats">
+        <div className="operator-stat-card">
+          <div className="operator-stat-number">{stats.total}</div>
+          <div className="operator-stat-label">Total RFQs</div>
+        </div>
+        <div className="operator-stat-card">
+          <div className="operator-stat-number" style={{ color: 'var(--gold)' }}>{stats.open}</div>
+          <div className="operator-stat-label">Open to Bid</div>
+        </div>
+        <div className="operator-stat-card">
+          <div className="operator-stat-number" style={{ color: 'var(--navy)' }}>{stats.shortlisted}</div>
+          <div className="operator-stat-label">Shortlisted</div>
+        </div>
+        <div className="operator-stat-card">
+          <div className="operator-stat-number" style={{ color: 'var(--green)' }}>{stats.accepted}</div>
+          <div className="operator-stat-label">Accepted</div>
+        </div>
+      </div>
+
+      {/* Message Alert */}
+      {message.text && (
+        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+          <span>{message.text}</span>
+        </div>
+      )}
+
+      {/* Open RFQs Section */}
+      <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
+        <div className="settings-card-header">
+          <h4><i className="bi bi-bell" /> Open RFQs ({openBids.length})</h4>
+        </div>
+        <div className="settings-card-body" style={{ padding: 0 }}>
+          {openBids.length === 0 ? (
+            <div className="table-empty" style={{ padding: '2rem' }}>
+              <i className="bi bi-check-circle" style={{ color: 'var(--green)' }} />
+              <p>No open RFQs at the moment. Check back later!</p>
+            </div>
+          ) : (
+            openBids.map(bid => (
+              <div key={bid.id} className="rfq-item">
+                <div className="rfq-info">
+                  <div className="rfq-booking">
+                    Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
+                    <Badge s={bid.status} />
+                  </div>
+                  <div className="rfq-details">
+                    Your bid: {formatCurrency(bid.operator_price_usd)}
+                    {bid.valid_until && ` · Valid until ${formatDate(bid.valid_until)}`}
+                  </div>
+                  {bid.route && (
+                    <div className="rfq-route">
+                      <i className="bi bi-geo-alt" /> {bid.route}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => openBid(bid)} className="btn btn-navy btn-sm">
+                  <i className="bi bi-send" /> Submit Bid
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Previous Bids Section */}
+      <div className="settings-card">
+        <div className="settings-card-header">
+          <h4><i className="bi bi-clock-history" /> Previous Bids ({pastBids.length})</h4>
+        </div>
+        <div className="settings-card-body" style={{ padding: 0 }}>
+          {pastBids.length === 0 ? (
+            <div className="table-empty" style={{ padding: '2rem' }}>
+              <i className="bi bi-inbox" />
+              <p>No previous bids yet.</p>
+            </div>
+          ) : (
+            pastBids.map(bid => (
+              <div key={bid.id} className="rfq-item past">
+                <div className="rfq-info">
+                  <div className="rfq-booking">
+                    Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
+                    <Badge s={bid.status} />
+                  </div>
+                  <div className="rfq-details">
+                    Your bid: {formatCurrency(bid.operator_price_usd)}
+                    {bid.njh_client_price && (
+                      <span className="client-price">
+                        · Client price: {formatCurrency(bid.njh_client_price)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Bid Modal */}
+      <Modal open={activeBid !== null} onClose={() => setActiveBid(null)} title={<><i className="bi bi-send" /> Submit Bid</>}>
+        <form onSubmit={handleSubmitBid}>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Assign Aircraft <span className="req">*</span></label>
+              <select 
+                className="form-control" 
+                value={bidForm.aircraft} 
+                onChange={e => setBidForm(f => ({ ...f, aircraft: e.target.value }))}
+                required
+              >
+                <option value="">Select aircraft</option>
+                {myAircraft.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Your Price (USD) <span className="req">*</span></label>
+              <input 
+                className="form-control" 
+                type="number" 
+                step="0.01"
+                value={bidForm.operator_price_usd} 
+                onChange={e => setBidForm(f => ({ ...f, operator_price_usd: e.target.value }))} 
+                required 
+                placeholder="25000"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Estimated Hours</label>
+              <input 
+                className="form-control" 
+                type="number" 
+                step="0.1"
+                value={bidForm.estimated_hours} 
+                onChange={e => setBidForm(f => ({ ...f, estimated_hours: e.target.value }))} 
+                placeholder="2.5"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Positioning Cost (USD)</label>
+              <input 
+                className="form-control" 
+                type="number" 
+                step="0.01"
+                value={bidForm.positioning_cost} 
+                onChange={e => setBidForm(f => ({ ...f, positioning_cost: e.target.value }))} 
+                placeholder="0"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Catering Cost (USD)</label>
+              <input 
+                className="form-control" 
+                type="number" 
+                step="0.01"
+                value={bidForm.catering_cost} 
+                onChange={e => setBidForm(f => ({ ...f, catering_cost: e.target.value }))} 
+                placeholder="0"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Overnight Cost (USD)</label>
+              <input 
+                className="form-control" 
+                type="number" 
+                step="0.01"
+                value={bidForm.overnight_cost} 
+                onChange={e => setBidForm(f => ({ ...f, overnight_cost: e.target.value }))} 
+                placeholder="0"
+              />
+            </div>
+            <div className="form-group form-full">
+              <label className="form-label">Notes</label>
+              <textarea 
+                className="form-control" 
+                rows={3}
+                value={bidForm.notes} 
+                onChange={e => setBidForm(f => ({ ...f, notes: e.target.value }))} 
+                placeholder="Any notes for the NJH team..."
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setActiveBid(null)}>Cancel</button>
+            <button type="submit" className="btn btn-navy" disabled={submitting}>
+              {submitting ? (
+                <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</>
+              ) : (
+                <><i className="bi bi-check-lg" /> Submit Bid</>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
-  );
+  )
 }
 
-/* ── Styles ── */
-const pageStyle    = { padding: '2rem', color: '#fff', minHeight: '100vh' };
-const pageTitle    = { fontFamily: 'var(--font-display,Georgia,serif)', color: 'var(--gold,#C9A84C)', fontSize: '1.6rem', marginBottom: '1.5rem' };
-const muted        = { color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' };
-const rowCard      = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' };
-const goldBtn      = { padding: '0.5rem 1.1rem', background: 'var(--gold,#C9A84C)', color: 'var(--navy,#0B1D3A)', border: 'none', borderRadius: '4px', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap' };
-const outlineBtn   = { padding: '0.5rem 1.1rem', background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' };
-const badge        = { display: 'inline-block', padding: '0.15rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem', fontWeight: '600', textTransform: 'capitalize' };
-const lbl          = { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.82rem', marginBottom: '0.35rem' };
-const inp          = { width: '100%', padding: '0.65rem 0.9rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', color: '#fff', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' };
-const grid2        = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem', marginBottom: '1rem' };
-const modalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' };
-const modalBox     = { background: 'var(--navy,#0B1D3A)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '8px', padding: '2rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' };
-
-export default OperatorRFQPage;
+export default OperatorRFQPage

@@ -3614,3 +3614,638 @@ input:checked + .toggle-slider:before {
     font-size: 2rem;
   }
 }
+
+/* ── Operator Sidebar Styles ──────────────────────────────────────────────── */
+.sidebar-operator {
+  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+}
+
+.sidebar-operator .sidebar-logo-icon {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+.sidebar-operator .sidebar-role-badge {
+  color: var(--gold-light);
+}
+
+.sidebar-operator .sidebar-section-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0.75rem 0.75rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.sidebar-operator .sidebar-link.active {
+  background: rgba(200, 164, 90, 0.12);
+  color: var(--gold-light);
+}
+
+.sidebar-operator .sidebar-link.active i {
+  color: var(--gold);
+}
+
+.sidebar-operator .sidebar-avatar {
+  background: rgba(200, 164, 90, 0.2);
+  border-color: rgba(200, 164, 90, 0.4);
+  color: var(--gold-light);
+}
+
+.sidebar-operator .sidebar-logout:hover {
+  background: rgba(200, 164, 90, 0.15);
+  color: var(--gold-light);
+}
+
+.sidebar-operator .sidebar-collapse-btn,
+.sidebar-operator .sidebar-expand-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-operator .sidebar-collapse-btn:hover,
+.sidebar-operator .sidebar-expand-btn:hover {
+  color: var(--gold-light);
+}
+
+/* ── Operator Dashboard Specific Styles ──────────────────────────────────── */
+.stat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--gold);
+  text-decoration: none;
+  margin-top: 0.5rem;
+  transition: var(--t);
+}
+
+.stat-link:hover {
+  gap: 0.5rem;
+  color: var(--gold-light);
+}
+
+.stat-link i {
+  font-size: 0.6rem;
+}
+
+.action-card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: var(--t-slow);
+}
+
+.action-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--gray-200);
+  transform: translateY(-2px);
+}
+
+.action-card-content {
+  flex: 1;
+}
+
+.action-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.15rem;
+}
+
+.action-card-subtitle {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  margin: 0;
+}
+
+.btn-outline-navy {
+  background: transparent;
+  border: 1.5px solid var(--navy);
+  color: var(--navy);
+}
+
+.btn-outline-navy:hover {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.btn-amber {
+  background: var(--amber);
+  color: var(--white);
+}
+
+.btn-amber:hover {
+  background: var(--amber-dark);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .action-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .action-card-content {
+    text-align: center;
+  }
+  
+  .stat-link {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Operator Bookings Page Styles ───────────────────────────────────────── */
+.booking-pending-card {
+  border-bottom: 1px solid var(--gray-100);
+  padding: 1rem 1.25rem;
+  transition: var(--t);
+}
+
+.booking-pending-card:last-child {
+  border-bottom: none;
+}
+
+.booking-pending-card:hover {
+  background: var(--gray-50);
+}
+
+.booking-pending-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.booking-reference {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.booking-details {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-bottom: 0.15rem;
+}
+
+.booking-date {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+}
+
+.booking-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.booking-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: var(--t);
+}
+
+.booking-item:hover {
+  background: var(--gray-50);
+}
+
+.booking-item:last-child {
+  border-bottom: none;
+}
+
+.booking-item-left {
+  flex: 1;
+}
+
+.booking-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.booking-ref-note {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  margin-top: 0.15rem;
+}
+
+.btn-outline-red {
+  background: transparent;
+  border: 1.5px solid var(--red);
+  color: var(--red);
+}
+
+.btn-outline-red:hover {
+  background: var(--red);
+  color: var(--white);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .booking-pending-header {
+    flex-direction: column;
+  }
+  
+  .booking-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .booking-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .booking-item-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ── Operator Profile Page Styles ───────────────────────────────────────── */
+.quick-action-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r);
+  color: var(--navy);
+  text-decoration: none;
+  transition: var(--t);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.quick-action-link:hover {
+  background: var(--white);
+  border-color: var(--gold);
+  box-shadow: var(--shadow-sm);
+  transform: translateX(4px);
+}
+
+.quick-action-link i:first-child {
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  transition: var(--t-slow);
+}
+
+.review-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--gray-200);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.review-stars {
+  display: flex;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.review-stars i {
+  font-size: 0.9rem;
+}
+
+.review-date {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+}
+
+.review-comment {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.review-author {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .profile-two-col {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .review-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .quick-action-link {
+    padding: 0.6rem 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Operator Yachts Page Styles ─────────────────────────────────────────── */
+.yacht-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.yacht-card-item {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  transition: var(--t-slow);
+}
+
+.yacht-card-item:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--gray-200);
+  transform: translateY(-2px);
+}
+
+.yacht-card-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+}
+
+.yacht-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  border-radius: var(--r);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.yacht-icon i {
+  color: var(--gold);
+  font-size: 1.5rem;
+}
+
+.yacht-info {
+  flex: 1;
+}
+
+.yacht-name {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.yacht-details {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-bottom: 0.25rem;
+}
+
+.yacht-rate {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.yacht-card-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .yacht-card-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .yacht-card-left {
+    width: 100%;
+  }
+  
+  .yacht-card-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .yacht-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .yacht-icon i {
+    font-size: 1.2rem;
+  }
+}
+
+/* ── Operator Availability Page Styles ───────────────────────────────────── */
+.block-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--gray-100);
+  transition: var(--t);
+}
+
+.block-item:last-child {
+  border-bottom: none;
+}
+
+.block-item:hover {
+  background: var(--gray-50);
+}
+
+.block-info {
+  flex: 1;
+}
+
+.block-title {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.block-dates {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.block-dates i {
+  font-size: 0.7rem;
+}
+
+.block-notes {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .block-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .block-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .block-dates {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Operator RFQ Page Styles ────────────────────────────────────────────── */
+.rfq-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--gray-100);
+  transition: var(--t);
+}
+
+.rfq-item:last-child {
+  border-bottom: none;
+}
+
+.rfq-item:hover {
+  background: var(--gray-50);
+}
+
+.rfq-item.past {
+  opacity: 0.8;
+}
+
+.rfq-info {
+  flex: 1;
+}
+
+.rfq-booking {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rfq-details {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-bottom: 0.25rem;
+}
+
+.rfq-route {
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rfq-route i {
+  font-size: 0.65rem;
+  color: var(--gold);
+}
+
+.client-price {
+  color: var(--green);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rfq-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .rfq-booking {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

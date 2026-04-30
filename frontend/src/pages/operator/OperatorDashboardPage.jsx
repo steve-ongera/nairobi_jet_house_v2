@@ -1,133 +1,254 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { operatorAPI } from '../../services/api';
+// ═══════════════════════════════════════════════════════════════════════════════
+// OPERATOR DASHBOARD PAGE - Clean & Simple
+// ═══════════════════════════════════════════════════════════════════════════════
+import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { operatorAPI } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'
 
-export function OperatorDashboardPage() {
-  const [bids, setBids] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [aircraft, setAircraft] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      operatorAPI.rfqBids({ status: 'submitted' }),
-      operatorAPI.opBookings({ status: 'sent' }),
-      operatorAPI.myAircraft(),
-    ])
-      .then(([b, bk, ac]) => {
-        setBids(b.data.results || b.data);
-        setBookings(bk.data.results || bk.data);
-        setAircraft(ac.data.results || ac.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const pendingAircraft = aircraft.filter(a => !a.is_approved).length;
-  const activeAircraft = aircraft.filter(a => a.status === 'available').length;
-
+function StatCard({ icon, label, value, color = '', to, sub = '' }) {
   return (
-    <div style={pageStyle}>
-      <h1 style={pageTitle}>Operator Dashboard</h1>
-
-      {loading ? (
-        <p style={muted}>Loading...</p>
-      ) : (
-        <>
-          {/* ── Stat Cards ── */}
-          <div style={statsGrid}>
-            <StatCard label="Open RFQs to Bid"          value={bids.length}      color="var(--gold,#C9A84C)" to="/operator/rfq"      />
-            <StatCard label="Bookings Awaiting Accept"   value={bookings.length}  color="#81c784"             to="/operator/bookings" />
-            <StatCard label="Active Aircraft"            value={activeAircraft}   color="#64b5f6"             to="/operator/aircraft" />
-            <StatCard label="Pending NJH Approval"      value={pendingAircraft}  color="#ffb74d"             to="/operator/aircraft" />
-          </div>
-
-          {/* ── Open RFQs ── */}
-          {bids.length > 0 && (
-            <Section title="Open RFQs — Action Required">
-              {bids.slice(0, 5).map(bid => (
-                <div key={bid.id} style={rowCard}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, color: '#fff', fontSize: '0.9rem' }}>
-                      Booking #{String(bid.booking).slice(0, 8).toUpperCase()}
-                    </p>
-                    <p style={{ margin: '0.2rem 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-                      Status: {bid.status} · Valid until: {bid.valid_until?.slice(0, 10) || 'N/A'}
-                    </p>
-                  </div>
-                  <Link to="/operator/rfq" style={goldBtn}>Respond</Link>
-                </div>
-              ))}
-            </Section>
-          )}
-
-          {/* ── Pending Bookings ── */}
-          {bookings.length > 0 && (
-            <Section title="Dispatched Bookings — Awaiting Confirmation">
-              {bookings.slice(0, 5).map(bk => (
-                <div key={bk.id} style={rowCard}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, color: '#fff', fontSize: '0.9rem' }}>
-                      Booking {String(bk.reference).slice(0, 8).toUpperCase()}
-                    </p>
-                    <p style={{ margin: '0.2rem 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-                      Payout: ${Number(bk.operator_payout_usd || 0).toLocaleString()} USD
-                    </p>
-                  </div>
-                  <Link to="/operator/bookings" style={goldBtn}>Review</Link>
-                </div>
-              ))}
-            </Section>
-          )}
-
-          {bids.length === 0 && bookings.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.3)' }}>
-              <p>No pending actions. You're all caught up! ✅</p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ── Sub-components ── */
-function StatCard({ label, value, color = 'var(--gold,#C9A84C)', to }) {
-  return (
-    <div style={statCard}>
-      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-        {label}
-      </p>
-      <p style={{ color, fontSize: '2rem', fontFamily: 'var(--font-display,Georgia,serif)', margin: '0.3rem 0 0.5rem' }}>
-        {value}
-      </p>
+    <div className={`stat-card${color ? ' ' + color : ''}`}>
+      <div className="stat-card-icon"><i className={`bi ${icon}`} /></div>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value ?? '—'}</div>
+      {sub && <div className="text-xs text-muted" style={{ marginTop: '0.25rem' }}>{sub}</div>}
       {to && (
-        <Link to={to} style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', textDecoration: 'none' }}>
-          View →
+        <Link to={to} className="stat-link">
+          View <i className="bi bi-chevron-right" />
         </Link>
       )}
     </div>
-  );
+  )
 }
 
-/* ── Shared styles (local) ── */
-const pageStyle  = { padding: '2rem', color: '#fff', minHeight: '100vh' };
-const pageTitle  = { fontFamily: 'var(--font-display,Georgia,serif)', color: 'var(--gold,#C9A84C)', fontSize: '1.6rem', marginBottom: '1.5rem' };
-const muted      = { color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' };
-const statsGrid  = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '1rem', marginBottom: '2rem' };
-const statCard   = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '1.25rem' };
-const rowCard    = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' };
-const goldBtn    = { padding: '0.5rem 1.1rem', background: 'var(--gold,#C9A84C)', color: 'var(--navy,#0B1D3A)', border: 'none', borderRadius: '4px', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' };
-
-function Section({ title, children }) {
+function ActionCard({ title, subtitle, buttonText, buttonLink, buttonColor = 'navy' }) {
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h2 style={{ color: '#fff', fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        {title}
-      </h2>
-      {children}
+    <div className="action-card">
+      <div className="action-card-content">
+        <h4 className="action-card-title">{title}</h4>
+        <p className="action-card-subtitle">{subtitle}</p>
+      </div>
+      <Link to={buttonLink} className={`btn btn-${buttonColor} btn-sm`}>
+        {buttonText} <i className="bi bi-arrow-right" />
+      </Link>
     </div>
-  );
+  )
 }
 
-export default OperatorDashboardPage;
+export function OperatorDashboardPage() {
+  const { user } = useAuth()
+  const [bids, setBids] = useState([])
+  const [bookings, setBookings] = useState([])
+  const [aircraft, setAircraft] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [bidsRes, bookingsRes, aircraftRes] = await Promise.all([
+        operatorAPI.rfqBids({ status: 'submitted' }),
+        operatorAPI.opBookings({ status: 'sent' }),
+        operatorAPI.myAircraft(),
+      ])
+      
+      const bidsData = bidsRes?.data?.results || bidsRes?.data || bidsRes || []
+      const bookingsData = bookingsRes?.data?.results || bookingsRes?.data || bookingsRes || []
+      const aircraftData = aircraftRes?.data?.results || aircraftRes?.data || aircraftRes || []
+      
+      setBids(bidsData)
+      setBookings(bookingsData)
+      setAircraft(aircraftData)
+    } catch (err) {
+      console.error('Failed to load operator dashboard:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const pendingAircraft = aircraft.filter(a => !a.is_approved).length
+  const activeAircraft = aircraft.filter(a => a.status === 'available' || a.status === 'active').length
+  const totalEarnings = bookings.reduce((sum, b) => sum + (Number(b.operator_payout_usd) || 0), 0)
+
+  const formatCurrency = (value) => {
+    if (!value) return '—'
+    return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+  }
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="table-empty">
+        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
+        <p>Loading dashboard...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="dash-header">
+        <div className="dash-header-left">
+          <h2>Operator Dashboard</h2>
+          <p>Welcome back, {user?.first_name || user?.company || user?.username || 'Operator'}</p>
+        </div>
+        <div className="admin-actions-right">
+          <button className="btn btn-outline-navy btn-sm" onClick={loadData}>
+            <i className="bi bi-arrow-clockwise" /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="stat-grid" style={{ marginBottom: '2rem' }}>
+        <StatCard 
+          icon="bi-file-text" 
+          label="Open RFQs" 
+          value={bids.length} 
+          color="gold"
+          to="/operator/rfq"
+          sub="Ready to bid"
+        />
+        <StatCard 
+          icon="bi-calendar-check" 
+          label="Pending Bookings" 
+          value={bookings.length} 
+          color="navy"
+          to="/operator/bookings"
+          sub="Awaiting confirmation"
+        />
+        <StatCard 
+          icon="bi-airplane" 
+          label="Active Aircraft" 
+          value={activeAircraft} 
+          color="green"
+          to="/operator/aircraft"
+          sub="Available for charter"
+        />
+        <StatCard 
+          icon="bi-clock-history" 
+          label="Pending Approval" 
+          value={pendingAircraft} 
+          color={pendingAircraft > 0 ? 'amber' : ''}
+          to="/operator/aircraft"
+          sub={pendingAircraft > 0 ? 'Awaiting NJH review' : 'All approved'}
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions" style={{ marginBottom: '2rem' }}>
+        <ActionCard 
+          title="Submit New Aircraft"
+          subtitle="Add aircraft to your fleet for charter"
+          buttonText="Add Aircraft"
+          buttonLink="/operator/aircraft"
+          buttonColor="navy"
+        />
+        <ActionCard 
+          title="View RFQ Requests"
+          subtitle="Review and bid on open requests"
+          buttonText="View RFQs"
+          buttonLink="/operator/rfq"
+          buttonColor="gold"
+        />
+        <ActionCard 
+          title="Manage Availability"
+          subtitle="Update your fleet availability calendar"
+          buttonText="Update"
+          buttonLink="/operator/availability"
+          buttonColor="outline-navy"
+        />
+        <ActionCard 
+          title="Payout History"
+          subtitle={`Total earned: ${formatCurrency(totalEarnings)}`}
+          buttonText="View Payouts"
+          buttonLink="/operator/payouts"
+          buttonColor="outline-navy"
+        />
+      </div>
+
+      {/* Open RFQs Section */}
+      {bids.length > 0 && (
+        <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
+          <div className="settings-card-header">
+            <h4><i className="bi bi-file-text" /> Open RFQs — Action Required</h4>
+            <Link to="/operator/rfq" className="btn btn-ghost btn-sm">View All</Link>
+          </div>
+          <div className="settings-card-body" style={{ padding: 0 }}>
+            {bids.slice(0, 5).map(bid => (
+              <div key={bid.id} className="detail-item" style={{ justifyContent: 'space-between' }}>
+                <div>
+                  <div className="td-name">Booking #{String(bid.booking).slice(0, 8).toUpperCase()}</div>
+                  <div className="td-email">
+                    Status: {bid.status} · Valid until: {formatDate(bid.valid_until)}
+                  </div>
+                </div>
+                <Link to="/operator/rfq" className="btn btn-navy btn-sm">
+                  Respond <i className="bi bi-send" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pending Bookings Section */}
+      {bookings.length > 0 && (
+        <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
+          <div className="settings-card-header">
+            <h4><i className="bi bi-calendar-check" /> Dispatched Bookings — Awaiting Confirmation</h4>
+            <Link to="/operator/bookings" className="btn btn-ghost btn-sm">View All</Link>
+          </div>
+          <div className="settings-card-body" style={{ padding: 0 }}>
+            {bookings.slice(0, 5).map(bk => (
+              <div key={bk.id} className="detail-item" style={{ justifyContent: 'space-between' }}>
+                <div>
+                  <div className="td-name">Booking {String(bk.reference).slice(0, 8).toUpperCase()}</div>
+                  <div className="td-email">
+                    Payout: {formatCurrency(bk.operator_payout_usd)} · {bk.departure_date ? formatDate(bk.departure_date) : ''}
+                  </div>
+                </div>
+                <Link to="/operator/bookings" className="btn btn-navy btn-sm">
+                  Review <i className="bi bi-eye" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {bids.length === 0 && bookings.length === 0 && (
+        <div className="empty-state" style={{ marginTop: '2rem' }}>
+          <i className="bi bi-check-circle" style={{ color: 'var(--green)', fontSize: '3rem' }} />
+          <h3>All Caught Up! ✅</h3>
+          <p>No pending actions at the moment. Your dashboard is clean.</p>
+        </div>
+      )}
+
+      {/* Helpful Tip */}
+      <div className="alert alert-info" style={{ marginTop: '1.5rem', fontSize: '0.8rem' }}>
+        <i className="bi bi-lightbulb" />
+        <div>
+          <strong>Operator Tip:</strong> Keep your aircraft availability up to date to receive more RFQ requests. 
+          Responding quickly to RFQs increases your chances of winning bookings.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default OperatorDashboardPage
