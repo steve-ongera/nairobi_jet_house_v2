@@ -2,7 +2,7 @@
 // ADMIN CAREERS PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminCareersPage() {
   const [jobs, setJobs] = useState([])
@@ -11,7 +11,7 @@ export function AdminCareersPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([adminApi.getJobs(), adminApi.getApplications()])
+    Promise.all([adminAPI.getJobs(), adminAPI.getApplications()])
       .then(([j, a]) => {
         setJobs(j.results || j)
         setApps(a.results || a)
@@ -20,14 +20,14 @@ export function AdminCareersPage() {
   }, [])
 
   const toggleJob = async (id) => {
-    await adminApi.toggleJobActive(id)
-    const d = await adminApi.getJobs()
+    await adminAPI.toggleJobActive(id)
+    const d = await adminAPI.getJobs()
     setJobs(d.results || d)
   }
 
   const updateApp = async (id, status) => {
-    await adminApi.updateAppStatus(id, { status })
-    const d = await adminApi.getApplications()
+    await adminAPI.updateAppStatus(id, { status })
+    const d = await adminAPI.getApplications()
     setApps(d.results || d)
   }
 

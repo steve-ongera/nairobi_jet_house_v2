@@ -2,7 +2,7 @@
 // ADMIN SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminSettingsPage() {
   const [rules, setRules] = useState([])
@@ -13,7 +13,7 @@ export function AdminSettingsPage() {
   const [ok, setOk] = useState('')
 
   useEffect(() => {
-    Promise.all([adminApi.getCommRules(), adminApi.getCommission()])
+    Promise.all([adminAPI.getCommRules(), adminAPI.getCommission()])
       .then(([r, l]) => {
         setRules(r.results || r)
         setLegacy(l.results || l)
@@ -26,9 +26,9 @@ export function AdminSettingsPage() {
     setSaving(true)
     setOk('')
     try {
-      await adminApi.createCommRule(form)
+      await adminAPI.createCommRule(form)
       setOk('Commission rule saved.')
-      const d = await adminApi.getCommRules()
+      const d = await adminAPI.getCommRules()
       setRules(d.results || d)
     } catch {
       setOk('Failed to save rule.')
@@ -38,8 +38,8 @@ export function AdminSettingsPage() {
   }
 
   const toggleRule = async (id) => {
-    await adminApi.toggleCommRule(id)
-    const d = await adminApi.getCommRules()
+    await adminAPI.toggleCommRule(id)
+    const d = await adminAPI.getCommRules()
     setRules(d.results || d)
   }
 

@@ -2,7 +2,7 @@
 // ADMIN COMMISSION RULES PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminCommissionRulesPage() {
   const [rules, setRules] = useState([])
@@ -30,7 +30,7 @@ export function AdminCommissionRulesPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [r, l] = await Promise.all([adminApi.getCommRules(), adminApi.getCommission()])
+      const [r, l] = await Promise.all([adminAPI.getCommRules(), adminAPI.getCommission()])
       setRules(r.results || r)
       setLegacy(l.results || l)
     } catch (err) {
@@ -46,7 +46,7 @@ export function AdminCommissionRulesPage() {
     setOk('')
     setError('')
     try {
-      await adminApi.createCommRule(form)
+      await adminAPI.createCommRule(form)
       setOk('Commission rule created successfully.')
       setForm({ 
         name: '', markup_pct: '20', commission_pct: '15', priority: '0', 
@@ -66,7 +66,7 @@ export function AdminCommissionRulesPage() {
     setOk('')
     setError('')
     try {
-      await adminApi.updateCommRule(editing.id, form)
+      await adminAPI.updateCommRule(editing.id, form)
       setOk('Commission rule updated successfully.')
       setEditing(null)
       setForm({ 
@@ -83,7 +83,7 @@ export function AdminCommissionRulesPage() {
 
   const toggleRule = async (id) => {
     try {
-      await adminApi.toggleCommRule(id)
+      await adminAPI.toggleCommRule(id)
       await loadData()
     } catch (err) {
       console.error('Failed to toggle rule:', err)
@@ -93,7 +93,7 @@ export function AdminCommissionRulesPage() {
   const deleteRule = async (id) => {
     if (!window.confirm('Are you sure you want to delete this commission rule?')) return
     try {
-      await adminApi.deleteCommRule(id)
+      await adminAPI.deleteCommRule(id)
       await loadData()
       setOk('Commission rule deleted successfully.')
     } catch (err) {

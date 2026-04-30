@@ -2,7 +2,7 @@
 // ADMIN RFQ PAGE (Request for Quote)
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminRFQPage() {
   const [rfqs, setRfqs] = useState([])
@@ -20,7 +20,7 @@ export function AdminRFQPage() {
       const params = {}
       if (search) params.search = search
       if (status) params.status = status
-      const data = await adminApi.getRFQs(params)
+      const data = await adminAPI.getRFQs(params)
       setRfqs(data.results || data)
     } finally {
       setLoading(false)
@@ -45,7 +45,7 @@ export function AdminRFQPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      await adminApi.submitRFQQuote(selected.id, quoteForm)
+      await adminAPI.submitRFQQuote(selected.id, quoteForm)
       await load()
       setModal(false)
     } catch (err) {
@@ -57,7 +57,7 @@ export function AdminRFQPage() {
 
   const updateStatus = async (id, newStatus) => {
     try {
-      await adminApi.updateRFQStatus(id, { status: newStatus })
+      await adminAPI.updateRFQStatus(id, { status: newStatus })
       await load()
     } catch (err) {
       console.error('Failed to update RFQ status:', err)

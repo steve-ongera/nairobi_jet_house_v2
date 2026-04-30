@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
 import { dashboardApi, marketplaceApi, maintenanceApi } from '../../services/api'
-import { useAuth } from '../../App'
+import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 
 function PageHeader({ title, sub, action }) {
   return (

@@ -300,77 +300,33 @@ if _storage_backend == 's3':
     AWS_QUERYSTRING_AUTH    = True
 
 # ─── Logging ─────────────────────────────────────────────────────────────────
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '[{asctime}] {levelname} {name} {process:d} {thread:d} — {message}',
-            'style': '{',
-        },
         'simple': {
             'format': '[{asctime}] {levelname} — {message}',
             'style': '{',
         },
     },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
-        },
-    },
     'handlers': {
         'console': {
-            'class':     'logging.StreamHandler',
+            'class': 'logging.StreamHandler',
             'formatter': 'simple',
-        },
-        'file': {
-            'class':       'logging.handlers.RotatingFileHandler',
-            'filename':    BASE_DIR / 'logs' / 'njh.log',
-            'maxBytes':    10 * 1024 * 1024,   # 10 MB
-            'backupCount': 5,
-            'formatter':   'verbose',
-        },
-        'mail_admins': {
-            'level':   'ERROR',
-            'class':   'django.utils.log.AdminEmailHandler',
-            'filters': ['require_debug_false'],
         },
     },
     'root': {
         'handlers': ['console'],
-        'level':    LOG_LEVEL,
+        'level': 'INFO',  # Only show INFO and above (WARNING, ERROR)
     },
     'loggers': {
-        'django': {
-            'handlers':  ['console', 'file'],
-            'level':     LOG_LEVEL,
-            'propagate': False,
-        },
-        'django.request': {
-            'handlers':  ['console', 'file', 'mail_admins'],
-            'level':     'WARNING',
-            'propagate': False,
-        },
         'django.db.backends': {
-            'handlers':  ['console'],
-            'level':     'WARNING',    # set to DEBUG to log all SQL
-            'propagate': False,
-        },
-        'core': {
-            'handlers':  ['console', 'file'],
-            'level':     LOG_LEVEL,
+            'level': 'ERROR',  # Hide SQL queries
             'propagate': False,
         },
     },
 }
 
-# Ensure logs directory exists
-(BASE_DIR / 'logs').mkdir(exist_ok=True)
 
 # ─── Security Headers (production) ───────────────────────────────────────────
 if not DEBUG:

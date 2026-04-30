@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../App'
+import { useAuth } from '../../hooks/useAuth'  // Fixed import
 
 const SERVICES = [
   { icon: 'bi-airplane',          label: 'Private Jet Charter',  desc: 'Airport to airport, worldwide',        href: '/book-flight' },
@@ -18,6 +18,8 @@ const PORTAL_MAP = {
   owner:    '/owner',
   operator: '/operator',
 }
+
+// ... rest of your component remains exactly the same
 
 export default function PublicNavbar({ dark = false }) {
   const { user, logout }    = useAuth()

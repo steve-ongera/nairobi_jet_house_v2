@@ -2,7 +2,7 @@
 // AdminEmailLogsPage.jsx
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminEmailLogsPage() {
   const [logs,    setLogs]    = useState([])
@@ -17,7 +17,7 @@ export function AdminEmailLogsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getEmailLogs(search ? { search } : {})
+      const data = await adminAPI.getEmailLogs(search ? { search } : {})
       setLogs(data.results || data)
     } finally { setLoading(false) }
   }, [search])
@@ -26,7 +26,7 @@ export function AdminEmailLogsPage() {
 
   const sendEmail = async (e) => {
     e.preventDefault(); setSending(true); setSendOk('')
-    try { await adminApi.sendEmail(sendForm); setSendOk('Email sent successfully.'); setSendForm(f => ({ ...f, to_email:'', to_name:'', subject:'', body:'' })); load() }
+    try { await adminAPI.sendEmail(sendForm); setSendOk('Email sent successfully.'); setSendForm(f => ({ ...f, to_email:'', to_name:'', subject:'', body:'' })); load() }
     catch { setSendOk('Failed to send email.') }
     finally { setSending(false) }
   }
@@ -122,7 +122,7 @@ export function AdminYachtChartersPage() {
       const params = {}
       if (search) params.search = search
       if (status) params.status = status
-      const data = await adminApi.getCharters(params)
+      const data = await adminAPI.getCharters(params)
       setCharters(data.results || data)
     } finally { setLoading(false) }
   }, [search, status])
@@ -133,7 +133,7 @@ export function AdminYachtChartersPage() {
 
   const submitPrice = async (e) => {
     e.preventDefault(); setSaving(true)
-    try { await adminApi.setCharterPrice(selected.id, priceForm); await load(); setModal(false) }
+    try { await adminAPI.setCharterPrice(selected.id, priceForm); await load(); setModal(false) }
     finally { setSaving(false) }
   }
 
@@ -229,7 +229,7 @@ export function AdminInquiriesPage() {
   const [tab,     setTab]     = useState('contacts')
 
   useEffect(() => {
-    adminApi.getInquiries().then(setData).finally(() => setLoading(false))
+    adminAPI.getInquiries().then(setData).finally(() => setLoading(false))
   }, [])
 
   const TABS = [
@@ -293,7 +293,7 @@ export function AdminMarketplacePage() {
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
-    adminApi.getMarketplace().then(d => setBookings(d.results || d)).finally(() => setLoading(false))
+    adminAPI.getMarketplace().then(d => setBookings(d.results || d)).finally(() => setLoading(false))
   }, [])
 
   const STATUS_COLOR = { pending:'amber', confirmed:'green', in_flight:'green', completed:'gray', cancelled:'red', disputed:'red' }
@@ -341,13 +341,13 @@ export function AdminCareersPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([adminApi.getJobs(), adminApi.getApplications()])
+    Promise.all([adminAPI.getJobs(), adminAPI.getApplications()])
       .then(([j, a]) => { setJobs(j.results || j); setApps(a.results || a) })
       .finally(() => setLoading(false))
   }, [])
 
-  const toggleJob = async (id) => { await adminApi.toggleJobActive(id); const d = await adminApi.getJobs(); setJobs(d.results || d) }
-  const updateApp = async (id, status) => { await adminApi.updateAppStatus(id, { status }); const d = await adminApi.getApplications(); setApps(d.results || d) }
+  const toggleJob = async (id) => { await adminAPI.toggleJobActive(id); const d = await adminAPI.getJobs(); setJobs(d.results || d) }
+  const updateApp = async (id, status) => { await adminAPI.updateAppStatus(id, { status }); const d = await adminAPI.getApplications(); setApps(d.results || d) }
 
   return (
     <div>
@@ -426,19 +426,19 @@ export function AdminSettingsPage() {
   const [ok,      setOk]      = useState('')
 
   useEffect(() => {
-    Promise.all([adminApi.getCommRules(), adminApi.getCommission()])
+    Promise.all([adminAPI.getCommRules(), adminAPI.getCommission()])
       .then(([r, l]) => { setRules(r.results || r); setLegacy(l.results || l) })
       .finally(() => setLoading(false))
   }, [])
 
   const createRule = async (e) => {
     e.preventDefault(); setSaving(true); setOk('')
-    try { await adminApi.createCommRule(form); setOk('Commission rule saved.'); const d = await adminApi.getCommRules(); setRules(d.results || d) }
+    try { await adminAPI.createCommRule(form); setOk('Commission rule saved.'); const d = await adminAPI.getCommRules(); setRules(d.results || d) }
     catch { setOk('Failed to save rule.') }
     finally { setSaving(false) }
   }
 
-  const toggleRule = async (id) => { await adminApi.toggleCommRule(id); const d = await adminApi.getCommRules(); setRules(d.results || d) }
+  const toggleRule = async (id) => { await adminAPI.toggleCommRule(id); const d = await adminAPI.getCommRules(); setRules(d.results || d) }
 
   return (
     <div>

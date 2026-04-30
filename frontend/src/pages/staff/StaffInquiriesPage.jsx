@@ -2,7 +2,7 @@
 // STAFF INQUIRIES PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 function PageHeader({ title, sub, action }) {
   return (
@@ -19,7 +19,7 @@ export function StaffInquiriesPage() {
   const [tab, setTab] = useState('contacts')
 
   useEffect(() => {
-    adminApi.getInquiries()
+    adminAPI.getInquiries()
       .then(setData)
       .finally(() => setLoading(false))
   }, [])

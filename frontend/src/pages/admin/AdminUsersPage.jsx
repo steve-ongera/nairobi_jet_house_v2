@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 const ROLES = ['client','owner','operator','staff','admin']
 const ROLE_COLOR = { client:'navy', owner:'gold', operator:'green', staff:'navy', admin:'red' }
@@ -16,7 +16,7 @@ export default function AdminUsersPage() {
     try {
       const params = {}
       if (search) params.search = search
-      const data = await adminApi.getUsers(params)
+      const data = await adminAPI.getUsers(params)
       setUsers((data.results || data).filter(u => role ? u.role === role : true))
     } finally { setLoading(false) }
   }, [search, role])
@@ -25,13 +25,13 @@ export default function AdminUsersPage() {
 
   const toggle = async (u) => {
     setSaving(u.id)
-    try { await adminApi.toggleActive(u.id); load() }
+    try { await adminAPI.toggleActive(u.id); load() }
     finally { setSaving(null) }
   }
 
   const changeRole = async (u, newRole) => {
     setSaving(u.id)
-    try { await adminApi.changeRole(u.id, newRole); load() }
+    try { await adminAPI.changeRole(u.id, newRole); load() }
     finally { setSaving(null) }
   }
 

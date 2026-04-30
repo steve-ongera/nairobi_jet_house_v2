@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 const TIER_COLOR   = { standard: 'gray', preferred: 'navy', exclusive: 'gold' }
 const STATUS_COLOR = { pending: 'amber', active: 'green', suspended: 'red', terminated: 'gray' }
@@ -47,7 +47,7 @@ export default function AdminOperatorsPage() {
       if (search)    params.search = search
       if (tierFilter)params.tier   = tierFilter
       if (stFilter)  params.status = stFilter
-      const data = await adminApi.getOperators(params)
+      const data = await adminAPI.getOperators(params)
       setOperators(data.results || data)
     } finally { setLoading(false) }
   }, [search, tierFilter, stFilter])
@@ -59,30 +59,30 @@ export default function AdminOperatorsPage() {
     setDetailTab('aircraft')
     setModal('detail')
     const [ac, yachts, bookings, payouts, reviews] = await Promise.all([
-      adminApi.getOpAircraft(op.id),
-      adminApi.getOpYachts(op.id),
-      adminApi.getOpBookings(op.id),
-      adminApi.getOpPayouts(op.id),
-      adminApi.getOpReviews(op.id),
+      adminAPI.getOpAircraft(op.id),
+      adminAPI.getOpYachts(op.id),
+      adminAPI.getOpBookings(op.id),
+      adminAPI.getOpPayouts(op.id),
+      adminAPI.getOpReviews(op.id),
     ])
     setDetail({ aircraft: ac.results || ac, yachts: yachts.results || yachts, bookings: bookings.results || bookings, payouts: payouts.results || payouts, reviews: reviews.results || reviews })
   }
 
-  const activate  = async (op) => { await adminApi.activateOperator(op.id); load() }
-  const suspend   = async (op) => { await adminApi.suspendOperator(op.id);  load() }
-  const approveAc = async (id) => { await adminApi.approveAircraft(id); if (selected) openDetail(selected) }
+  const activate  = async (op) => { await adminAPI.activateOperator(op.id); load() }
+  const suspend   = async (op) => { await adminAPI.suspendOperator(op.id);  load() }
+  const approveAc = async (id) => { await adminAPI.approveAircraft(id); if (selected) openDetail(selected) }
 
   const submitCreate = async (e) => {
     e.preventDefault(); setSaving(true); setFormErr('')
     try {
-      await adminApi.createOperator(form)
+      await adminAPI.createOperator(form)
       setModal(null); setForm(blankForm()); load()
     } catch (err) { setFormErr(err?.detail || JSON.stringify(err)) }
     finally { setSaving(false) }
   }
 
   const changeTier = async (op, tier) => {
-    await adminApi.changeTier(op.id, tier)
+    await adminAPI.changeTier(op.id, tier)
     load(); setModal(null)
   }
 

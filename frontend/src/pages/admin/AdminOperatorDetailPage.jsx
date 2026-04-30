@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminOperatorDetailPage() {
   const { id } = useParams()
@@ -22,9 +22,9 @@ export function AdminOperatorDetailPage() {
     setLoading(true)
     try {
       const [op, ac, bk] = await Promise.all([
-        adminApi.getOperatorDetail(id),
-        adminApi.getOperatorAircraft({ operator_id: id }),
-        adminApi.getOperatorBookings(id)
+        adminAPI.getOperatorDetail(id),
+        adminAPI.getOperatorAircraft({ operator_id: id }),
+        adminAPI.getOperatorBookings(id)
       ])
       setOperator(op)
       setAircraft(ac.results || ac)
@@ -53,7 +53,7 @@ export function AdminOperatorDetailPage() {
     setSaving(true)
     setMessage('')
     try {
-      await adminApi.updateOperator(id, form)
+      await adminAPI.updateOperator(id, form)
       setMessage('Operator updated successfully.')
       setEditing(false)
       loadData()
@@ -66,7 +66,7 @@ export function AdminOperatorDetailPage() {
 
   const updateAircraftStatus = async (aircraftId, status) => {
     try {
-      await adminApi.updateAircraftStatus(aircraftId, { status })
+      await adminAPI.updateAircraftStatus(aircraftId, { status })
       loadData()
     } catch (err) {
       console.error('Failed to update aircraft status:', err)

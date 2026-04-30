@@ -2,7 +2,7 @@
 // ADMIN OPERATOR AIRCRAFT PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminOperatorAircraftPage() {
   const [aircraft, setAircraft] = useState([])
@@ -18,7 +18,7 @@ export function AdminOperatorAircraftPage() {
       const params = {}
       if (search) params.search = search
       if (status) params.status = status
-      const data = await adminApi.getOperatorAircraft(params)
+      const data = await adminAPI.getOperatorAircraft(params)
       setAircraft(data.results || data)
     } finally {
       setLoading(false)
@@ -31,7 +31,7 @@ export function AdminOperatorAircraftPage() {
 
   const updateStatus = async (id, newStatus) => {
     try {
-      await adminApi.updateAircraftStatus(id, { status: newStatus })
+      await adminAPI.updateAircraftStatus(id, { status: newStatus })
       await load()
     } catch (err) {
       console.error('Failed to update aircraft status:', err)

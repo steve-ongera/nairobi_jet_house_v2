@@ -2,7 +2,7 @@
 // AdminPayoutsPage.jsx
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 function PayoutsPage() {
   const [payouts,  setPayouts]  = useState([])
@@ -17,7 +17,7 @@ function PayoutsPage() {
       const params = {}
       if (filter) params.status = filter
       if (ref)    params.search = ref
-      const data = await adminApi.getPayouts(params)
+      const data = await adminAPI.getPayouts(params)
       setPayouts(data.results || data)
     } finally { setLoading(false) }
   }, [filter, ref])
@@ -28,13 +28,13 @@ function PayoutsPage() {
     const bankRef = prompt('Bank reference / transaction ID:')
     if (!bankRef) return
     setSaving(id)
-    try { await adminApi.markPaid(id, { bank_reference: bankRef }); load() }
+    try { await adminAPI.markPaid(id, { bank_reference: bankRef }); load() }
     finally { setSaving(null) }
   }
 
   const markProcessing = async (id) => {
     setSaving(id)
-    try { await adminApi.markProcessing(id); load() }
+    try { await adminAPI.markProcessing(id); load() }
     finally { setSaving(null) }
   }
 

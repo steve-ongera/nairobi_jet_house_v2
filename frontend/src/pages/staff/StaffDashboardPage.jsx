@@ -2,8 +2,8 @@
 // STAFF DASHBOARD PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
-import { useAuth } from '../../App'
+import { adminAPI } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 
 export function StaffDashboardPage() {
   const { user } = useAuth()
@@ -11,7 +11,7 @@ export function StaffDashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    adminApi.overview()
+    adminAPI.overview()
       .then(setOverview)
       .finally(() => setLoading(false))
   }, [])

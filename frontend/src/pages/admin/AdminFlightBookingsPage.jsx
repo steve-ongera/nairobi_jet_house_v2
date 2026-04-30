@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 const STATUS_OPTIONS = ['inquiry','rfq_sent','quoted','confirmed','in_flight','completed','cancelled']
 const STATUS_COLOR   = { inquiry:'amber', rfq_sent:'navy', quoted:'navy', confirmed:'green', in_flight:'green', completed:'gray', cancelled:'red' }
@@ -46,7 +46,7 @@ export default function AdminFlightBookingsPage() {
       const params = {}
       if (search) params.search = search
       if (status) params.status = status
-      const data = await adminApi.getBookings(params)
+      const data = await adminAPI.getBookings(params)
       setBookings(data.results || data)
     } finally { setLoading(false) }
   }, [search, status])
@@ -63,7 +63,7 @@ export default function AdminFlightBookingsPage() {
   const submitPrice = async (e) => {
     e.preventDefault(); setPriceLoading(true); setPriceErr('')
     try {
-      await adminApi.setPrice(selected.id, priceForm)
+      await adminAPI.setPrice(selected.id, priceForm)
       await load(); setModal(null)
     } catch (err) { setPriceErr(err?.detail || JSON.stringify(err)) }
     finally { setPriceLoading(false) }
@@ -73,7 +73,7 @@ export default function AdminFlightBookingsPage() {
     e.preventDefault(); setRfqLoading(true)
     try {
       const ids = rfqIds.split(',').map(s => parseInt(s.trim())).filter(Boolean)
-      await adminApi.sendRFQ(selected.id, { operator_ids: ids })
+      await adminAPI.sendRFQ(selected.id, { operator_ids: ids })
       await load(); setModal(null)
     } finally { setRfqLoading(false) }
   }

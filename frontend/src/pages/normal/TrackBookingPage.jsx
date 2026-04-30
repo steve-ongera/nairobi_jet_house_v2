@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import PublicNavbar from '../../components/common/PublicNavbar'
 import PublicFooter from '../../components/common/PublicFooter'
-import { trackFlightBooking, trackYachtCharter, bookingsByEmail } from '../../services/api'
+import { bookingAPI, charterAPI } from '../../services/api'  // ← CHANGE THIS
 
-const STATUS_COLORS = { inquiry:'amber', rfq_sent:'navy', quoted:'navy', confirmed:'green', in_flight:'green', completed:'gray', cancelled:'red', active:'green' }
+const STATUS_COLORS = { 
+  inquiry: 'amber', 
+  rfq_sent: 'navy', 
+  quoted: 'navy', 
+  confirmed: 'green', 
+  in_flight: 'green', 
+  completed: 'gray', 
+  cancelled: 'red', 
+  active: 'green' 
+}
 
 function StatusBadge({ s }) {
   const c = STATUS_COLORS[s] || 'gray'
@@ -11,32 +20,53 @@ function StatusBadge({ s }) {
 }
 
 export default function TrackBookingPage() {
-  const [mode,    setMode]    = useState('ref')   // ref | email
-  const [ref,     setRef]     = useState('')
-  const [email,   setEmail]   = useState('')
+  const [mode, setMode] = useState('ref')   // ref | email
+  const [ref, setRef] = useState('')
+  const [email, setEmail] = useState('')
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [error, setError] = useState('')
 
   const search = async (e) => {
-    e.preventDefault(); setLoading(true); setError(''); setResults(null)
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setResults(null);
+    
     try {
       if (mode === 'ref') {
         const trimmed = ref.trim()
         let data = null
-        try { data = await trackFlightBooking(trimmed) } catch {}
-        if (!data) { try { data = await trackYachtCharter(trimmed) } catch {} }
+        
+        // Try flight booking first
+        try {
+          const response = await bookingAPI.track(trimmed)
+          data = response.data
+        } catch {}
+        
+        // If not found, try yacht charter
+        if (!data) {
+          try {
+            const response = await charterAPI.track(trimmed)
+            data = response.data
+          } catch {}
+        }
+        
         if (!data) throw new Error('No booking found with that reference.')
         setResults({ type: 'single', item: data })
       } else {
-        const data = await bookingsByEmail(email.trim())
-        const list = data.results || data
+        // Use bookingAPI.byEmail instead of bookingsByEmail
+        const response = await bookingAPI.byEmail(email.trim())
+        const list = response.data?.results || response.data || []
+        
         if (!list.length) throw new Error('No bookings found for that email address.')
         setResults({ type: 'list', items: list })
       }
     } catch (err) {
       setError(err?.message || err?.detail || 'No booking found.')
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -86,7 +116,7 @@ export default function TrackBookingPage() {
 
           {/* Results */}
           {results?.type === 'single' && <BookingCard item={results.item} />}
-          {results?.type === 'list'   && results.items.map(item => <BookingCard key={item.id} item={item} />)}
+          {results?.type === 'list' && results.items.map(item => <BookingCard key={item.id} item={item} />)}
         </div>
       </section>
       <PublicFooter />
@@ -133,7 +163,7 @@ function BookingCard({ item }) {
           ['Reference', String(item.reference).slice(0,8) + '…'],
           ['Passengers', item.passenger_count || item.guest_count],
           item.quoted_price_usd ? ['Quoted Price', `$${Number(item.quoted_price_usd).toLocaleString()}`] : null,
-          item.payment_status  ? ['Payment', item.payment_status] : null,
+          item.payment_status ? ['Payment', item.payment_status] : null,
         ].filter(Boolean).map(([k, v]) => (
           <div key={k}>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gray-400)', marginBottom: '0.2rem' }}>{k}</div>

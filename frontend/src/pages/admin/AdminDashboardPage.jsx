@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'  // ← CHANGE THIS LINE
 
 function StatCard({ icon, label, value, sub, color = '' }) {
   return (
@@ -19,8 +19,9 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([adminApi.overview(), adminApi.revenue()])
+    Promise.all([adminAPI.overview(), adminAPI.revenue()])  // ← Note: adminAPI (not adminAPI)
       .then(([ov, rev]) => { setData(ov); setRevenue(rev) })
+      .catch(err => console.error('Failed to load admin data:', err))
       .finally(() => setLoading(false))
   }, [])
 

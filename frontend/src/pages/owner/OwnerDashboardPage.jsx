@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
 import { dashboardApi } from '../../services/api'
-import { useAuth } from '../../App'
+import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 
 export function OwnerDashboardPage() {
   const { user } = useAuth()

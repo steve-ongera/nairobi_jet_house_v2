@@ -2,7 +2,7 @@
 // STAFF EMAIL PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 function PageHeader({ title, sub, action }) {
   return (
@@ -21,7 +21,7 @@ export function StaffEmailPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    adminApi.getEmailLogs()
+    adminAPI.getEmailLogs()
       .then(d => setLogs(d.results || d))
       .finally(() => setLoading(false))
   }, [])
@@ -31,10 +31,10 @@ export function StaffEmailPage() {
     setSending(true)
     setMsg('')
     try {
-      await adminApi.sendEmail(form)
+      await adminAPI.sendEmail(form)
       setMsg('Email sent successfully.')
       setForm(f => ({ ...f, to_email: '', to_name: '', subject: '', body: '' }))
-      const d = await adminApi.getEmailLogs()
+      const d = await adminAPI.getEmailLogs()
       setLogs(d.results || d)
     } catch {
       setMsg('Failed to send email.')

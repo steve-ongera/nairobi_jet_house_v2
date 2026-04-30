@@ -2,8 +2,8 @@
 // Staff Portal Pages
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
-import { useAuth } from '../../App'
+import { adminAPI } from '../../services/api'
+import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 function PageHeader({ title, sub, action }) {
@@ -33,7 +33,7 @@ export function StaffDashboardPage() {
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
-    adminApi.overview().then(setOverview).finally(() => setLoading(false))
+    adminAPI.overview().then(setOverview).finally(() => setLoading(false))
   }, [])
 
   const fmt = (n) => n != null ? `$${Number(n).toLocaleString(undefined,{maximumFractionDigits:0})}` : '—'
@@ -97,7 +97,7 @@ export function StaffBookingsPage() {
     setLoading(true)
     try {
       const params = search ? { search } : {}
-      const [b, c] = await Promise.all([adminApi.getBookings(params), adminApi.getCharters(params)])
+      const [b, c] = await Promise.all([adminAPI.getBookings(params), adminAPI.getCharters(params)])
       setBookings(b.results || b)
       setCharters(c.results || c)
     } finally { setLoading(false) }
@@ -184,7 +184,7 @@ export function StaffInquiriesPage() {
   const [tab,     setTab]     = useState('contacts')
 
   useEffect(() => {
-    adminApi.getInquiries().then(setData).finally(() => setLoading(false))
+    adminAPI.getInquiries().then(setData).finally(() => setLoading(false))
   }, [])
 
   const TABS = [
@@ -245,16 +245,16 @@ export function StaffEmailPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    adminApi.getEmailLogs().then(d => setLogs(d.results||d)).finally(() => setLoading(false))
+    adminAPI.getEmailLogs().then(d => setLogs(d.results||d)).finally(() => setLoading(false))
   }, [])
 
   const send = async (e) => {
     e.preventDefault(); setSending(true); setMsg('')
     try {
-      await adminApi.sendEmail(form)
+      await adminAPI.sendEmail(form)
       setMsg('Email sent successfully.')
       setForm(f => ({ ...f, to_email:'', to_name:'', subject:'', body:'' }))
-      const d = await adminApi.getEmailLogs(); setLogs(d.results||d)
+      const d = await adminAPI.getEmailLogs(); setLogs(d.results||d)
     } catch { setMsg('Failed to send email.') }
     finally { setSending(false) }
   }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../App'
+import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 import PublicNavbar from '../../components/common/PublicNavbar'
 import PublicFooter from '../../components/common/PublicFooter'
 

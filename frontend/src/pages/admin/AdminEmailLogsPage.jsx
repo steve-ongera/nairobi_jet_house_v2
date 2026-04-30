@@ -2,7 +2,7 @@
 // ADMIN EMAIL LOGS PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminEmailLogsPage() {
   const [logs, setLogs] = useState([])
@@ -16,7 +16,7 @@ export function AdminEmailLogsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getEmailLogs(search ? { search } : {})
+      const data = await adminAPI.getEmailLogs(search ? { search } : {})
       setLogs(data.results || data)
     } finally {
       setLoading(false)
@@ -32,7 +32,7 @@ export function AdminEmailLogsPage() {
     setSending(true)
     setSendOk('')
     try {
-      await adminApi.sendEmail(sendForm)
+      await adminAPI.sendEmail(sendForm)
       setSendOk('Email sent successfully.')
       setSendForm(f => ({ ...f, to_email: '', to_name: '', subject: '', body: '' }))
       load()

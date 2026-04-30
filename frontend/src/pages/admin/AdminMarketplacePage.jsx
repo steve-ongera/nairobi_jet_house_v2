@@ -2,14 +2,14 @@
 // ADMIN MARKETPLACE PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminMarketplacePage() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    adminApi.getMarketplace()
+    adminAPI.getMarketplace()
       .then(d => setBookings(d.results || d))
       .finally(() => setLoading(false))
   }, [])

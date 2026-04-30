@@ -2,7 +2,7 @@
 // ADMIN YACHT CHARTERS PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminYachtChartersPage() {
   const [charters, setCharters] = useState([])
@@ -20,7 +20,7 @@ export function AdminYachtChartersPage() {
       const params = {}
       if (search) params.search = search
       if (status) params.status = status
-      const data = await adminApi.getCharters(params)
+      const data = await adminAPI.getCharters(params)
       setCharters(data.results || data)
     } finally {
       setLoading(false)
@@ -47,7 +47,7 @@ export function AdminYachtChartersPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      await adminApi.setCharterPrice(selected.id, priceForm)
+      await adminAPI.setCharterPrice(selected.id, priceForm)
       await load()
       setModal(false)
     } finally {

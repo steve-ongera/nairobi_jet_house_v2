@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from 'react'
 import { operatorApi } from '../../services/api'
-import { useAuth } from '../../App'
+import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 function EmptyState({ icon, text }) {

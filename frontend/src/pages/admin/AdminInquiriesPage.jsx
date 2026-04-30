@@ -2,7 +2,7 @@
 // ADMIN INQUIRIES PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { adminApi } from '../../services/api'
+import { adminAPI } from '../../services/api'
 
 export function AdminInquiriesPage() {
   const [data, setData] = useState(null)
@@ -10,7 +10,7 @@ export function AdminInquiriesPage() {
   const [tab, setTab] = useState('contacts')
 
   useEffect(() => {
-    adminApi.getInquiries()
+    adminAPI.getInquiries()
       .then(setData)
       .finally(() => setLoading(false))
   }, [])
