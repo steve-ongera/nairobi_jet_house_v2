@@ -286,4 +286,14 @@ export const adminAPI = {
   approveMkt:      id      => api.post(`/marketplace-aircraft/${id}/approve/`),
 };
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MAINTENANCE
+// ══════════════════════════════════════════════════════════════════════════════
+export const maintenanceAPI = {
+  getAll:   params => api.get('/maintenance/', { params }),
+  create:   d      => api.post('/maintenance/', d),
+  update:   (id,d) => api.patch(`/maintenance/${id}/`, d),
+  delete:   id     => api.delete(`/maintenance/${id}/`),
+};
+
 export default api;

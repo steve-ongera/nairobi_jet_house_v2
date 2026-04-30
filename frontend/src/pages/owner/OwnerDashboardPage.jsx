@@ -2,7 +2,7 @@
 // OWNER DASHBOARD PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { dashboardApi } from '../../services/api'
+import { dashboardAPI } from '../../services/api'  // ← CHANGE THIS LINE
 import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
 
 export function OwnerDashboardPage() {
@@ -11,8 +11,9 @@ export function OwnerDashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    dashboardApi.owner()
-      .then(setDash)
+    dashboardAPI.owner()  // ← Also change here
+      .then(response => setDash(response.data))  // ← Add .data since axios returns data in response.data
+      .catch(err => console.error('Failed to load owner dashboard:', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -83,4 +84,4 @@ export function OwnerDashboardPage() {
   )
 }
 
-export default OwnerDashboardPage
+export default OwnerDashboardPage;

@@ -148,3 +148,5 @@ export function StaffEmailPage() {
     </div>
   )
 }
+
+export default StaffEmailPage;

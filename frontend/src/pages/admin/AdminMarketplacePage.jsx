@@ -74,3 +74,5 @@ export function AdminMarketplacePage() {
     </div>
   )
 }
+
+export default AdminMarketplacePage;

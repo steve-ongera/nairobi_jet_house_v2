@@ -132,3 +132,5 @@ const profileCard = { background: 'rgba(255,255,255,0.04)', border: '1px solid r
 const cardTitle  = { color: 'var(--gold,#C9A84C)', marginBottom: '1rem', fontSize: '0.95rem' };
 const rowCard    = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' };
 const outlineBtn = { padding: '0.5rem 1.1rem', background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer', display: 'block' };
+
+export default OperatorProfilePage;

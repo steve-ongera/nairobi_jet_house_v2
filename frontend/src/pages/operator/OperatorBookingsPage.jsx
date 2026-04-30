@@ -163,3 +163,5 @@ const rowCard    = { background: 'rgba(255,255,255,0.04)', border: '1px solid rg
 const goldBtn    = { padding: '0.5rem 1.1rem', background: 'var(--gold,#C9A84C)', color: 'var(--navy,#0B1D3A)', border: 'none', borderRadius: '4px', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap' };
 const outlineBtn = { padding: '0.5rem 1.1rem', background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' };
 const badge      = { display: 'inline-block', padding: '0.15rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem', fontWeight: '600', textTransform: 'capitalize' };
+
+export default OperatorBookingsPage;

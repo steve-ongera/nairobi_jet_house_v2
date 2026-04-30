@@ -134,3 +134,5 @@ export function AdminCareersPage() {
     </div>
   )
 }
+
+export default AdminCareersPage;

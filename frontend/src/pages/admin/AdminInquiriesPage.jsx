@@ -74,3 +74,5 @@ export function AdminInquiriesPage() {
     </div>
   )
 }
+
+export default AdminInquiriesPage;

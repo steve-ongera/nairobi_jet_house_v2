@@ -80,3 +80,5 @@ const muted     = { color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' };
 const statsGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '1rem', marginBottom: '2rem' };
 const statCard  = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '1.25rem' };
 const rowCard   = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' };
+
+export default OperatorPayoutsPage;

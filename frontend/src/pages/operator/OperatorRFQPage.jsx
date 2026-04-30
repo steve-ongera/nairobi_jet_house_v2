@@ -204,3 +204,5 @@ const inp          = { width: '100%', padding: '0.65rem 0.9rem', background: 'rg
 const grid2        = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem', marginBottom: '1rem' };
 const modalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' };
 const modalBox     = { background: 'var(--navy,#0B1D3A)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '8px', padding: '2rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' };
+
+export default OperatorRFQPage;

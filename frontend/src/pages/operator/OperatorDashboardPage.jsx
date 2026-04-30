@@ -129,3 +129,5 @@ function Section({ title, children }) {
     </div>
   );
 }
+
+export default OperatorDashboardPage;

@@ -2,7 +2,7 @@
 // OWNER AIRCRAFT PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect } from 'react'
-import { marketplaceApi } from '../../services/api'
+import { marketplaceAPI } from '../../services/api'  // ✅ CORRECT
 
 function PageHeader({ title, sub, action }) {
   return (
@@ -177,3 +177,5 @@ export function OwnerAircraftPage() {
     </div>
   )
 }
+
+export default OwnerAircraftPage;

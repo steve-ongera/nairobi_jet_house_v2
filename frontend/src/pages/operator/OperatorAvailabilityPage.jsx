@@ -177,3 +177,5 @@ const goldBtn   = { padding: '0.5rem 1.1rem', background: 'var(--gold,#C9A84C)',
 const lbl       = { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.82rem', marginBottom: '0.35rem' };
 const inp       = { width: '100%', padding: '0.65rem 0.9rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', color: '#fff', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' };
 const grid2     = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem', marginBottom: '1rem' };
+
+export default OperatorAvailabilityPage;

@@ -80,3 +80,5 @@ export function StaffInquiriesPage() {
     </div>
   )
 }
+
+export default StaffInquiriesPage;

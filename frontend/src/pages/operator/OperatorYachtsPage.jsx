@@ -132,3 +132,5 @@ const lbl       = { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 
 const inp       = { width: '100%', padding: '0.65rem 0.9rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', color: '#fff', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' };
 const grid2     = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem', marginBottom: '1rem' };
 const errorBox  = { background: 'rgba(220,53,69,0.15)', border: '1px solid rgba(220,53,69,0.4)', borderRadius: '4px', padding: '0.75rem', marginBottom: '1rem', color: '#ff6b7a', fontSize: '0.875rem' };
+
+export default OperatorYachtsPage;

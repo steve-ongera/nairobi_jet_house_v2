@@ -196,3 +196,5 @@ export function AdminYachtChartersPage() {
     </div>
   )
 }
+
+export default  AdminYachtChartersPage;
