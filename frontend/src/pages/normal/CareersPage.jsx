@@ -1,5 +1,9 @@
+// src/pages/public/Careers.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import PublicNavbar from '../../components/common/PublicNavbar';
+import PublicFooter from '../../components/common/PublicFooter';
 import { jobsAPI } from '../../services/api';
 
 const DEPT_COLORS = {
@@ -8,6 +12,24 @@ const DEPT_COLORS = {
   it: '#64b5f6', hr: '#ffcc02', marketing: '#ff8a65', management: '#ef9a9a',
   partnerships: '#80cbc4',
 };
+
+/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
+const STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'NairobiJetHouse Careers',
+  url: 'https://www.nairobijethouse.com/careers',
+  sameAs: ['https://www.linkedin.com/company/nairobijethouse'],
+}
+
+const PERKS = [
+  { icon: 'bi-airplane', title: 'Aviation Perks', desc: 'Flight benefits and discounts for you and your family on our charter network.' },
+  { icon: 'bi-globe2', title: 'Pan-African Scope', desc: 'Work on a platform that operates across 35 countries with global clients.' },
+  { icon: 'bi-graph-up', title: 'Fast Growth', desc: 'Join a startup scaling rapidly — your work has direct impact from day one.' },
+  { icon: 'bi-house-door', title: 'Flexible Work', desc: 'Remote-first culture with hubs in Nairobi, Dubai, London, and Lagos.' },
+  { icon: 'bi-trophy', title: 'Career Development', desc: 'Continuous learning budget and mentorship programs to grow your career.' },
+  { icon: 'bi-heart', title: 'Great Culture', desc: 'Collaborative, inclusive, and passionate team that celebrates wins together.' },
+]
 
 export default function CareersPage() {
   const [jobs, setJobs] = useState([]);
@@ -31,135 +53,195 @@ export default function CareersPage() {
   const regular = filtered.filter(j => !j.is_featured);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--navy, #0B1D3A)', color: '#fff' }}>
-      <div style={{ padding: '1rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <Link to="/" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', textDecoration: 'none' }}>← Home</Link>
-      </div>
+    <>
+      <Helmet>
+        <title>Careers | NairobiJetHouse - Join Our Team</title>
+        <meta name="description" content="Build Africa's aviation future with NairobiJetHouse. We're hiring across operations, technology, charter services, and more." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://www.nairobijethouse.com/careers" />
+        <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
+      </Helmet>
 
-      {/* Hero */}
-      <div style={{ textAlign: 'center', padding: '4rem 2rem 3rem', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
-        <p style={{ color: 'var(--gold, #C9A84C)', letterSpacing: '0.2em', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '1rem' }}>Join the Team</p>
-        <h1 style={{ fontFamily: 'var(--font-display, Georgia, serif)', fontSize: '2.5rem', margin: '0 auto 1rem', maxWidth: '600px' }}>
-          Build Africa's Aviation Future
-        </h1>
-        <p style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '580px', margin: '0 auto', lineHeight: '1.8' }}>
-          We're a fast-growing private aviation platform hiring across operations, technology, charter services, and more. We operate across 35 countries and are headquartered in Nairobi, Kenya.
-        </p>
-      </div>
+      <PublicNavbar />
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem' }}>
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem', alignItems: 'center' }}>
-          <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={selectStyle}>
-            <option value="">All Departments</option>
-            {departments.map(d => <option key={d} value={d}>{d.replace('_', ' ')}</option>)}
-          </select>
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
-            <option value="">All Types</option>
-            {['full_time', 'part_time', 'contract', 'internship'].map(t => (
-              <option key={t} value={t}>{t.replace('_', ' ')}</option>
-            ))}
-          </select>
-          {(deptFilter || typeFilter) && (
-            <button onClick={() => { setDeptFilter(''); setTypeFilter(''); }}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
-              Clear filters
-            </button>
-          )}
+      {/* Hero Section */}
+      <section className="page-hero">
+        <div className="container">
+          <div className="eyebrow">Join the Team</div>
+          <h1>Build Africa's <em style={{ color: 'var(--gold-light)' }}>Aviation Future</em></h1>
+          <p style={{ maxWidth: 580, marginTop: '0.5rem' }}>
+            We're a fast-growing private aviation platform hiring across operations, technology, charter services, and more. 
+            We operate across 35 countries and are headquartered in Nairobi, Kenya.
+          </p>
         </div>
+      </section>
 
-        {loading ? (
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '3rem' }}>Loading positions...</p>
-        ) : filtered.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '3rem' }}>No open positions matching your filters.</p>
-        ) : (
-          <>
-            {featured.length > 0 && (
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ color: 'var(--gold, #C9A84C)', fontSize: '0.85rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>
-                  Featured Roles
-                </h3>
-                {featured.map(job => <JobCard key={job.id} job={job} featured />)}
-              </div>
+      {/* Main Content */}
+      <section className="section" style={{ background: 'var(--off-white)' }}>
+        <div className="container">
+          
+          {/* Filters */}
+          <div className="filter-bar" style={{ marginBottom: '2rem' }}>
+            <select 
+              value={deptFilter} 
+              onChange={e => setDeptFilter(e.target.value)} 
+              className="form-control"
+              style={{ width: 'auto', minWidth: '180px' }}
+            >
+              <option value="">All Departments</option>
+              {departments.map(d => <option key={d} value={d}>{d.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+            </select>
+            <select 
+              value={typeFilter} 
+              onChange={e => setTypeFilter(e.target.value)} 
+              className="form-control"
+              style={{ width: 'auto', minWidth: '160px' }}
+            >
+              <option value="">All Types</option>
+              {['full_time', 'part_time', 'contract', 'internship'].map(t => (
+                <option key={t} value={t}>{t.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
+              ))}
+            </select>
+            {(deptFilter || typeFilter) && (
+              <button 
+                onClick={() => { setDeptFilter(''); setTypeFilter(''); }}
+                className="btn btn-ghost btn-sm"
+              >
+                Clear filters
+              </button>
             )}
-            {regular.length > 0 && (
-              <div>
-                {featured.length > 0 && (
-                  <h3 style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '1rem' }}>
-                    All Open Positions
-                  </h3>
-                )}
-                {regular.map(job => <JobCard key={job.id} job={job} />)}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Perks */}
-        <div style={{ marginTop: '4rem', padding: '2.5rem', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '8px' }}>
-          <h3 style={{ color: '#fff', textAlign: 'center', marginBottom: '2rem', fontFamily: 'var(--font-display, Georgia, serif)', fontSize: '1.5rem' }}>
-            Why NairobiJetHouse?
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-            {[
-              ['✈️', 'Aviation Perks', 'Flight benefits and discounts for you and your family on our charter network.'],
-              ['🌍', 'Pan-African Scope', 'Work on a platform that operates across 35 countries with global clients.'],
-              ['📈', 'Fast Growth', 'Join a startup scaling rapidly — your work has direct impact from day one.'],
-              ['🏡', 'Flexible Work', 'Remote-first culture with hubs in Nairobi, Dubai, London, and Lagos.'],
-            ].map(([icon, title, desc]) => (
-              <div key={title} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{icon}</div>
-                <h4 style={{ color: 'var(--gold, #C9A84C)', margin: '0 0 0.5rem', fontSize: '0.95rem' }}>{title}</h4>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem', lineHeight: '1.6', margin: 0 }}>{desc}</p>
-              </div>
-            ))}
           </div>
+
+          {/* Jobs List */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <div className="spinner-dark" style={{ margin: '0 auto' }}></div>
+              <p style={{ color: 'var(--gray-400)', marginTop: '1rem' }}>Loading positions...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+              <i className="bi bi-inbox" style={{ fontSize: '3rem', color: 'var(--gray-300)', marginBottom: '1rem', display: 'block' }} />
+              <p style={{ color: 'var(--gray-400)' }}>No open positions matching your filters.</p>
+              <button 
+                onClick={() => { setDeptFilter(''); setTypeFilter(''); }}
+                className="btn btn-outline-navy btn-sm"
+                style={{ marginTop: '1rem' }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <>
+              {featured.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <div className="eyebrow" style={{ marginBottom: '1rem' }}>Featured Roles</div>
+                  {featured.map(job => <JobCard key={job.id} job={job} featured />)}
+                </div>
+              )}
+              {regular.length > 0 && (
+                <div>
+                  {featured.length > 0 && (
+                    <div className="eyebrow" style={{ marginBottom: '1rem' }}>All Open Positions</div>
+                  )}
+                  {regular.map(job => <JobCard key={job.id} job={job} />)}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Perks Section */}
+          <div className="card" style={{ marginTop: '4rem', padding: '2.5rem' }}>
+            <div className="text-center mb-4">
+              <div className="eyebrow">Why NairobiJetHouse?</div>
+              <h2>Join a Team That <em>Takes Flight</em></h2>
+              <div className="gold-rule gold-rule-center" />
+            </div>
+            <div className="grid-3" style={{ marginTop: '2rem' }}>
+              {PERKS.map(({ icon, title, desc }) => (
+                <div key={title} style={{ textAlign: 'center', padding: '1rem' }}>
+                  <div style={{
+                    width: 64, height: 64, background: 'var(--gold-pale)', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 1rem'
+                  }}>
+                    <i className={`bi ${icon}`} style={{ fontSize: '1.6rem', color: 'var(--gold)' }} />
+                  </div>
+                  <h4 style={{ color: 'var(--navy)', marginBottom: '0.5rem', fontSize: '1rem' }}>{title}</h4>
+                  <p style={{ color: 'var(--gray-500)', fontSize: '0.85rem', lineHeight: '1.6', margin: 0 }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div className="card" style={{ marginTop: '2rem', textAlign: 'center', padding: '3rem', background: 'var(--navy)' }}>
+            <h3 style={{ color: 'var(--white)', marginBottom: '0.5rem' }}>Don't see the perfect role?</h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
+              We're always looking for talented people. Send us your CV and we'll keep you in mind.
+            </p>
+            <Link to="/contact?subject=careers" className="btn btn-gold">
+              <i className="bi bi-envelope" /> Send Speculative Application
+            </Link>
+          </div>
+
         </div>
-      </div>
-    </div>
+      </section>
+
+      <PublicFooter />
+    </>
   );
 }
 
 function JobCard({ job, featured }) {
   const deptColor = DEPT_COLORS[job.department] || '#aaa';
+  
   return (
-    <div style={{
-      background: featured ? 'rgba(201,168,76,0.07)' : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${featured ? 'rgba(201,168,76,0.3)' : 'rgba(255,255,255,0.08)'}`,
-      borderRadius: '8px', padding: '1.25rem 1.5rem', marginBottom: '0.75rem',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem',
+    <div className={`card ${featured ? 'featured' : ''}`} style={{ 
+      marginBottom: '1rem',
+      border: featured ? '2px solid var(--gold)' : '1px solid var(--gray-100)',
+      background: featured ? 'var(--gold-pale)' : 'var(--white)',
     }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
-          <h4 style={{ margin: 0, color: '#fff', fontSize: '1rem' }}>{job.title}</h4>
-          {featured && <span style={{ background: 'var(--gold, #C9A84C)', color: 'var(--navy, #0B1D3A)', fontSize: '0.65rem', padding: '0.1rem 0.5rem', borderRadius: '3px', fontWeight: '700' }}>FEATURED</span>}
+      <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+            <h4 style={{ margin: 0, color: 'var(--navy)', fontSize: '1rem' }}>{job.title}</h4>
+            {featured && (
+              <span className="badge badge-gold" style={{ fontSize: '0.65rem' }}>
+                <i className="bi bi-star-fill" /> FEATURED
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span className="pill" style={{ 
+              background: `${deptColor}22`, 
+              borderColor: deptColor,
+              color: deptColor,
+              cursor: 'default'
+            }}>
+              <i className="bi bi-building" /> {job.department_display || job.department?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </span>
+            <span className="pill" style={{ cursor: 'default' }}>
+              <i className="bi bi-geo-alt" /> {job.location_display || job.location?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </span>
+            <span className="pill" style={{ cursor: 'default' }}>
+              <i className="bi bi-briefcase" /> {job.job_type_display || job.job_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </span>
+            {job.salary_range && (
+              <span className="pill" style={{ background: 'var(--green-light)', borderColor: 'var(--green)', color: 'var(--green)', cursor: 'default' }}>
+                <i className="bi bi-cash" /> {job.salary_range}
+              </span>
+            )}
+            {job.deadline && (
+              <span className="pill" style={{ background: 'var(--amber-light)', borderColor: 'var(--amber)', color: 'var(--amber)', cursor: 'default' }}>
+                <i className="bi bi-calendar" /> Deadline: {new Date(job.deadline).toLocaleDateString()}
+              </span>
+            )}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Tag color={deptColor}>{job.department_display || job.department?.replace('_', ' ')}</Tag>
-          <Tag color="rgba(255,255,255,0.3)">{job.location_display || job.location?.replace('_', ' ')}</Tag>
-          <Tag color="rgba(255,255,255,0.3)">{job.job_type_display || job.job_type?.replace('_', ' ')}</Tag>
-          {job.salary_range && <Tag color="rgba(129,199,132,0.4)">{job.salary_range}</Tag>}
-          {job.deadline && <Tag color="rgba(255,167,38,0.3)">Deadline: {job.deadline}</Tag>}
-        </div>
+        <Link to={`/careers/apply/${job.id}`} className="btn btn-navy btn-sm">
+          Apply Now <i className="bi bi-arrow-right"></i>
+        </Link>
       </div>
-      <Link to={`/careers/apply/${job.id}`} style={applyBtn}>Apply Now</Link>
     </div>
   );
 }
-
-const Tag = ({ color, children }) => (
-  <span style={{ display: 'inline-block', padding: '0.15rem 0.6rem', background: `${color}22`, border: `1px solid ${color}66`, borderRadius: '3px', fontSize: '0.75rem', color: '#ddd' }}>
-    {children}
-  </span>
-);
-
-const selectStyle = {
-  padding: '0.6rem 1rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
-  borderRadius: '4px', color: '#fff', fontSize: '0.875rem', outline: 'none', cursor: 'pointer',
-};
-
-const applyBtn = {
-  display: 'inline-block', padding: '0.55rem 1.25rem', background: 'var(--gold, #C9A84C)',
-  color: 'var(--navy, #0B1D3A)', borderRadius: '4px', fontWeight: '600', fontSize: '0.875rem',
-  textDecoration: 'none', whiteSpace: 'nowrap',
-};

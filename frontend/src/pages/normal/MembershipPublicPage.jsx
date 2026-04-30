@@ -1,5 +1,9 @@
+// src/pages/public/MembershipPublicPage.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import PublicNavbar from '../../components/common/PublicNavbar';
+import PublicFooter from '../../components/common/PublicFooter';
 import { membershipAPI } from '../../services/api';
 
 const TIER_COLORS = { basic: '#64b5f6', premium: '#C9A84C', corporate: '#ce93d8' };
@@ -39,6 +43,20 @@ const COMPARISON = [
   { feature: 'Group Charter Priority', basic: '—', premium: '—', corporate: '✓' },
 ];
 
+/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
+const STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'NairobiJetHouse Membership',
+  description: 'Priority access to private aviation with exclusive rates and dedicated concierge service.',
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'USD',
+    lowPrice: 2500,
+    highPrice: 15000,
+  },
+}
+
 export default function MembershipPublicPage() {
   const [tiers, setTiers] = useState(DEFAULT_TIERS);
   const [billing, setBilling] = useState('annual');
@@ -51,152 +69,168 @@ export default function MembershipPublicPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--navy, #0B1D3A)', color: '#fff' }}>
-      <div style={{ padding: '1rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', textDecoration: 'none' }}>← Home</Link>
-        <Link to="/login" style={{ color: 'var(--gold, #C9A84C)', fontSize: '0.85rem', textDecoration: 'none' }}>Sign in to your account →</Link>
-      </div>
+    <>
+      <Helmet>
+        <title>Membership | NairobiJetHouse - Private Aviation Membership Program</title>
+        <meta name="description" content="Join NairobiJetHouse membership for priority access to our fleet, exclusive rates, and dedicated concierge service. Monthly and annual plans available." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://www.nairobijethouse.com/membership" />
+        <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
+      </Helmet>
 
-      {/* Hero */}
-      <div style={{ textAlign: 'center', padding: '4rem 2rem 3rem', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
-        <p style={{ color: 'var(--gold, #C9A84C)', letterSpacing: '0.2em', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '1rem' }}>Membership</p>
-        <h1 style={{ fontFamily: 'var(--font-display, Georgia, serif)', fontSize: '2.5rem', margin: '0 auto 1rem', maxWidth: '600px', lineHeight: '1.2' }}>
-          Your Key to Africa's Private Skies
-        </h1>
-        <p style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '550px', margin: '0 auto 2rem', lineHeight: '1.8' }}>
-          Join NairobiJetHouse and get priority access to our full fleet, exclusive rates, and dedicated concierge — all for a single monthly or annual fee.
-        </p>
+      <PublicNavbar />
 
-        {/* Billing toggle */}
-        <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.07)', borderRadius: '6px', padding: '0.3rem' }}>
-          {['monthly', 'annual'].map(b => (
-            <button key={b} onClick={() => setBilling(b)}
-              style={{ padding: '0.5rem 1.25rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500',
-                background: billing === b ? 'var(--gold, #C9A84C)' : 'transparent',
-                color: billing === b ? 'var(--navy, #0B1D3A)' : 'rgba(255,255,255,0.6)',
-              }}>
-              {b.charAt(0).toUpperCase() + b.slice(1)}
-              {b === 'annual' && <span style={{ fontSize: '0.7rem', marginLeft: '0.4rem', opacity: 0.8 }}>Save ~15%</span>}
-            </button>
-          ))}
+      {/* Hero Section */}
+      <section className="page-hero">
+        <div className="container">
+          <div className="eyebrow">Membership</div>
+          <h1>Your Key to Africa's <em style={{ color: 'var(--gold-light)' }}>Private Skies</em></h1>
+          <p style={{ maxWidth: 550, marginTop: '0.5rem' }}>
+            Join NairobiJetHouse and get priority access to our full fleet, exclusive rates, and dedicated concierge — all for a single monthly or annual fee.
+          </p>
+          
+          {/* Billing toggle */}
+          <div className="filter-bar" style={{ justifyContent: 'center', marginTop: '2rem' }}>
+            <div className="tab-nav" style={{ borderBottom: 'none', gap: '0.5rem' }}>
+              {['monthly', 'annual'].map(b => (
+                <button 
+                  key={b} 
+                  onClick={() => setBilling(b)}
+                  className={`tab-btn ${billing === b ? 'active' : ''}`}
+                  style={{ 
+                    borderBottom: billing === b ? '2px solid var(--gold)' : 'none',
+                    padding: '0.5rem 1.25rem',
+                  }}
+                >
+                  {b.charAt(0).toUpperCase() + b.slice(1)}
+                  {b === 'annual' && <span style={{ fontSize: '0.7rem', marginLeft: '0.4rem', opacity: 0.8 }}>Save ~15%</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Tier Cards */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '3rem 2rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
-          {tiers.map(tier => {
-            const isPremium = tier.name === 'premium';
-            const price = billing === 'annual' ? tier.annual_fee_usd : tier.monthly_fee_usd;
-            const color = TIER_COLORS[tier.name] || '#aaa';
-            return (
-              <div key={tier.name} style={{
-                background: isPremium ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${isPremium ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                borderRadius: '10px', padding: '2rem', position: 'relative',
-              }}>
-                {isPremium && (
-                  <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--gold, #C9A84C)', color: 'var(--navy, #0B1D3A)', padding: '0.2rem 1rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                    MOST POPULAR
+      {/* Tier Cards Section */}
+      <section className="section" style={{ background: 'var(--off-white)' }}>
+        <div className="container">
+          <div className="tier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
+            {tiers.map(tier => {
+              const isPremium = tier.name === 'premium';
+              const price = billing === 'annual' ? tier.annual_fee_usd : tier.monthly_fee_usd;
+              const color = TIER_COLORS[tier.name] || '#aaa';
+              
+              return (
+                <div key={tier.name} className={`tier-card ${isPremium ? 'featured' : ''}`}>
+                  {isPremium && <div className="tier-featured-label">MOST POPULAR</div>}
+                  <div className="tier-icon">
+                    <i className={`bi ${tier.name === 'basic' ? 'bi-star' : tier.name === 'premium' ? 'bi-gem' : 'bi-building'}`}></i>
                   </div>
-                )}
-
-                <div style={{ width: '40px', height: '4px', background: color, borderRadius: '2px', marginBottom: '1.25rem' }} />
-                <h3 style={{ color: '#fff', fontSize: '1.3rem', margin: '0 0 0.25rem', fontFamily: 'var(--font-display, Georgia, serif)' }}>{tier.display_name}</h3>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', margin: '0 0 1.5rem', lineHeight: '1.5' }}>{tier.description}</p>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <span style={{ fontFamily: 'var(--font-display, Georgia, serif)', fontSize: '2.2rem', color: color, fontWeight: '600' }}>
+                  <div className="tier-name">{tier.display_name}</div>
+                  <div className="tier-price">
                     ${Number(price).toLocaleString()}
-                  </span>
-                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>/{billing === 'annual' ? 'year' : 'month'}</span>
+                    <sub>/{billing === 'annual' ? 'year' : 'month'}</sub>
+                  </div>
                   {billing === 'annual' && (
-                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.78rem', margin: '0.3rem 0 0' }}>
+                    <p style={{ color: 'var(--gray-400)', fontSize: '0.78rem', marginTop: '-0.5rem', marginBottom: '1rem' }}>
                       ≈ ${Math.round(price / 12).toLocaleString()}/month billed annually
                     </p>
                   )}
+                  <p style={{ color: 'var(--gray-500)', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                    {tier.description}
+                  </p>
+                  <div className="tier-features">
+                    {(tier.features_list || []).map(f => (
+                      <div key={f} className="tier-feature">
+                        <i className="bi bi-check-lg yes"></i>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link to="/register" className="btn btn-navy btn-full" style={{ marginTop: '1.5rem' }}>
+                    Get Started <i className="bi bi-arrow-right"></i>
+                  </Link>
                 </div>
+              );
+            })}
+          </div>
 
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.75rem' }}>
-                  {(tier.features_list || []).map(f => (
-                    <li key={f} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
-                      <span style={{ color, flexShrink: 0 }}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link to="/register"
-                  style={{ display: 'block', textAlign: 'center', padding: '0.8rem', borderRadius: '5px', fontWeight: '600', fontSize: '0.9rem', textDecoration: 'none',
-                    background: isPremium ? 'var(--gold, #C9A84C)' : 'transparent',
-                    color: isPremium ? 'var(--navy, #0B1D3A)' : '#fff',
-                    border: isPremium ? 'none' : '1px solid rgba(255,255,255,0.25)',
-                  }}>
-                  Get Started
-                </Link>
+          {/* Comparison Table */}
+          <div className="detail-card" style={{ marginTop: '3rem' }}>
+            <div className="detail-card-header">
+              <div className="detail-card-title">
+                <i className="bi bi-table"></i> Feature Comparison
               </div>
-            );
-          })}
-        </div>
+            </div>
+            <div className="detail-card-body" style={{ overflowX: 'auto', padding: 0 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--gray-50)' }}>
+                    <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--navy)', fontWeight: 600 }}>Feature</th>
+                    <th style={{ padding: '1rem', textAlign: 'center', color: TIER_COLORS.basic, fontWeight: 600 }}>Basic</th>
+                    <th style={{ padding: '1rem', textAlign: 'center', color: TIER_COLORS.premium, fontWeight: 600 }}>Premium</th>
+                    <th style={{ padding: '1rem', textAlign: 'center', color: TIER_COLORS.corporate, fontWeight: 600 }}>Corporate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARISON.map((row, i) => (
+                    <tr key={row.feature} style={{ borderBottom: '1px solid var(--gray-100)' }}>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--gray-600)' }}>{row.feature}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: row.basic === '✓' ? 'var(--green)' : 'var(--gray-400)' }}>{row.basic}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: row.premium === '✓' ? 'var(--green)' : 'var(--gray-400)' }}>{row.premium}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: row.corporate === '✓' ? 'var(--green)' : 'var(--gray-400)' }}>{row.corporate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-        {/* Comparison table */}
-        <h2 style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: '#fff', fontSize: '1.6rem', textAlign: 'center', marginBottom: '1.5rem' }}>
-          Feature Comparison
-        </h2>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr>
-                <th style={th()}>Feature</th>
-                <th style={th(TIER_COLORS.basic)}>Basic</th>
-                <th style={th(TIER_COLORS.premium)}>Premium</th>
-                <th style={th(TIER_COLORS.corporate)}>Corporate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARISON.map((row, i) => (
-                <tr key={row.feature} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
-                  <td style={td()}>{row.feature}</td>
-                  <td style={tdCenter(TIER_COLORS.basic)}>{row.basic}</td>
-                  <td style={tdCenter(TIER_COLORS.premium)}>{row.premium}</td>
-                  <td style={tdCenter(TIER_COLORS.corporate)}>{row.corporate}</td>
-                </tr>
+          {/* FAQ Section */}
+          <div className="detail-card" style={{ marginTop: '2rem' }}>
+            <div className="detail-card-header">
+              <div className="detail-card-title">
+                <i className="bi bi-question-circle"></i> Frequently Asked Questions
+              </div>
+            </div>
+            <div className="detail-card-body">
+              {[
+                ['Can I upgrade my plan?', 'Yes — you can upgrade at any time and pay the prorated difference. Your new benefits take effect immediately.'],
+                ['Is there a minimum commitment?', 'Annual plans require a 12-month commitment. Monthly plans can be cancelled with 30 days notice.'],
+                ['Do membership fees include flights?', 'No — membership gives you access to discounted rates and priority booking. Flights are billed separately at the discounted rate.'],
+                ['Can we have multiple users on one corporate account?', 'Yes — Corporate accounts support multi-user access with role-based permissions. Perfect for flight departments and executive assistants.'],
+                ['What happens if I don\'t use all my bookings?', 'Unused bookings do not roll over to the next month. However, our team can help you maximise your membership value.'],
+              ].map(([q, a]) => (
+                <details key={q} style={{ marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--gray-100)' }}>
+                  <summary style={{ color: 'var(--navy)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <i className="bi bi-plus-circle" style={{ color: 'var(--gold)', marginRight: '0.5rem', fontSize: '0.8rem' }}></i>
+                    {q}
+                  </summary>
+                  <p style={{ color: 'var(--gray-500)', marginTop: '0.75rem', marginLeft: '1.5rem', lineHeight: '1.7', fontSize: '0.875rem' }}>{a}</p>
+                </details>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
 
-        {/* FAQ-style Note */}
-        <div style={{ marginTop: '3rem', padding: '2rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Frequently Asked Questions</h3>
-          {[
-            ['Can I upgrade my plan?', 'Yes — you can upgrade at any time and pay the prorated difference.'],
-            ['Is there a minimum commitment?', 'Annual plans require a 12-month commitment. Monthly plans can be cancelled with 30 days notice.'],
-            ['Do membership fees include flights?', 'No — membership gives you access to discounted rates and priority booking. Flights are billed separately.'],
-            ['Can we have multiple users on one corporate account?', 'Yes — Corporate accounts support multi-user access with role-based permissions.'],
-          ].map(([q, a]) => (
-            <details key={q} style={{ marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <summary style={{ color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500' }}>{q}</summary>
-              <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem', lineHeight: '1.7', fontSize: '0.875rem' }}>{a}</p>
-            </details>
-          ))}
+          {/* CTA Section */}
+          <div className="card" style={{ marginTop: '3rem', textAlign: 'center', padding: '3rem', background: 'var(--navy)' }}>
+            <h3 style={{ color: 'var(--white)', marginBottom: '0.5rem' }}>Not sure which plan is right for you?</h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
+              Our membership specialists can help you choose the perfect plan based on your travel patterns.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/contact" className="btn btn-gold">
+                <i className="bi bi-chat-dots"></i> Talk to Our Team
+              </Link>
+              <Link to="/register" className="btn btn-outline-gold" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}>
+                <i className="bi bi-person-plus"></i> Start Free Trial
+              </Link>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-          <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '1rem', fontSize: '0.875rem' }}>
-            Not sure which plan is right for you?
-          </p>
-          <Link to="/contact" style={{ color: 'var(--gold, #C9A84C)', textDecoration: 'none', fontWeight: '500' }}>
-            Talk to our team →
-          </Link>
-        </div>
-      </div>
-    </div>
+      <PublicFooter />
+    </>
   );
 }
-
-const th = (color) => ({
-  padding: '0.75rem 1rem', textAlign: 'left', color: color || 'rgba(255,255,255,0.5)',
-  borderBottom: `2px solid ${color || 'rgba(255,255,255,0.1)'}`, fontWeight: '600', fontSize: '0.85rem',
-});
-const td = () => ({ padding: '0.65rem 1rem', color: 'rgba(255,255,255,0.7)', borderBottom: '1px solid rgba(255,255,255,0.05)' });
-const tdCenter = (color) => ({ ...td(), textAlign: 'center', color: color });
