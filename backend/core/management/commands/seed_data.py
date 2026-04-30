@@ -4,7 +4,10 @@ core/management/commands/seed_data.py
 NairobiJetHouse V2 — Full Seed Data
 Covers ~6 months of realistic data across ALL V1 + V2 models.
 Password for all seeded users: password123
-Run: python manage.py seed_data
+
+Run:
+    python manage.py seed_data          # clears ALL data first, then seeds
+    python manage.py seed_data --append # skips clearing (adds on top)
 ──────────────────────────────────────────────────────────────────────────────
 """
 
@@ -16,6 +19,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.db import transaction
 
 from core.models import (
     Airport, Aircraft, Yacht,
@@ -44,7 +48,6 @@ def future_date(n):
     return (timezone.now() + timedelta(days=n)).date()
 
 def rand_dt(start_days_ago, end_days_ago=0):
-    diff = start_days_ago - end_days_ago
     d = days_ago(random.randint(end_days_ago, start_days_ago))
     t = time(random.randint(5, 22), random.choice([0, 15, 30, 45]))
     return timezone.make_aware(datetime.combine(d, t))
@@ -125,13 +128,53 @@ LOGO_URLS = [
     "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400",
 ]
 
+# ── Models cleared in dependency-safe order ──────────────────────────────────
+CLEAR_ORDER = [
+    JobApplication, JobPosting,
+    EmailLog, Dispute, SavedRoute,
+    PaymentRecord, MarketplaceBooking, MaintenanceLog, MarketplaceAircraft,
+    WebhookLog, ClientNotification, DocumentUpload,
+    OperatorReview, OperatorPayoutLog, OperatorBooking,
+    RFQBid, FlightLeg, FlightBooking,
+    YachtCharter,
+    AvailabilityBlock,
+    OperatorAircraft, OperatorYacht,
+    Membership, MembershipTier,
+    AircraftSalesInquiry, AirCargoInquiry, GroupCharterInquiry,
+    ContactInquiry, FlightInquiry, LeaseInquiry,
+    NJHCommissionRule, CommissionSetting,
+    CharterOperator,
+    Aircraft, Yacht,
+    Airport,
+    User,
+]
+
 
 class Command(BaseCommand):
-    help = "Seed NairobiJetHouse V2 with ~6 months of realistic demo data."
+    help = "Clear ALL data then seed NairobiJetHouse V2 with ~6 months of realistic demo data."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--append",
+            action="store_true",
+            help="Skip clearing existing data and append seed data instead.",
+        )
 
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.MIGRATE_HEADING("\n🛫  NairobiJetHouse V2 — Seeding Data\n"))
+        append = kwargs.get("append", False)
 
+        self.stdout.write(self.style.MIGRATE_HEADING(
+            "\n🛫  NairobiJetHouse V2 — Seed Data\n"
+        ))
+
+        if not append:
+            self._clear_all_data()
+        else:
+            self.stdout.write(self.style.WARNING(
+                "  ⚠  --append flag set: skipping data clear.\n"
+            ))
+
+        self._seed_airports()
         self._seed_users()
         self._seed_commission_settings()
         self._seed_njh_commission_rules()
@@ -171,23 +214,214 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\n✅  Seed complete!\n"))
 
     # ─────────────────────────────────────────────────────────────────────────
+    # CLEAR ALL DATA
+    # ─────────────────────────────────────────────────────────────────────────
+    def _clear_all_data(self):
+        self.stdout.write(self.style.WARNING("  🗑  Clearing existing data...\n"))
+        with transaction.atomic():
+            for model in CLEAR_ORDER:
+                name = model.__name__
+                try:
+                    if model == User:
+                        # Keep Django superusers created outside seed to be safe;
+                        # delete only seeded users (non-django-created superusers
+                        # won't have our seed roles). We delete ALL users so the
+                        # seed is fully reproducible.
+                        count, _ = model.objects.all().delete()
+                    else:
+                        count, _ = model.objects.all().delete()
+                    if count:
+                        self.stdout.write(f"    deleted {count:>5}  {name}")
+                except Exception as exc:
+                    self.stdout.write(
+                        self.style.ERROR(f"    ✗ Could not clear {name}: {exc}")
+                    )
+        self.stdout.write(self.style.SUCCESS("  ✓ All tables cleared.\n"))
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # AIRPORTS  ← must run before any model that FK-references Airport
+    # ─────────────────────────────────────────────────────────────────────────
+    def _seed_airports(self):
+        self.stdout.write("  → Airports")
+        airports_data = [
+            # ── East Africa ──────────────────────────────────────────────────
+            dict(code="NBO", name="Jomo Kenyatta International Airport",
+                 city="Nairobi",      country="Kenya",
+                 latitude=Decimal("-1.319167"),  longitude=Decimal("36.927500")),
+            dict(code="WIL", name="Wilson Airport",
+                 city="Nairobi",      country="Kenya",
+                 latitude=Decimal("-1.321944"),  longitude=Decimal("36.814722")),
+            dict(code="MBA", name="Moi International Airport",
+                 city="Mombasa",      country="Kenya",
+                 latitude=Decimal("-4.034833"),  longitude=Decimal("39.594250")),
+            dict(code="MRE", name="Mara Serena Airport",
+                 city="Masai Mara",   country="Kenya",
+                 latitude=Decimal("-1.406111"),  longitude=Decimal("35.008056")),
+            dict(code="EDL", name="Eldoret International Airport",
+                 city="Eldoret",      country="Kenya",
+                 latitude=Decimal("0.404458"),   longitude=Decimal("35.238928")),
+            dict(code="KIS", name="Kisumu International Airport",
+                 city="Kisumu",       country="Kenya",
+                 latitude=Decimal("-0.086139"),  longitude=Decimal("34.728944")),
+            dict(code="NKU", name="Nakuru Airport",
+                 city="Nakuru",       country="Kenya",
+                 latitude=Decimal("-0.298056"),  longitude=Decimal("36.159722")),
+            dict(code="LAU", name="Lamu Airport",
+                 city="Lamu",         country="Kenya",
+                 latitude=Decimal("-2.252417"),  longitude=Decimal("40.913111")),
+            dict(code="DAR", name="Julius Nyerere International Airport",
+                 city="Dar es Salaam", country="Tanzania",
+                 latitude=Decimal("-6.878111"),  longitude=Decimal("39.202625")),
+            dict(code="ZNZ", name="Abeid Amani Karume International Airport",
+                 city="Zanzibar",     country="Tanzania",
+                 latitude=Decimal("-6.222025"),  longitude=Decimal("39.224886")),
+            dict(code="KIA", name="Kilimanjaro International Airport",
+                 city="Arusha",       country="Tanzania",
+                 latitude=Decimal("-3.429408"),  longitude=Decimal("37.074461")),
+            dict(code="EBB", name="Entebbe International Airport",
+                 city="Kampala",      country="Uganda",
+                 latitude=Decimal("0.042386"),   longitude=Decimal("32.443503")),
+            dict(code="KGL", name="Kigali International Airport",
+                 city="Kigali",       country="Rwanda",
+                 latitude=Decimal("-1.968628"),  longitude=Decimal("30.139444")),
+            dict(code="ADD", name="Addis Ababa Bole International Airport",
+                 city="Addis Ababa",  country="Ethiopia",
+                 latitude=Decimal("8.977889"),   longitude=Decimal("38.799319")),
+            dict(code="JUB", name="Juba International Airport",
+                 city="Juba",         country="South Sudan",
+                 latitude=Decimal("4.872008"),   longitude=Decimal("31.601117")),
+            dict(code="OLX", name="Ol Kiombo Airstrip",
+                 city="Masai Mara",   country="Kenya",
+                 latitude=Decimal("-1.403333"),  longitude=Decimal("35.296389")),
+            # ── Southern Africa ──────────────────────────────────────────────
+            dict(code="JNB", name="O.R. Tambo International Airport",
+                 city="Johannesburg", country="South Africa",
+                 latitude=Decimal("-26.133694"), longitude=Decimal("28.242317")),
+            dict(code="CPT", name="Cape Town International Airport",
+                 city="Cape Town",    country="South Africa",
+                 latitude=Decimal("-33.964806"), longitude=Decimal("18.601667")),
+            dict(code="VFA", name="Victoria Falls Airport",
+                 city="Victoria Falls", country="Zimbabwe",
+                 latitude=Decimal("-18.095881"), longitude=Decimal("25.839006")),
+            dict(code="MRU", name="Sir Seewoosagur Ramgoolam International Airport",
+                 city="Port Louis",   country="Mauritius",
+                 latitude=Decimal("-20.430235"), longitude=Decimal("57.683628")),
+            dict(code="SEZ", name="Seychelles International Airport",
+                 city="Mahé",         country="Seychelles",
+                 latitude=Decimal("-4.674342"),  longitude=Decimal("55.521839")),
+            # ── Middle East ──────────────────────────────────────────────────
+            dict(code="DXB", name="Dubai International Airport",
+                 city="Dubai",        country="UAE",
+                 latitude=Decimal("25.252778"),  longitude=Decimal("55.364444")),
+            dict(code="AUH", name="Abu Dhabi International Airport",
+                 city="Abu Dhabi",    country="UAE",
+                 latitude=Decimal("24.432972"),  longitude=Decimal("54.651138")),
+            dict(code="DOH", name="Hamad International Airport",
+                 city="Doha",         country="Qatar",
+                 latitude=Decimal("25.273056"),  longitude=Decimal("51.608056")),
+            dict(code="RUH", name="King Khalid International Airport",
+                 city="Riyadh",       country="Saudi Arabia",
+                 latitude=Decimal("24.957556"),  longitude=Decimal("46.698776")),
+            # ── Europe ───────────────────────────────────────────────────────
+            dict(code="LHR", name="Heathrow Airport",
+                 city="London",       country="United Kingdom",
+                 latitude=Decimal("51.477500"),  longitude=Decimal("-0.461389")),
+            dict(code="LGW", name="Gatwick Airport",
+                 city="London",       country="United Kingdom",
+                 latitude=Decimal("51.156389"),  longitude=Decimal("-0.161944")),
+            dict(code="CDG", name="Charles de Gaulle Airport",
+                 city="Paris",        country="France",
+                 latitude=Decimal("49.009722"),  longitude=Decimal("2.547778")),
+            dict(code="AMS", name="Amsterdam Airport Schiphol",
+                 city="Amsterdam",    country="Netherlands",
+                 latitude=Decimal("52.308611"),  longitude=Decimal("4.763889")),
+            dict(code="FRA", name="Frankfurt Airport",
+                 city="Frankfurt",    country="Germany",
+                 latitude=Decimal("50.026421"),  longitude=Decimal("8.543125")),
+            dict(code="GVA", name="Geneva Airport",
+                 city="Geneva",       country="Switzerland",
+                 latitude=Decimal("46.238064"),  longitude=Decimal("6.108918")),
+            dict(code="FCO", name="Leonardo da Vinci–Fiumicino Airport",
+                 city="Rome",         country="Italy",
+                 latitude=Decimal("41.800278"),  longitude=Decimal("12.238889")),
+            dict(code="BCN", name="Barcelona–El Prat Airport",
+                 city="Barcelona",    country="Spain",
+                 latitude=Decimal("41.296944"),  longitude=Decimal("2.078333")),
+            dict(code="NCE", name="Nice Côte d'Azur Airport",
+                 city="Nice",         country="France",
+                 latitude=Decimal("43.658411"),  longitude=Decimal("7.215872")),
+            dict(code="MXP", name="Milan Malpensa Airport",
+                 city="Milan",        country="Italy",
+                 latitude=Decimal("45.630606"),  longitude=Decimal("8.728111")),
+            dict(code="ZRH", name="Zurich Airport",
+                 city="Zurich",       country="Switzerland",
+                 latitude=Decimal("47.464722"),  longitude=Decimal("8.549167")),
+            # ── Americas ─────────────────────────────────────────────────────
+            dict(code="JFK", name="John F. Kennedy International Airport",
+                 city="New York",     country="USA",
+                 latitude=Decimal("40.639722"),  longitude=Decimal("-73.778889")),
+            dict(code="MIA", name="Miami International Airport",
+                 city="Miami",        country="USA",
+                 latitude=Decimal("25.795833"),  longitude=Decimal("-80.287222")),
+            dict(code="LAX", name="Los Angeles International Airport",
+                 city="Los Angeles",  country="USA",
+                 latitude=Decimal("33.942536"),  longitude=Decimal("-118.408074")),
+            dict(code="GRU", name="São Paulo–Guarulhos International Airport",
+                 city="São Paulo",    country="Brazil",
+                 latitude=Decimal("-23.435556"), longitude=Decimal("-46.473056")),
+            # ── Asia ─────────────────────────────────────────────────────────
+            dict(code="BOM", name="Chhatrapati Shivaji Maharaj International Airport",
+                 city="Mumbai",       country="India",
+                 latitude=Decimal("19.088700"),  longitude=Decimal("72.867900")),
+            dict(code="DEL", name="Indira Gandhi International Airport",
+                 city="Delhi",        country="India",
+                 latitude=Decimal("28.556667"),  longitude=Decimal("77.100281")),
+            dict(code="SIN", name="Singapore Changi Airport",
+                 city="Singapore",    country="Singapore",
+                 latitude=Decimal("1.350189"),   longitude=Decimal("103.994433")),
+            dict(code="HKG", name="Hong Kong International Airport",
+                 city="Hong Kong",    country="China",
+                 latitude=Decimal("22.308919"),  longitude=Decimal("113.914603")),
+            dict(code="NRT", name="Narita International Airport",
+                 city="Tokyo",        country="Japan",
+                 latitude=Decimal("35.765278"),  longitude=Decimal("140.385556")),
+            # ── West Africa ──────────────────────────────────────────────────
+            dict(code="ACC", name="Kotoka International Airport",
+                 city="Accra",        country="Ghana",
+                 latitude=Decimal("5.605186"),   longitude=Decimal("-0.166786")),
+            dict(code="LOS", name="Murtala Muhammed International Airport",
+                 city="Lagos",        country="Nigeria",
+                 latitude=Decimal("6.577369"),   longitude=Decimal("3.321156")),
+        ]
+        created_count = 0
+        for a in airports_data:
+            _, created = Airport.objects.get_or_create(code=a["code"], defaults=a)
+            if created:
+                created_count += 1
+        self.stdout.write(self.style.SUCCESS(
+            f"    ✓ {len(airports_data)} airports ({created_count} created)"
+        ))
+
+    # ─────────────────────────────────────────────────────────────────────────
     # USERS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_users(self):
         self.stdout.write("  → Users")
 
         staff_data = [
-            ("admin",       "admin@nairobijethouse.com",     "admin"),
-            ("ops_manager", "ops@nairobijethouse.com",       "staff"),
-            ("sales_lead",  "sales@nairobijethouse.com",     "staff"),
-            ("finance",     "finance@nairobijethouse.com",   "staff"),
+            ("admin",       "admin@nairobijethouse.com",   "admin"),
+            ("ops_manager", "ops@nairobijethouse.com",     "staff"),
+            ("sales_lead",  "sales@nairobijethouse.com",   "staff"),
+            ("finance",     "finance@nairobijethouse.com", "staff"),
         ]
         self.staff_users = []
         for username, email, role in staff_data:
             u, created = User.objects.get_or_create(username=username, defaults=dict(
-                email=email, role=role, first_name=username.capitalize(),
+                email=email, role=role,
+                first_name=username.replace("_", " ").title(),
                 last_name="NJH", phone="+254700000001",
-                avatar_url=pick(AVATAR_URLS), is_staff=(role == "admin"),
+                avatar_url=pick(AVATAR_URLS),
+                is_staff=(role in ("admin", "staff")),
                 is_superuser=(role == "admin"),
             ))
             if created:
@@ -196,18 +430,18 @@ class Command(BaseCommand):
             self.staff_users.append(u)
 
         client_data = [
-            ("amani_kariuki",   "amani@gmail.com",       "James Amani",     "Kariuki",   "+254712345678",  "Kariuki Holdings"),
-            ("sophia_waweru",   "sophia@waweru.co.ke",   "Sophia",          "Waweru",    "+254723456789",  "Waweru Ventures"),
-            ("david_omondi",    "david@omondi.com",      "David",           "Omondi",    "+254734567890",  "Omondi Logistics"),
-            ("fatuma_ali",      "fatuma@ali.co.ke",      "Fatuma",          "Ali",       "+254745678901",  "Ali Trading Co."),
-            ("peter_ngugi",     "peter@ngugi.co.ke",     "Peter",           "Ngugi",     "+254756789012",  "Ngugi Properties"),
-            ("grace_mutua",     "grace@mutua.com",       "Grace",           "Mutua",     "+254767890123",  ""),
-            ("hassan_omar",     "hassan@omar.co.ke",     "Hassan",          "Omar",      "+254778901234",  "Omar Group"),
-            ("esther_wanjiku",  "esther@wanjiku.com",    "Esther",          "Wanjiku",   "+254789012345",  "Wanjiku Safaris"),
-            ("john_kamau",      "john@kamau.co.ke",      "John",            "Kamau",     "+254790123456",  "Kamau Corp"),
-            ("linda_achieng",   "linda@achieng.com",     "Linda",           "Achieng",   "+254701234567",  ""),
-            ("omar_farah",      "omar@farah.so",         "Omar",            "Farah",     "+252612345678",  "Farah Investments"),
-            ("isabella_rosa",   "isabella@rosa.it",      "Isabella",        "Rosa",      "+393312345678",  "Rosa Capital"),
+            ("amani_kariuki",  "amani@gmail.com",      "James Amani", "Kariuki",  "+254712345678", "Kariuki Holdings"),
+            ("sophia_waweru",  "sophia@waweru.co.ke",  "Sophia",      "Waweru",   "+254723456789", "Waweru Ventures"),
+            ("david_omondi",   "david@omondi.com",     "David",       "Omondi",   "+254734567890", "Omondi Logistics"),
+            ("fatuma_ali",     "fatuma@ali.co.ke",     "Fatuma",      "Ali",      "+254745678901", "Ali Trading Co."),
+            ("peter_ngugi",    "peter@ngugi.co.ke",    "Peter",       "Ngugi",    "+254756789012", "Ngugi Properties"),
+            ("grace_mutua",    "grace@mutua.com",      "Grace",       "Mutua",    "+254767890123", ""),
+            ("hassan_omar",    "hassan@omar.co.ke",    "Hassan",      "Omar",     "+254778901234", "Omar Group"),
+            ("esther_wanjiku", "esther@wanjiku.com",   "Esther",      "Wanjiku",  "+254789012345", "Wanjiku Safaris"),
+            ("john_kamau",     "john@kamau.co.ke",     "John",        "Kamau",    "+254790123456", "Kamau Corp"),
+            ("linda_achieng",  "linda@achieng.com",    "Linda",       "Achieng",  "+254701234567", ""),
+            ("omar_farah",     "omar@farah.so",        "Omar",        "Farah",    "+252612345678", "Farah Investments"),
+            ("isabella_rosa",  "isabella@rosa.it",     "Isabella",    "Rosa",     "+393312345678", "Rosa Capital"),
         ]
         self.clients = []
         for username, email, first, last, phone, company in client_data:
@@ -221,27 +455,29 @@ class Command(BaseCommand):
             self.clients.append(u)
 
         operator_data = [
-            ("op_afrijet",     "dispatch@afrijet.co.ke",   "AfriqJet Ops"),
-            ("op_savanna",     "ops@savannair.com",        "Savanna Air"),
-            ("op_coastair",    "fleet@coastair.ke",        "CoastAir"),
-            ("op_kilijet",     "bookings@kilijet.tz",      "KiliJet"),
-            ("op_riftvalley",  "ops@riftvalleyair.ke",     "Rift Valley Air"),
+            ("op_afrijet",    "dispatch@afrijet.co.ke",  "AfriqJet Ops"),
+            ("op_savanna",    "ops@savannair.com",       "Savanna Air"),
+            ("op_coastair",   "fleet@coastair.ke",       "CoastAir"),
+            ("op_kilijet",    "bookings@kilijet.tz",     "KiliJet"),
+            ("op_riftvalley", "ops@riftvalleyair.ke",    "Rift Valley Air"),
         ]
         self.operator_users = []
         for username, email, company in operator_data:
             u, created = User.objects.get_or_create(username=username, defaults=dict(
-                email=email, role="operator", first_name=company.split()[0],
-                last_name="Ops", phone="+254700000099", company=company,
+                email=email, role="operator",
+                first_name=company.split()[0], last_name="Ops",
+                phone="+254700000099", company=company,
             ))
             if created:
                 u.set_password("password123")
                 u.save()
             self.operator_users.append(u)
 
-        self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.clients)+len(self.staff_users)+len(self.operator_users)} users"))
+        total = len(self.staff_users) + len(self.clients) + len(self.operator_users)
+        self.stdout.write(self.style.SUCCESS(f"    ✓ {total} users"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # COMMISSION SETTINGS (V1)
+    # COMMISSION SETTINGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_commission_settings(self):
         self.stdout.write("  → CommissionSettings")
@@ -259,13 +495,14 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("    ✓ 4 commission settings"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # NJH COMMISSION RULES (V2)
+    # NJH COMMISSION RULES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_njh_commission_rules(self):
         self.stdout.write("  → NJHCommissionRules")
         admin = User.objects.filter(role="admin").first()
         rules = [
-            dict(name="Default Platform Rate", priority=0, markup_pct=Decimal("20"), commission_pct=Decimal("15"),
+            dict(name="Default Platform Rate", priority=0,
+                 markup_pct=Decimal("20"), commission_pct=Decimal("15"),
                  description="Baseline markup for all bookings"),
             dict(name="Exclusive Partner Discount", priority=10, operator_tier="exclusive",
                  markup_pct=Decimal("15"), commission_pct=Decimal("12"),
@@ -273,16 +510,21 @@ class Command(BaseCommand):
             dict(name="Preferred Partner Rate", priority=5, operator_tier="preferred",
                  markup_pct=Decimal("17"), commission_pct=Decimal("13"),
                  description="Preferred partner special rate"),
-            dict(name="High Value Flight Discount", priority=8, min_booking_usd=Decimal("50000"),
+            dict(name="High Value Flight Discount", priority=8,
+                 min_booking_usd=Decimal("50000"),
                  markup_pct=Decimal("12"), commission_pct=Decimal("10"),
-                 description="Reduced margin on mega-bookings over $50k"),
+                 description="Reduced margin on bookings over $50k"),
             dict(name="Helicopter Rate", priority=6, asset_category="helicopter",
                  markup_pct=Decimal("25"), commission_pct=Decimal("18"),
                  description="Higher margin on helicopter charters"),
         ]
         for r in rules:
-            NJHCommissionRule.objects.get_or_create(name=r["name"], defaults={**r,
-                "is_active": True, "effective_from": days_ago(180), "created_by": admin})
+            NJHCommissionRule.objects.get_or_create(name=r["name"], defaults={
+                **r,
+                "is_active": True,
+                "effective_from": days_ago(180),
+                "created_by": admin,
+            })
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(rules)} commission rules"))
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -291,24 +533,27 @@ class Command(BaseCommand):
     def _seed_membership_tiers(self):
         self.stdout.write("  → MembershipTiers")
         tiers = [
-            dict(name="basic", display_name="NJH Basic", monthly_fee_usd=Decimal("299"),
-                 annual_fee_usd=Decimal("2999"), hourly_discount_pct=Decimal("0"),
+            dict(name="basic", display_name="NJH Basic",
+                 monthly_fee_usd=Decimal("299"), annual_fee_usd=Decimal("2999"),
+                 hourly_discount_pct=Decimal("0"),
                  priority_booking=False, dedicated_support=False, exclusive_listings=False,
                  max_monthly_bookings=3,
                  features_list=["Access to light & midsize jets", "Standard support", "Online booking portal"],
                  description="Entry-level membership for occasional flyers."),
-            dict(name="premium", display_name="NJH Premium", monthly_fee_usd=Decimal("999"),
-                 annual_fee_usd=Decimal("9999"), hourly_discount_pct=Decimal("5"),
+            dict(name="premium", display_name="NJH Premium",
+                 monthly_fee_usd=Decimal("999"), annual_fee_usd=Decimal("9999"),
+                 hourly_discount_pct=Decimal("5"),
                  priority_booking=True, dedicated_support=True, exclusive_listings=False,
                  max_monthly_bookings=10,
                  features_list=["All jet categories", "5% hourly discount", "Priority booking", "Dedicated concierge"],
                  description="Premium access with priority service."),
-            dict(name="corporate", display_name="NJH Corporate", monthly_fee_usd=Decimal("2999"),
-                 annual_fee_usd=Decimal("29999"), hourly_discount_pct=Decimal("10"),
+            dict(name="corporate", display_name="NJH Corporate",
+                 monthly_fee_usd=Decimal("2999"), annual_fee_usd=Decimal("29999"),
+                 hourly_discount_pct=Decimal("10"),
                  priority_booking=True, dedicated_support=True, exclusive_listings=True,
                  max_monthly_bookings=50,
-                 features_list=["Unlimited bookings", "10% discount", "Exclusive listings", "White-glove concierge",
-                                 "Yacht charters included", "Multi-leg routing"],
+                 features_list=["Unlimited bookings", "10% discount", "Exclusive listings",
+                                 "White-glove concierge", "Yacht charters included", "Multi-leg routing"],
                  description="Full corporate suite for high-frequency flyers."),
         ]
         self.tiers = {}
@@ -351,69 +596,81 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.memberships)} memberships"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # AIRCRAFT CATALOG (V1)
+    # AIRCRAFT CATALOG
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_aircraft_catalog(self):
         self.stdout.write("  → Aircraft Catalog")
         catalog = [
             dict(name="Cessna Citation CJ3+", model="Citation CJ3+", category="light",
                  passenger_capacity=7, range_km=3300, cruise_speed_kmh=778,
-                 hourly_rate_usd=Decimal("3500"), amenities=["Wi-Fi", "Leather seats", "Refreshment bar"],
+                 hourly_rate_usd=Decimal("3500"),
+                 amenities=["Wi-Fi", "Leather seats", "Refreshment bar"],
                  description="Ideal for short East African hops. Efficient and nimble.",
                  image_url=AIRCRAFT_IMAGES["light"][0]),
             dict(name="Embraer Phenom 300E", model="Phenom 300E", category="light",
                  passenger_capacity=8, range_km=3650, cruise_speed_kmh=834,
-                 hourly_rate_usd=Decimal("4200"), amenities=["Wi-Fi", "Flat-screen", "Catering"],
+                 hourly_rate_usd=Decimal("4200"),
+                 amenities=["Wi-Fi", "Flat-screen", "Catering"],
                  description="Best-selling light jet, perfect for NBO–MBA runs.",
                  image_url=AIRCRAFT_IMAGES["light"][1]),
             dict(name="Hawker 900XP", model="Hawker 900XP", category="midsize",
                  passenger_capacity=9, range_km=5250, cruise_speed_kmh=842,
-                 hourly_rate_usd=Decimal("6500"), amenities=["Stand-up cabin", "Wi-Fi", "Full galley"],
+                 hourly_rate_usd=Decimal("6500"),
+                 amenities=["Stand-up cabin", "Wi-Fi", "Full galley"],
                  description="Proven midsize workhorse with transcon capability.",
                  image_url=AIRCRAFT_IMAGES["midsize"][0]),
             dict(name="Bombardier Learjet 75", model="Learjet 75", category="midsize",
                  passenger_capacity=8, range_km=4445, cruise_speed_kmh=860,
-                 hourly_rate_usd=Decimal("5800"), amenities=["Bose noise-cancelling", "Wi-Fi", "Catering"],
+                 hourly_rate_usd=Decimal("5800"),
+                 amenities=["Bose noise-cancelling", "Wi-Fi", "Catering"],
                  description="Iconic performance. Nairobi to Johannesburg non-stop.",
                  image_url=AIRCRAFT_IMAGES["midsize"][1]),
             dict(name="Bombardier Challenger 350", model="Challenger 350", category="super_midsize",
                  passenger_capacity=10, range_km=5926, cruise_speed_kmh=870,
-                 hourly_rate_usd=Decimal("8500"), amenities=["Full stand-up cabin", "Lie-flat seats", "Wi-Fi", "Entertainment system"],
+                 hourly_rate_usd=Decimal("8500"),
+                 amenities=["Full stand-up cabin", "Lie-flat seats", "Wi-Fi", "Entertainment system"],
                  description="Super-midsize comfort with intercontinental range.",
                  image_url=AIRCRAFT_IMAGES["super_midsize"][0]),
             dict(name="Gulfstream G550", model="G550", category="heavy",
                  passenger_capacity=16, range_km=12500, cruise_speed_kmh=901,
-                 hourly_rate_usd=Decimal("13500"), amenities=["Sleeping quarters", "Shower", "Full galley", "Conference table"],
+                 hourly_rate_usd=Decimal("13500"),
+                 amenities=["Sleeping quarters", "Shower", "Full galley", "Conference table"],
                  description="NBO–LHR non-stop. The executive flagship.",
                  image_url=AIRCRAFT_IMAGES["heavy"][0]),
             dict(name="Bombardier Global 6000", model="Global 6000", category="heavy",
                  passenger_capacity=14, range_km=11112, cruise_speed_kmh=904,
-                 hourly_rate_usd=Decimal("15000"), amenities=["3-zone cabin", "King bed", "Full office", "Shower"],
+                 hourly_rate_usd=Decimal("15000"),
+                 amenities=["3-zone cabin", "King bed", "Full office", "Shower"],
                  description="Ultra-long range with Bombardier's finest interior.",
                  image_url=AIRCRAFT_IMAGES["heavy"][1]),
             dict(name="Gulfstream G700", model="G700", category="ultra_long",
                  passenger_capacity=19, range_km=13890, cruise_speed_kmh=956,
-                 hourly_rate_usd=Decimal("22000"), amenities=["Master suite", "Shower", "Full-size galley", "Cinema lounge"],
+                 hourly_rate_usd=Decimal("22000"),
+                 amenities=["Master suite", "Shower", "Full-size galley", "Cinema lounge"],
                  description="The pinnacle of private aviation.",
                  image_url=AIRCRAFT_IMAGES["ultra_long"][0]),
             dict(name="Boeing BBJ 737", model="BBJ 737-700", category="vip_airliner",
                  passenger_capacity=50, range_km=11000, cruise_speed_kmh=850,
-                 hourly_rate_usd=Decimal("35000"), amenities=["VIP cabin", "Boardroom", "Bedrooms", "Full kitchen"],
+                 hourly_rate_usd=Decimal("35000"),
+                 amenities=["VIP cabin", "Boardroom", "Bedrooms", "Full kitchen"],
                  description="Head-of-state configured 737 for large delegations.",
                  image_url=AIRCRAFT_IMAGES["vip_airliner"][0]),
             dict(name="Pilatus PC-12 NGX", model="PC-12 NGX", category="turboprop",
                  passenger_capacity=9, range_km=1800, cruise_speed_kmh=528,
-                 hourly_rate_usd=Decimal("2200"), amenities=["Cargo door", "Short-field capability"],
+                 hourly_rate_usd=Decimal("2200"),
+                 amenities=["Cargo door", "Short-field capability"],
                  description="Workhorse for remote Kenyan airstrips.",
                  image_url=AIRCRAFT_IMAGES["turboprop"][0]),
             dict(name="Cessna Grand Caravan EX", model="Grand Caravan EX", category="turboprop",
                  passenger_capacity=13, range_km=1500, cruise_speed_kmh=341,
-                 hourly_rate_usd=Decimal("1800"), amenities=["Bush-strip capable", "Scenic windows"],
+                 hourly_rate_usd=Decimal("1800"),
+                 amenities=["Bush-strip capable", "Scenic windows"],
                  description="The Mara safari workhorse — lands anywhere.",
                  image_url=AIRCRAFT_IMAGES["turboprop"][1]),
             dict(name="Airbus H145", model="H145", category="helicopter",
                  passenger_capacity=8, range_km=640, cruise_speed_kmh=268,
-                 hourly_rate_usd=Decimal("4500"), amenities=["VIP interior", "Air-conditioning"],
+                 hourly_rate_usd=Decimal("4500"),
+                 amenities=["VIP interior", "Air-conditioning"],
                  description="Premium heli transfer for game reserves.",
                  image_url=AIRCRAFT_IMAGES["helicopter"][0]),
         ]
@@ -424,7 +681,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.catalog_aircraft)} catalog aircraft"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # YACHT CATALOG (V1)
+    # YACHT CATALOG
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_yacht_catalog(self):
         self.stdout.write("  → Yacht Catalog")
@@ -461,15 +718,14 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.catalog_yachts)} catalog yachts"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # CHARTER OPERATORS (V2)
+    # CHARTER OPERATORS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_charter_operators(self):
         self.stdout.write("  → CharterOperators")
-        nbo = Airport.objects.filter(code="NBO").first()
-        mba = Airport.objects.filter(code="MBA").first()
-        dar = Airport.objects.filter(code="DAR").first()
-        jnb = Airport.objects.filter(code="JNB").first()
-        dxb = Airport.objects.filter(code="DXB").first()
+        nbo = Airport.objects.get(code="NBO")
+        mba = Airport.objects.get(code="MBA")
+        dar = Airport.objects.get(code="DAR")
+        wil = Airport.objects.get(code="WIL")
 
         ops_data = [
             dict(
@@ -482,10 +738,11 @@ class Command(BaseCommand):
                 bank_swift="EQBLKENA", payout_currency="USD", payment_terms_days=7,
                 aoc_number="AOC/KE/2019/034", insurance_provider="Allianz Aviation",
                 insurance_expiry=future_date(180), argus_rating="Platinum", wyvern_rating="REGISTERED",
-                operating_regions=["AF", "EU", "AS"],
-                accepts_last_minute=True, logo_url=LOGO_URLS[0],
+                operating_regions=["AF", "EU", "AS"], accepts_last_minute=True,
+                logo_url=LOGO_URLS[0],
                 notes="Primary exclusive partner — Nairobi-based, fleet of 8.",
                 address="Hangar 4, Wilson Airport, Nairobi",
+                base_codes=["NBO", "WIL"],
             ),
             dict(
                 name="Savanna Air (EA) Ltd", trading_name="Savanna Air",
@@ -497,10 +754,11 @@ class Command(BaseCommand):
                 bank_swift="KCBLKENX", payout_currency="USD", payment_terms_days=10,
                 aoc_number="AOC/KE/2020/017", insurance_provider="AIG Aviation",
                 insurance_expiry=future_date(90), argus_rating="Gold", wyvern_rating="",
-                operating_regions=["AF"],
-                accepts_last_minute=True, logo_url=LOGO_URLS[1],
+                operating_regions=["AF"], accepts_last_minute=True,
+                logo_url=LOGO_URLS[1],
                 notes="Strong for Mara & Coast routes.",
                 address="Hangar 7, JKIA, Nairobi",
+                base_codes=["NBO", "MBA"],
             ),
             dict(
                 name="CoastAir Kenya Ltd", trading_name="CoastAir",
@@ -512,10 +770,11 @@ class Command(BaseCommand):
                 bank_swift="SCBLKENX", payout_currency="USD", payment_terms_days=14,
                 aoc_number="AOC/KE/2018/009", insurance_provider="Marsh Aviation",
                 insurance_expiry=future_date(60), argus_rating="", wyvern_rating="",
-                operating_regions=["AF"],
-                accepts_last_minute=False, logo_url=LOGO_URLS[2],
+                operating_regions=["AF"], accepts_last_minute=False,
+                logo_url=LOGO_URLS[2],
                 notes="Coastal specialist — Mombasa, Lamu, Zanzibar routes.",
                 address="Moi International Airport, Mombasa",
+                base_codes=["MBA"],
             ),
             dict(
                 name="KiliJet Tanzania Ltd", trading_name="KiliJet",
@@ -527,10 +786,11 @@ class Command(BaseCommand):
                 bank_swift="CORUTZTZ", payout_currency="USD", payment_terms_days=7,
                 aoc_number="AOC/TZ/2021/005", insurance_provider="Chartis Aviation",
                 insurance_expiry=future_date(200), argus_rating="Silver", wyvern_rating="",
-                operating_regions=["AF"],
-                accepts_last_minute=True, logo_url=LOGO_URLS[3],
+                operating_regions=["AF"], accepts_last_minute=True,
+                logo_url=LOGO_URLS[3],
                 notes="Tanzania + Southern Africa corridor.",
                 address="Julius Nyerere Intl, Dar es Salaam",
+                base_codes=["DAR"],
             ),
             dict(
                 name="Rift Valley Air (EA) Ltd", trading_name="Rift Valley Air",
@@ -542,45 +802,37 @@ class Command(BaseCommand):
                 bank_swift="KCOOKENA", payout_currency="KES", payment_terms_days=14,
                 aoc_number="AOC/KE/2017/022", insurance_provider="CIC Insurance",
                 insurance_expiry=future_date(120), argus_rating="", wyvern_rating="",
-                operating_regions=["AF"],
-                accepts_last_minute=True, logo_url=LOGO_URLS[0],
+                operating_regions=["AF"], accepts_last_minute=True,
+                logo_url=LOGO_URLS[0],
                 notes="Rift Valley corridor specialist. Safari & cargo.",
                 address="Nakuru Airport, Nakuru",
+                base_codes=["NBO"],
             ),
-        ]
-
-        airports_map = {
-            "NBO": nbo, "MBA": mba, "DAR": dar, "JNB": jnb, "DXB": dxb,
-        }
-        base_map = [
-            [nbo],
-            [nbo, mba],
-            [mba],
-            [dar],
-            [nbo],
         ]
 
         self.operators = []
         for i, data in enumerate(ops_data):
+            base_codes = data.pop("base_codes")
             op, _ = CharterOperator.objects.get_or_create(name=data["name"], defaults=data)
-            user = self.operator_users[i]
-            op.users.add(user)
-            for airport in base_map[i]:
-                if airport:
-                    op.base_airports.add(airport)
+            op.users.add(self.operator_users[i])
+            for code in base_codes:
+                try:
+                    op.base_airports.add(Airport.objects.get(code=code))
+                except Airport.DoesNotExist:
+                    pass
             self.operators.append(op)
 
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.operators)} charter operators"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # OPERATOR AIRCRAFT (V2)
+    # OPERATOR AIRCRAFT
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_operator_aircraft(self):
         self.stdout.write("  → OperatorAircraft")
-        nbo = Airport.objects.filter(code="NBO").first()
-        mba = Airport.objects.filter(code="MBA").first()
-        wil = Airport.objects.filter(code="WIL").first()
-        dar = Airport.objects.filter(code="DAR").first()
+        nbo = Airport.objects.get(code="NBO")
+        mba = Airport.objects.get(code="MBA")
+        wil = Airport.objects.get(code="WIL")
+        dar = Airport.objects.get(code="DAR")
 
         aircraft_data = [
             # AfriqJet — exclusive
@@ -595,13 +847,14 @@ class Command(BaseCommand):
                  total_flight_hours=Decimal("3420.5"), maintenance_interval_hours=500,
                  last_maintenance_hours=Decimal("3250.0"), next_maintenance_date=future_date(45),
                  airworthiness_expiry=future_date(300), insurance_expiry=future_date(180),
-                 description="NJH's flagship — NBO to LHR non-stop. Full sleeping quarters.",
+                 description="NJH flagship — NBO to LHR non-stop. Full sleeping quarters.",
                  amenities=["Sleeping quarters", "Shower", "Full galley", "Conference table", "Sat phone"],
                  images=[AIRCRAFT_IMAGES["heavy"][0], AIRCRAFT_IMAGES["heavy"][1]],
                  image_url=AIRCRAFT_IMAGES["heavy"][0]),
             dict(operator=self.operators[0], catalog_aircraft=self.catalog_aircraft[4],
-                 name="AfriqJet Challenger 350", model="Bombardier Challenger 350", category="super_midsize",
-                 registration_number="5Y-AJC", year_of_manufacture=2020, base_airport=nbo,
+                 name="AfriqJet Challenger 350", model="Bombardier Challenger 350",
+                 category="super_midsize", registration_number="5Y-AJC",
+                 year_of_manufacture=2020, base_airport=nbo,
                  passenger_capacity=10, range_km=5926, cruise_speed_kmh=870,
                  max_baggage_kg=1200, wifi_available=True, pets_allowed=True, smoking_allowed=False,
                  hourly_rate_usd=Decimal("7200"), min_hours=Decimal("2.0"),
@@ -665,7 +918,7 @@ class Command(BaseCommand):
                  name="CoastAir Phenom 300E", model="Embraer Phenom 300E", category="light",
                  registration_number="5Y-CAP", year_of_manufacture=2022, base_airport=mba,
                  passenger_capacity=8, range_km=3650, cruise_speed_kmh=834,
-                 max_baggage_km=600, wifi_available=True, pets_allowed=False, smoking_allowed=False,
+                 max_baggage_kg=600, wifi_available=True, pets_allowed=False, smoking_allowed=False,
                  hourly_rate_usd=Decimal("3600"), min_hours=Decimal("1.5"),
                  positioning_fee_usd=Decimal("0"), overnight_fee_usd=Decimal("900"),
                  status="available", is_approved=True, is_featured=False,
@@ -712,8 +965,6 @@ class Command(BaseCommand):
 
         self.operator_aircraft = []
         for d in aircraft_data:
-            # handle typo in test data (max_baggage_km instead of max_baggage_kg)
-            d.pop("max_baggage_km", None)
             obj, _ = OperatorAircraft.objects.get_or_create(
                 registration_number=d["registration_number"], defaults=d)
             self.operator_aircraft.append(obj)
@@ -721,7 +972,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.operator_aircraft)} operator aircraft"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # OPERATOR YACHTS (V2)
+    # OPERATOR YACHTS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_operator_yachts(self):
         self.stdout.write("  → OperatorYachts")
@@ -729,51 +980,49 @@ class Command(BaseCommand):
             dict(operator=self.operators[0], catalog_yacht=self.catalog_yachts[1],
                  name="Serengeti Dream II", yacht_type="superyacht",
                  flag_state="Kenya", year_built=2019,
-                 length_meters=Decimal("58"), beam_meters=Decimal("11.2"), draft_meters=Decimal("2.4"),
-                 home_port="Mombasa, Kenya",
+                 length_meters=Decimal("58"), beam_meters=Decimal("11.2"),
+                 draft_meters=Decimal("2.4"), home_port="Mombasa, Kenya",
                  guest_capacity=14, cabin_count=7, crew_count=10,
                  daily_rate_usd=Decimal("15000"), weekly_rate_usd=Decimal("95000"),
                  min_charter_days=3, apa_percentage=Decimal("30"),
                  status="available", is_approved=True, is_featured=True,
-                 description="Flagship superyacht for Indian Ocean expeditions. Mombasa–Seychelles.",
+                 description="Flagship superyacht for Indian Ocean expeditions.",
                  amenities=["Jacuzzi", "Jet skis", "Dive centre", "Cinema", "Tender"],
-                 images=[YACHT_IMAGES[1], YACHT_IMAGES[4]],
-                 image_url=YACHT_IMAGES[1]),
+                 images=[YACHT_IMAGES[1], YACHT_IMAGES[4]], image_url=YACHT_IMAGES[1]),
             dict(operator=self.operators[2], catalog_yacht=self.catalog_yachts[0],
                  name="Diani Star", yacht_type="motor",
                  flag_state="Kenya", year_built=2016,
-                 length_meters=Decimal("42"), beam_meters=Decimal("8.5"), draft_meters=Decimal("1.9"),
-                 home_port="Diani Beach, Kenya",
+                 length_meters=Decimal("42"), beam_meters=Decimal("8.5"),
+                 draft_meters=Decimal("1.9"), home_port="Diani Beach, Kenya",
                  guest_capacity=10, cabin_count=5, crew_count=6,
                  daily_rate_usd=Decimal("7500"), weekly_rate_usd=Decimal("48000"),
                  min_charter_days=2, apa_percentage=Decimal("25"),
                  status="available", is_approved=True, is_featured=False,
-                 description="Stunning motor yacht based in Diani. Great for Wasini Island day trips.",
+                 description="Stunning motor yacht based in Diani.",
                  amenities=["Water toys", "Snorkelling gear", "Sundeck", "Barbecue"],
-                 images=[YACHT_IMAGES[0], YACHT_IMAGES[5]],
-                 image_url=YACHT_IMAGES[0]),
+                 images=[YACHT_IMAGES[0], YACHT_IMAGES[5]], image_url=YACHT_IMAGES[0]),
             dict(operator=self.operators[3], catalog_yacht=self.catalog_yachts[2],
                  name="Zanzibar Breeze", yacht_type="catamaran",
                  flag_state="Tanzania", year_built=2020,
-                 length_meters=Decimal("28"), beam_meters=Decimal("14.0"), draft_meters=Decimal("1.2"),
-                 home_port="Zanzibar, Tanzania",
+                 length_meters=Decimal("28"), beam_meters=Decimal("14.0"),
+                 draft_meters=Decimal("1.2"), home_port="Zanzibar, Tanzania",
                  guest_capacity=8, cabin_count=4, crew_count=3,
                  daily_rate_usd=Decimal("4200"), weekly_rate_usd=Decimal("27000"),
                  min_charter_days=2, apa_percentage=Decimal("20"),
                  status="available", is_approved=True, is_featured=False,
                  description="Beautiful catamaran for Zanzibar archipelago exploration.",
                  amenities=["Kayaks", "Stand-up paddleboards", "Snorkelling", "Barbecue"],
-                 images=[YACHT_IMAGES[2], YACHT_IMAGES[6]],
-                 image_url=YACHT_IMAGES[2]),
+                 images=[YACHT_IMAGES[2], YACHT_IMAGES[6]], image_url=YACHT_IMAGES[2]),
         ]
         self.operator_yachts = []
         for d in yachts_data:
-            obj, _ = OperatorYacht.objects.get_or_create(name=d["name"], operator=d["operator"], defaults=d)
+            obj, _ = OperatorYacht.objects.get_or_create(
+                name=d["name"], operator=d["operator"], defaults=d)
             self.operator_yachts.append(obj)
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.operator_yachts)} operator yachts"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # AVAILABILITY BLOCKS (V2)
+    # AVAILABILITY BLOCKS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_availability_blocks(self):
         self.stdout.write("  → AvailabilityBlocks")
@@ -806,12 +1055,13 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(blocks)} availability blocks"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # MARKETPLACE AIRCRAFT (V1)
+    # MARKETPLACE AIRCRAFT
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_marketplace_aircraft(self):
         self.stdout.write("  → MarketplaceAircraft")
         owner_user, created = User.objects.get_or_create(username="fleet_owner_njh", defaults=dict(
-            email="owner@njhfleet.com", role="owner", first_name="Fleet", last_name="Owner",
+            email="owner@njhfleet.com", role="owner",
+            first_name="Fleet", last_name="Owner",
             phone="+254700777888", avatar_url=pick(AVATAR_URLS),
         ))
         if created:
@@ -853,7 +1103,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.marketplace_aircraft)} marketplace aircraft"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # MAINTENANCE LOGS (V1)
+    # MAINTENANCE LOGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_maintenance_logs(self):
         self.stdout.write("  → MaintenanceLogs")
@@ -876,151 +1126,155 @@ class Command(BaseCommand):
             ]
             for l in logs:
                 MaintenanceLog.objects.get_or_create(
-                    aircraft=aircraft, scheduled_date=l["scheduled_date"],
-                    maintenance_type=l["maintenance_type"], defaults=l)
+                    aircraft=aircraft,
+                    scheduled_date=l["scheduled_date"],
+                    maintenance_type=l["maintenance_type"],
+                    defaults=l)
         self.stdout.write(self.style.SUCCESS("    ✓ Maintenance logs"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # FLIGHT BOOKINGS (V1 + V2)
+    # FLIGHT BOOKINGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_flight_bookings(self):
         self.stdout.write("  → FlightBookings")
 
-        airports = list(Airport.objects.filter(country__in=["Kenya", "Tanzania", "Uganda", "Rwanda",
-                                                              "United Kingdom", "UAE", "South Africa"]))
-        nbo = Airport.objects.filter(code="NBO").first()
-        mba = Airport.objects.filter(code="MBA").first()
-        lhr = Airport.objects.filter(code="LHR").first()
-        jnb = Airport.objects.filter(code="JNB").first()
-        dxb = Airport.objects.filter(code="DXB").first()
-        znz = Airport.objects.filter(code="ZNZ").first()
-        mre = Airport.objects.filter(code="MRE").first()
-
-        route_airport_pairs = [
-            (nbo, mba), (nbo, znz), (nbo, jnb), (nbo, lhr), (nbo, dxb),
-            (mba, znz), (nbo, mre), (mba, mre), (jnb, nbo), (dxb, nbo),
-        ]
+        # Use .get() so missing airports raise a clear error instead of None FK
+        nbo = Airport.objects.get(code="NBO")
+        mba = Airport.objects.get(code="MBA")
+        lhr = Airport.objects.get(code="LHR")
+        jnb = Airport.objects.get(code="JNB")
+        dxb = Airport.objects.get(code="DXB")
+        znz = Airport.objects.get(code="ZNZ")
+        mre = Airport.objects.get(code="MRE")
+        dar = Airport.objects.get(code="DAR")
 
         bookings_data = [
-            # Completed bookings (past)
-            dict(guest_name="James Amani Kariuki", guest_email="amani@gmail.com",
-                 guest_phone="+254712345678", company="Kariuki Holdings",
-                 client=self.clients[0], trip_type="round_trip",
-                 origin=nbo, destination=lhr, departure_date=days_ago(150),
-                 return_date=days_ago(140), passenger_count=4,
+            # ── Completed ────────────────────────────────────────────────────
+            dict(guest_name="James Amani Kariuki",   guest_email="amani@gmail.com",
+                 guest_phone="+254712345678",         company="Kariuki Holdings",
+                 client=self.clients[0],              trip_type="round_trip",
+                 origin=nbo,  destination=lhr,        departure_date=days_ago(150),
+                 return_date=days_ago(140),            passenger_count=4,
                  operator_aircraft=self.operator_aircraft[0],
-                 assigned_operator=self.operators[0],
-                 preferred_category="heavy", catering_requested=True,
-                 concierge_requested=True,
-                 operator_cost_usd=Decimal("88000"), quoted_price_usd=Decimal("108000"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="completed", departure_time=time(8, 0)),
-            dict(guest_name="Sophia Waweru", guest_email="sophia@waweru.co.ke",
-                 guest_phone="+254723456789", company="Waweru Ventures",
-                 client=self.clients[1], trip_type="one_way",
-                 origin=nbo, destination=jnb, departure_date=days_ago(120),
-                 passenger_count=6, operator_aircraft=self.operator_aircraft[1],
-                 assigned_operator=self.operators[0],
-                 preferred_category="super_midsize", catering_requested=True,
-                 operator_cost_usd=Decimal("24000"), quoted_price_usd=Decimal("29000"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="completed", departure_time=time(10, 30)),
-            dict(guest_name="David Omondi", guest_email="david@omondi.com",
-                 guest_phone="+254734567890", company="Omondi Logistics",
-                 client=self.clients[2], trip_type="one_way",
-                 origin=nbo, destination=mba, departure_date=days_ago(90),
-                 passenger_count=3, operator_aircraft=self.operator_aircraft[5],
-                 assigned_operator=self.operators[2],
-                 preferred_category="light", catering_requested=False,
-                 operator_cost_usd=Decimal("5500"), quoted_price_usd=Decimal("6800"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="completed", departure_time=time(7, 0)),
-            dict(guest_name="Fatuma Ali", guest_email="fatuma@ali.co.ke",
-                 guest_phone="+254745678901", company="Ali Trading Co.",
-                 client=self.clients[3], trip_type="round_trip",
-                 origin=mba, destination=znz, departure_date=days_ago(80),
-                 return_date=days_ago(75), passenger_count=2,
+                 assigned_operator=self.operators[0], preferred_category="heavy",
+                 catering_requested=True, concierge_requested=True,
+                 operator_cost_usd=Decimal("88000"),  quoted_price_usd=Decimal("108000"),
+                 commission_pct=Decimal("15"),         payment_status="paid",
+                 status="completed",                  departure_time=time(8, 0)),
+            dict(guest_name="Sophia Waweru",          guest_email="sophia@waweru.co.ke",
+                 guest_phone="+254723456789",          company="Waweru Ventures",
+                 client=self.clients[1],               trip_type="one_way",
+                 origin=nbo,  destination=jnb,         departure_date=days_ago(120),
+                 passenger_count=6,
+                 operator_aircraft=self.operator_aircraft[1],
+                 assigned_operator=self.operators[0],  preferred_category="super_midsize",
+                 catering_requested=True,
+                 operator_cost_usd=Decimal("24000"),   quoted_price_usd=Decimal("29000"),
+                 commission_pct=Decimal("15"),          payment_status="paid",
+                 status="completed",                   departure_time=time(10, 30)),
+            dict(guest_name="David Omondi",            guest_email="david@omondi.com",
+                 guest_phone="+254734567890",           company="Omondi Logistics",
+                 client=self.clients[2],                trip_type="one_way",
+                 origin=nbo,  destination=mba,          departure_date=days_ago(90),
+                 passenger_count=3,
                  operator_aircraft=self.operator_aircraft[5],
-                 assigned_operator=self.operators[2],
-                 preferred_category="light", catering_requested=True,
-                 operator_cost_usd=Decimal("4200"), quoted_price_usd=Decimal("5200"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="completed", departure_time=time(9, 15)),
-            dict(guest_name="Hassan Omar", guest_email="hassan@omar.co.ke",
-                 guest_phone="+254778901234", company="Omar Group",
-                 client=self.clients[6], trip_type="one_way",
-                 origin=nbo, destination=dxb, departure_date=days_ago(60),
-                 passenger_count=8, operator_aircraft=self.operator_aircraft[0],
-                 assigned_operator=self.operators[0],
-                 preferred_category="heavy", catering_requested=True,
-                 ground_transport_requested=True, concierge_requested=True,
-                 operator_cost_usd=Decimal("42000"), quoted_price_usd=Decimal("52000"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="completed", departure_time=time(23, 30)),
-            dict(guest_name="Esther Wanjiku", guest_email="esther@wanjiku.com",
-                 guest_phone="+254789012345", company="Wanjiku Safaris",
-                 client=self.clients[7], trip_type="one_way",
-                 origin=nbo, destination=mre, departure_date=days_ago(45),
-                 passenger_count=6, operator_aircraft=self.operator_aircraft[4],
-                 assigned_operator=self.operators[1],
-                 preferred_category="turboprop", catering_requested=False,
-                 operator_cost_usd=Decimal("2800"), quoted_price_usd=Decimal("3500"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="completed", departure_time=time(6, 30)),
-            # Confirmed (upcoming)
-            dict(guest_name="John Kamau", guest_email="john@kamau.co.ke",
-                 guest_phone="+254790123456", company="Kamau Corp",
-                 client=self.clients[8], trip_type="round_trip",
-                 origin=nbo, destination=lhr, departure_date=future_date(10),
-                 return_date=future_date(17), passenger_count=5,
+                 assigned_operator=self.operators[2],   preferred_category="light",
+                 catering_requested=False,
+                 operator_cost_usd=Decimal("5500"),     quoted_price_usd=Decimal("6800"),
+                 commission_pct=Decimal("15"),           payment_status="paid",
+                 status="completed",                    departure_time=time(7, 0)),
+            dict(guest_name="Fatuma Ali",               guest_email="fatuma@ali.co.ke",
+                 guest_phone="+254745678901",            company="Ali Trading Co.",
+                 client=self.clients[3],                 trip_type="round_trip",
+                 origin=mba,  destination=znz,           departure_date=days_ago(80),
+                 return_date=days_ago(75),               passenger_count=2,
+                 operator_aircraft=self.operator_aircraft[5],
+                 assigned_operator=self.operators[2],    preferred_category="light",
+                 catering_requested=True,
+                 operator_cost_usd=Decimal("4200"),      quoted_price_usd=Decimal("5200"),
+                 commission_pct=Decimal("15"),            payment_status="paid",
+                 status="completed",                     departure_time=time(9, 15)),
+            dict(guest_name="Hassan Omar",              guest_email="hassan@omar.co.ke",
+                 guest_phone="+254778901234",            company="Omar Group",
+                 client=self.clients[6],                 trip_type="one_way",
+                 origin=nbo,  destination=dxb,           departure_date=days_ago(60),
+                 passenger_count=8,
                  operator_aircraft=self.operator_aircraft[0],
-                 assigned_operator=self.operators[0],
-                 preferred_category="heavy", catering_requested=True, concierge_requested=True,
-                 operator_cost_usd=Decimal("95000"), quoted_price_usd=Decimal("116000"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="confirmed", departure_time=time(22, 0)),
-            dict(guest_name="Isabella Rosa", guest_email="isabella@rosa.it",
-                 guest_phone="+393312345678", company="Rosa Capital",
-                 client=self.clients[11], trip_type="one_way",
-                 origin=dxb, destination=nbo, departure_date=future_date(5),
-                 passenger_count=3, operator_aircraft=self.operator_aircraft[1],
-                 assigned_operator=self.operators[0],
-                 preferred_category="super_midsize", catering_requested=True,
-                 operator_cost_usd=Decimal("18000"), quoted_price_usd=Decimal("22000"),
-                 commission_pct=Decimal("15"), payment_status="paid",
-                 status="confirmed", departure_time=time(14, 0)),
-            # Quoted
-            dict(guest_name="Omar Farah", guest_email="omar@farah.so",
-                 guest_phone="+252612345678", company="Farah Investments",
-                 client=self.clients[10], trip_type="one_way",
-                 origin=nbo, destination=jnb, departure_date=future_date(20),
-                 passenger_count=7, operator_aircraft=self.operator_aircraft[6],
-                 assigned_operator=self.operators[3],
-                 preferred_category="midsize", catering_requested=True,
-                 operator_cost_usd=Decimal("20000"), quoted_price_usd=Decimal("25000"),
-                 commission_pct=Decimal("15"), payment_status="unpaid",
-                 status="quoted", departure_time=time(11, 0)),
-            # RFQ in progress
-            dict(guest_name="Peter Ngugi", guest_email="peter@ngugi.co.ke",
-                 guest_phone="+254756789012", company="Ngugi Properties",
-                 client=self.clients[4], trip_type="one_way",
-                 origin=nbo, destination=dxb, departure_date=future_date(30),
-                 passenger_count=10, operator_aircraft=None, assigned_operator=None,
-                 preferred_category="heavy", catering_requested=True,
-                 concierge_requested=True,
+                 assigned_operator=self.operators[0],    preferred_category="heavy",
+                 catering_requested=True, ground_transport_requested=True, concierge_requested=True,
+                 operator_cost_usd=Decimal("42000"),     quoted_price_usd=Decimal("52000"),
+                 commission_pct=Decimal("15"),            payment_status="paid",
+                 status="completed",                     departure_time=time(23, 30)),
+            dict(guest_name="Esther Wanjiku",           guest_email="esther@wanjiku.com",
+                 guest_phone="+254789012345",            company="Wanjiku Safaris",
+                 client=self.clients[7],                  trip_type="one_way",
+                 origin=nbo,  destination=mre,            departure_date=days_ago(45),
+                 passenger_count=6,
+                 operator_aircraft=self.operator_aircraft[4],
+                 assigned_operator=self.operators[1],    preferred_category="turboprop",
+                 catering_requested=False,
+                 operator_cost_usd=Decimal("2800"),      quoted_price_usd=Decimal("3500"),
+                 commission_pct=Decimal("15"),            payment_status="paid",
+                 status="completed",                     departure_time=time(6, 30)),
+            # ── Confirmed (upcoming) ──────────────────────────────────────────
+            dict(guest_name="John Kamau",               guest_email="john@kamau.co.ke",
+                 guest_phone="+254790123456",            company="Kamau Corp",
+                 client=self.clients[8],                  trip_type="round_trip",
+                 origin=nbo,  destination=lhr,            departure_date=future_date(10),
+                 return_date=future_date(17),             passenger_count=5,
+                 operator_aircraft=self.operator_aircraft[0],
+                 assigned_operator=self.operators[0],    preferred_category="heavy",
+                 catering_requested=True, concierge_requested=True,
+                 operator_cost_usd=Decimal("95000"),     quoted_price_usd=Decimal("116000"),
+                 commission_pct=Decimal("15"),            payment_status="paid",
+                 status="confirmed",                     departure_time=time(22, 0)),
+            dict(guest_name="Isabella Rosa",            guest_email="isabella@rosa.it",
+                 guest_phone="+393312345678",            company="Rosa Capital",
+                 client=self.clients[11],                 trip_type="one_way",
+                 origin=dxb,  destination=nbo,            departure_date=future_date(5),
+                 passenger_count=3,
+                 operator_aircraft=self.operator_aircraft[1],
+                 assigned_operator=self.operators[0],    preferred_category="super_midsize",
+                 catering_requested=True,
+                 operator_cost_usd=Decimal("18000"),     quoted_price_usd=Decimal("22000"),
+                 commission_pct=Decimal("15"),            payment_status="paid",
+                 status="confirmed",                     departure_time=time(14, 0)),
+            # ── Quoted ──────────────────────────────────────────────────────
+            dict(guest_name="Omar Farah",               guest_email="omar@farah.so",
+                 guest_phone="+252612345678",            company="Farah Investments",
+                 client=self.clients[10],                 trip_type="one_way",
+                 origin=nbo,  destination=jnb,            departure_date=future_date(20),
+                 passenger_count=7,
+                 operator_aircraft=self.operator_aircraft[6],
+                 assigned_operator=self.operators[3],    preferred_category="midsize",
+                 catering_requested=True,
+                 operator_cost_usd=Decimal("20000"),     quoted_price_usd=Decimal("25000"),
+                 commission_pct=Decimal("15"),            payment_status="unpaid",
+                 status="quoted",                        departure_time=time(11, 0)),
+            # ── RFQ sent ────────────────────────────────────────────────────
+            dict(guest_name="Peter Ngugi",              guest_email="peter@ngugi.co.ke",
+                 guest_phone="+254756789012",            company="Ngugi Properties",
+                 client=self.clients[4],                  trip_type="one_way",
+                 origin=nbo,  destination=dxb,            departure_date=future_date(30),
+                 passenger_count=10,
+                 operator_aircraft=None, assigned_operator=None,
+                 preferred_category="heavy",
+                 catering_requested=True, concierge_requested=True,
                  operator_cost_usd=None, quoted_price_usd=None,
-                 commission_pct=Decimal("15"), payment_status="unpaid",
-                 status="rfq_sent", departure_time=time(18, 0)),
-            # Inquiry
-            dict(guest_name="Grace Mutua", guest_email="grace@mutua.com",
-                 guest_phone="+254767890123", company="",
-                 client=self.clients[5], trip_type="one_way",
-                 origin=nbo, destination=znz, departure_date=future_date(45),
-                 passenger_count=2, operator_aircraft=None, assigned_operator=None,
-                 preferred_category="light", catering_requested=False,
+                 commission_pct=Decimal("15"),            payment_status="unpaid",
+                 status="rfq_sent",                      departure_time=time(18, 0)),
+            # ── Inquiry ─────────────────────────────────────────────────────
+            dict(guest_name="Grace Mutua",              guest_email="grace@mutua.com",
+                 guest_phone="+254767890123",            company="",
+                 client=self.clients[5],                  trip_type="one_way",
+                 origin=nbo,  destination=znz,            departure_date=future_date(45),
+                 passenger_count=2,
+                 operator_aircraft=None, assigned_operator=None,
+                 preferred_category="light",
+                 catering_requested=False,
                  operator_cost_usd=None, quoted_price_usd=None,
-                 commission_pct=Decimal("15"), payment_status="unpaid",
-                 status="inquiry", departure_time=time(9, 0)),
+                 commission_pct=Decimal("15"),            payment_status="unpaid",
+                 status="inquiry",                       departure_time=time(9, 0)),
         ]
 
         self.flight_bookings = []
@@ -1033,26 +1287,28 @@ class Command(BaseCommand):
             )
             self.flight_bookings.append(obj)
 
-        # Add some FlightLegs for multi-leg
-        multi_leg_booking = self.flight_bookings[0]
-        if not multi_leg_booking.legs.exists():
-            for i, (orig, dest) in enumerate([(nbo, dxb), (dxb, lhr)], start=1):
-                FlightLeg.objects.create(
-                    booking=multi_leg_booking, leg_number=i,
-                    origin=orig, destination=dest,
-                    departure_date=days_ago(150 - i), departure_time=time(6 + i * 4, 0),
-                )
+        # Multi-leg flight legs for first booking
+        multi_leg = self.flight_bookings[0]
+        if not multi_leg.legs.exists():
+            FlightLeg.objects.create(
+                booking=multi_leg, leg_number=1,
+                origin=nbo, destination=dxb,
+                departure_date=days_ago(150), departure_time=time(8, 0))
+            FlightLeg.objects.create(
+                booking=multi_leg, leg_number=2,
+                origin=dxb, destination=lhr,
+                departure_date=days_ago(149), departure_time=time(14, 0))
 
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.flight_bookings)} flight bookings"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # RFQ BIDS (V2)
+    # RFQ BIDS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_rfq_bids(self):
         self.stdout.write("  → RFQBids")
-        # RFQ booking is self.flight_bookings[9] (rfq_sent status)
         rfq_booking = next((b for b in self.flight_bookings if b.status == "rfq_sent"), None)
         if not rfq_booking:
+            self.stdout.write(self.style.WARNING("    ⚠  No rfq_sent booking found — skipping"))
             return
 
         bids = [
@@ -1090,168 +1346,177 @@ class Command(BaseCommand):
     def _seed_yacht_charters(self):
         self.stdout.write("  → YachtCharters")
         charters_data = [
-            dict(guest_name="James Amani Kariuki", guest_email="amani@gmail.com",
-                 guest_phone="+254712345678", company="Kariuki Holdings",
+            dict(guest_name="James Amani Kariuki",  guest_email="amani@gmail.com",
+                 guest_phone="+254712345678",        company="Kariuki Holdings",
                  client=self.clients[0],
                  operator_yacht=self.operator_yachts[0], assigned_operator=self.operators[0],
-                 departure_port="Mombasa, Kenya", destination_port="Lamu, Kenya",
-                 charter_start=days_ago(130), charter_end=days_ago(123),
-                 guest_count=10, itinerary_description="7-day Kenyan Coast cruise. Mombasa → Wasini → Lamu.",
+                 departure_port="Mombasa, Kenya",    destination_port="Lamu, Kenya",
+                 charter_start=days_ago(130),        charter_end=days_ago(123),
+                 guest_count=10,
+                 itinerary_description="7-day Kenyan Coast cruise. Mombasa → Wasini → Lamu.",
                  special_requests="Halal catering, fishing gear.",
                  operator_cost_usd=Decimal("85000"), quoted_price_usd=Decimal("105000"),
-                 commission_pct=Decimal("15"), apa_amount_usd=Decimal("31500"),
-                 payment_status="paid", status="completed"),
-            dict(guest_name="Sophia Waweru", guest_email="sophia@waweru.co.ke",
-                 guest_phone="+254723456789", company="Waweru Ventures",
+                 commission_pct=Decimal("15"),        apa_amount_usd=Decimal("31500"),
+                 payment_status="paid",               status="completed"),
+            dict(guest_name="Sophia Waweru",         guest_email="sophia@waweru.co.ke",
+                 guest_phone="+254723456789",         company="Waweru Ventures",
                  client=self.clients[1],
                  operator_yacht=self.operator_yachts[1], assigned_operator=self.operators[2],
                  departure_port="Diani Beach, Kenya", destination_port="Wasini Island, Kenya",
-                 charter_start=days_ago(70), charter_end=days_ago(67),
-                 guest_count=8, itinerary_description="3-night Diani getaway with snorkelling.",
+                 charter_start=days_ago(70),          charter_end=days_ago(67),
+                 guest_count=8,
+                 itinerary_description="3-night Diani getaway with snorkelling.",
                  special_requests="Vegetarian catering.",
-                 operator_cost_usd=Decimal("18000"), quoted_price_usd=Decimal("22500"),
-                 commission_pct=Decimal("15"), apa_amount_usd=Decimal("6750"),
-                 payment_status="paid", status="completed"),
-            dict(guest_name="Omar Farah", guest_email="omar@farah.so",
-                 guest_phone="+252612345678", company="Farah Investments",
+                 operator_cost_usd=Decimal("18000"),  quoted_price_usd=Decimal("22500"),
+                 commission_pct=Decimal("15"),         apa_amount_usd=Decimal("6750"),
+                 payment_status="paid",                status="completed"),
+            dict(guest_name="Omar Farah",             guest_email="omar@farah.so",
+                 guest_phone="+252612345678",          company="Farah Investments",
                  client=self.clients[10],
                  operator_yacht=self.operator_yachts[2], assigned_operator=self.operators[3],
-                 departure_port="Zanzibar, Tanzania", destination_port="Pemba Island, Tanzania",
-                 charter_start=future_date(15), charter_end=future_date(22),
-                 guest_count=6, itinerary_description="7-day Zanzibar archipelago cruise.",
+                 departure_port="Zanzibar, Tanzania",  destination_port="Pemba Island, Tanzania",
+                 charter_start=future_date(15),        charter_end=future_date(22),
+                 guest_count=6,
+                 itinerary_description="7-day Zanzibar archipelago cruise.",
                  special_requests="Halal food, diving equipment.",
-                 operator_cost_usd=Decimal("22000"), quoted_price_usd=Decimal("28000"),
-                 commission_pct=Decimal("15"), apa_amount_usd=Decimal("8400"),
-                 payment_status="paid", status="confirmed"),
-            dict(guest_name="Isabella Rosa", guest_email="isabella@rosa.it",
-                 guest_phone="+393312345678", company="Rosa Capital",
+                 operator_cost_usd=Decimal("22000"),   quoted_price_usd=Decimal("28000"),
+                 commission_pct=Decimal("15"),          apa_amount_usd=Decimal("8400"),
+                 payment_status="paid",                 status="confirmed"),
+            dict(guest_name="Isabella Rosa",          guest_email="isabella@rosa.it",
+                 guest_phone="+393312345678",          company="Rosa Capital",
                  client=self.clients[11],
                  operator_yacht=self.operator_yachts[0], assigned_operator=self.operators[0],
-                 departure_port="Mombasa, Kenya", destination_port="Seychelles",
-                 charter_start=future_date(40), charter_end=future_date(50),
-                 guest_count=12, itinerary_description="10-day Mombasa–Seychelles luxury cruise.",
+                 departure_port="Mombasa, Kenya",      destination_port="Seychelles",
+                 charter_start=future_date(40),        charter_end=future_date(50),
+                 guest_count=12,
+                 itinerary_description="10-day Mombasa–Seychelles luxury cruise.",
                  special_requests="European cuisine, sommelier onboard.",
                  operator_cost_usd=None, quoted_price_usd=None,
-                 commission_pct=Decimal("15"), apa_amount_usd=None,
-                 payment_status="unpaid", status="inquiry"),
+                 commission_pct=Decimal("15"),          apa_amount_usd=None,
+                 payment_status="unpaid",               status="inquiry"),
         ]
         self.yacht_charters = []
         for d in charters_data:
             obj, _ = YachtCharter.objects.get_or_create(
-                guest_email=d["guest_email"], charter_start=d["charter_start"],
+                guest_email=d["guest_email"],
+                charter_start=d["charter_start"],
                 defaults=d)
             self.yacht_charters.append(obj)
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.yacht_charters)} yacht charters"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # OPERATOR BOOKINGS (V2)
+    # OPERATOR BOOKINGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_operator_bookings(self):
         self.stdout.write("  → OperatorBookings")
-        completed_flights = [b for b in self.flight_bookings if b.status == "completed"]
-        completed_charters = [c for c in self.yacht_charters if c.status == "completed"]
-        confirmed_flights = [b for b in self.flight_bookings if b.status == "confirmed"]
+        completed_flights  = [b for b in self.flight_bookings  if b.status == "completed"]
+        completed_charters = [c for c in self.yacht_charters   if c.status == "completed"]
+        confirmed_flights  = [b for b in self.flight_bookings  if b.status == "confirmed"]
 
         self.operator_bookings = []
 
         for fb in completed_flights[:4]:
-            if not hasattr(fb, "operator_booking") or fb.operator_booking is None:
-                op = fb.assigned_operator or self.operators[0]
-                oa = fb.operator_aircraft
-                payout = fb.operator_cost_usd or Decimal("10000")
-                client_total = fb.quoted_price_usd or Decimal("12000")
-                margin = client_total - payout
-                ob = OperatorBooking.objects.create(
-                    operator=op, asset_type="aircraft",
-                    operator_aircraft=oa, flight_booking=fb,
-                    operator_payout_usd=payout, njh_margin_usd=margin,
-                    total_client_usd=client_total,
-                    operator_reference=f"OP-{str(uuid.uuid4())[:8].upper()}",
-                    operator_notes="Confirmed and flown. All passengers satisfied.",
-                    accepted_at=timezone.now() - timedelta(days=random.randint(10, 140)),
-                    status="completed",
-                )
-                self.operator_bookings.append(ob)
+            if OperatorBooking.objects.filter(flight_booking=fb).exists():
+                self.operator_bookings.append(
+                    OperatorBooking.objects.get(flight_booking=fb))
+                continue
+            op     = fb.assigned_operator or self.operators[0]
+            oa     = fb.operator_aircraft
+            payout = fb.operator_cost_usd  or Decimal("10000")
+            total  = fb.quoted_price_usd   or Decimal("12000")
+            ob = OperatorBooking.objects.create(
+                operator=op, asset_type="aircraft",
+                operator_aircraft=oa, flight_booking=fb,
+                operator_payout_usd=payout, njh_margin_usd=total - payout,
+                total_client_usd=total,
+                operator_reference=f"OP-{str(uuid.uuid4())[:8].upper()}",
+                operator_notes="Confirmed and flown. All passengers satisfied.",
+                accepted_at=timezone.now() - timedelta(days=random.randint(10, 140)),
+                status="completed",
+            )
+            self.operator_bookings.append(ob)
 
         for yc in completed_charters[:2]:
-            if not hasattr(yc, "operator_booking") or yc.operator_booking is None:
-                op = yc.assigned_operator or self.operators[2]
-                oy = yc.operator_yacht
-                payout = yc.operator_cost_usd or Decimal("18000")
-                client_total = yc.quoted_price_usd or Decimal("22500")
-                margin = client_total - payout
-                ob = OperatorBooking.objects.create(
-                    operator=op, asset_type="yacht",
-                    operator_yacht=oy, yacht_charter=yc,
-                    operator_payout_usd=payout, njh_margin_usd=margin,
-                    total_client_usd=client_total,
-                    operator_reference=f"YC-{str(uuid.uuid4())[:8].upper()}",
-                    operator_notes="Charter completed. Crew performance excellent.",
-                    accepted_at=timezone.now() - timedelta(days=random.randint(10, 120)),
-                    status="completed",
-                )
-                self.operator_bookings.append(ob)
+            if OperatorBooking.objects.filter(yacht_charter=yc).exists():
+                self.operator_bookings.append(
+                    OperatorBooking.objects.get(yacht_charter=yc))
+                continue
+            op     = yc.assigned_operator or self.operators[2]
+            oy     = yc.operator_yacht
+            payout = yc.operator_cost_usd or Decimal("18000")
+            total  = yc.quoted_price_usd  or Decimal("22500")
+            ob = OperatorBooking.objects.create(
+                operator=op, asset_type="yacht",
+                operator_yacht=oy, yacht_charter=yc,
+                operator_payout_usd=payout, njh_margin_usd=total - payout,
+                total_client_usd=total,
+                operator_reference=f"YC-{str(uuid.uuid4())[:8].upper()}",
+                operator_notes="Charter completed. Crew performance excellent.",
+                accepted_at=timezone.now() - timedelta(days=random.randint(10, 120)),
+                status="completed",
+            )
+            self.operator_bookings.append(ob)
 
         for fb in confirmed_flights[:2]:
-            if not hasattr(fb, "operator_booking") or fb.operator_booking is None:
-                op = fb.assigned_operator or self.operators[0]
-                oa = fb.operator_aircraft
-                payout = fb.operator_cost_usd or Decimal("90000")
-                client_total = fb.quoted_price_usd or Decimal("110000")
-                margin = client_total - payout
-                ob = OperatorBooking.objects.create(
-                    operator=op, asset_type="aircraft",
-                    operator_aircraft=oa, flight_booking=fb,
-                    operator_payout_usd=payout, njh_margin_usd=margin,
-                    total_client_usd=client_total,
-                    operator_reference=f"OP-{str(uuid.uuid4())[:8].upper()}",
-                    accepted_at=timezone.now() - timedelta(days=5),
-                    status="accepted",
-                )
-                self.operator_bookings.append(ob)
+            if OperatorBooking.objects.filter(flight_booking=fb).exists():
+                self.operator_bookings.append(
+                    OperatorBooking.objects.get(flight_booking=fb))
+                continue
+            op     = fb.assigned_operator or self.operators[0]
+            payout = fb.operator_cost_usd or Decimal("90000")
+            total  = fb.quoted_price_usd  or Decimal("110000")
+            ob = OperatorBooking.objects.create(
+                operator=op, asset_type="aircraft",
+                operator_aircraft=fb.operator_aircraft, flight_booking=fb,
+                operator_payout_usd=payout, njh_margin_usd=total - payout,
+                total_client_usd=total,
+                operator_reference=f"OP-{str(uuid.uuid4())[:8].upper()}",
+                accepted_at=timezone.now() - timedelta(days=5),
+                status="accepted",
+            )
+            self.operator_bookings.append(ob)
 
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.operator_bookings)} operator bookings"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # OPERATOR PAYOUTS (V2)
+    # OPERATOR PAYOUTS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_operator_payouts(self):
         self.stdout.write("  → OperatorPayouts")
         admin = User.objects.filter(role="admin").first()
-        payout_statuses = ["paid", "paid", "paid", "processing", "pending"]
-
         for ob in self.operator_bookings:
-            if ob.status == "completed":
-                status = pick(["paid", "paid", "processing"])
-                OperatorPayoutLog.objects.get_or_create(
-                    operator_booking=ob,
-                    defaults=dict(
-                        operator=ob.operator,
-                        amount_usd=ob.operator_payout_usd,
-                        currency="USD",
-                        exchange_rate=Decimal("1.0"),
-                        payment_method=pick(["Wire Transfer", "SWIFT", "M-Pesa Business"]),
-                        bank_reference=f"REF{str(uuid.uuid4())[:10].upper()}",
-                        paid_at=timezone.now() - timedelta(days=random.randint(1, 30)) if status == "paid" else None,
-                        due_date=days_ago(random.randint(1, 15)),
-                        status=status,
-                        processed_by=admin,
-                        notes="Released after trip completion verification.",
-                    )
-                )
+            if ob.status != "completed":
+                continue
+            if OperatorPayoutLog.objects.filter(operator_booking=ob).exists():
+                continue
+            status = pick(["paid", "paid", "processing"])
+            OperatorPayoutLog.objects.create(
+                operator=ob.operator,
+                operator_booking=ob,
+                amount_usd=ob.operator_payout_usd,
+                currency="USD",
+                exchange_rate=Decimal("1.0"),
+                payment_method=pick(["Wire Transfer", "SWIFT", "M-Pesa Business"]),
+                bank_reference=f"REF{str(uuid.uuid4())[:10].upper()}",
+                paid_at=timezone.now() - timedelta(days=random.randint(1, 30)) if status == "paid" else None,
+                due_date=days_ago(random.randint(1, 15)),
+                status=status,
+                processed_by=admin,
+                notes="Released after trip completion verification.",
+            )
         self.stdout.write(self.style.SUCCESS("    ✓ Operator payouts"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # OPERATOR REVIEWS (V2)
+    # OPERATOR REVIEWS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_operator_reviews(self):
         self.stdout.write("  → OperatorReviews")
         completed_obs = [ob for ob in self.operator_bookings if ob.status == "completed"]
         client_pairs = [
-            (self.clients[0], "James Amani Kariuki", "amani@gmail.com"),
-            (self.clients[1], "Sophia Waweru", "sophia@waweru.co.ke"),
-            (self.clients[6], "Hassan Omar", "hassan@omar.co.ke"),
-            (self.clients[7], "Esther Wanjiku", "esther@wanjiku.com"),
+            (self.clients[0],  "James Amani Kariuki", "amani@gmail.com"),
+            (self.clients[1],  "Sophia Waweru",       "sophia@waweru.co.ke"),
+            (self.clients[6],  "Hassan Omar",         "hassan@omar.co.ke"),
+            (self.clients[7],  "Esther Wanjiku",      "esther@wanjiku.com"),
         ]
         comments = [
             "Absolutely flawless service. The crew was exceptional and the aircraft was immaculate.",
@@ -1259,8 +1524,9 @@ class Command(BaseCommand):
             "The yacht exceeded all expectations. Highly recommended for Kenyan Coast charters.",
             "Professional team, comfortable aircraft. Will definitely use AfriqJet again.",
         ]
+        count = 0
         for i, ob in enumerate(completed_obs[:4]):
-            if hasattr(ob, "review"):
+            if OperatorReview.objects.filter(operator_booking=ob).exists():
                 continue
             client, name, email = client_pairs[i % len(client_pairs)]
             OperatorReview.objects.create(
@@ -1273,61 +1539,60 @@ class Command(BaseCommand):
                 comment=comments[i % len(comments)],
                 is_published=True,
             )
-        self.stdout.write(self.style.SUCCESS("    ✓ Operator reviews"))
+            count += 1
+        self.stdout.write(self.style.SUCCESS(f"    ✓ {count} operator reviews"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # MARKETPLACE BOOKINGS (V1)
+    # MARKETPLACE BOOKINGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_marketplace_bookings(self):
         self.stdout.write("  → MarketplaceBookings")
         self.marketplace_bookings = []
         mkt_data = [
-            dict(client=self.clients[0], aircraft=self.marketplace_aircraft[1],
+            dict(client=self.clients[0],  aircraft=self.marketplace_aircraft[1],
                  membership=self.memberships[0], trip_type="round_trip",
-                 origin="Nairobi (NBO)", destination="London Heathrow (LHR)",
-                 departure_datetime=rand_dt(160, 155),
-                 return_datetime=rand_dt(150, 145),
+                 origin="Nairobi (NBO)",  destination="London Heathrow (LHR)",
+                 departure_datetime=rand_dt(160, 155), return_datetime=rand_dt(150, 145),
                  estimated_hours=Decimal("8.5"), passenger_count=5,
-                 status="completed", gross_amount_usd=Decimal("110500"),
+                 status="completed",       gross_amount_usd=Decimal("110500"),
                  commission_pct=Decimal("10"), discount_applied=Decimal("5"),
-                 payment_status="paid", commission_usd=Decimal("11050"),
+                 payment_status="paid",    commission_usd=Decimal("11050"),
                  net_owner_usd=Decimal("99450"),
                  special_requests="Champagne on arrival, Dubai stopover catering."),
-            dict(client=self.clients[4], aircraft=self.marketplace_aircraft[0],
+            dict(client=self.clients[4],  aircraft=self.marketplace_aircraft[0],
                  membership=self.memberships[4], trip_type="one_way",
-                 origin="Nairobi (NBO)", destination="Masai Mara (MRE)",
+                 origin="Nairobi (NBO)",  destination="Masai Mara (MRE)",
                  departure_datetime=rand_dt(90, 88),
                  estimated_hours=Decimal("1.2"), passenger_count=4,
-                 status="completed", gross_amount_usd=Decimal("4560"),
+                 status="completed",       gross_amount_usd=Decimal("4560"),
                  commission_pct=Decimal("10"), discount_applied=Decimal("0"),
-                 payment_status="paid", commission_usd=Decimal("456"),
+                 payment_status="paid",    commission_usd=Decimal("456"),
                  net_owner_usd=Decimal("4104"),
                  special_requests="Game drive pickup at airstrip."),
-            dict(client=self.clients[8], aircraft=self.marketplace_aircraft[1],
+            dict(client=self.clients[8],  aircraft=self.marketplace_aircraft[1],
                  membership=self.memberships[8], trip_type="round_trip",
-                 origin="Nairobi (NBO)", destination="Dubai (DXB)",
-                 departure_datetime=rand_dt(50, 45),
-                 return_datetime=rand_dt(40, 38),
+                 origin="Nairobi (NBO)",  destination="Dubai (DXB)",
+                 departure_datetime=rand_dt(50, 45), return_datetime=rand_dt(40, 38),
                  estimated_hours=Decimal("5.5"), passenger_count=3,
-                 status="completed", gross_amount_usd=Decimal("71500"),
+                 status="completed",       gross_amount_usd=Decimal("71500"),
                  commission_pct=Decimal("10"), discount_applied=Decimal("10"),
-                 payment_status="paid", commission_usd=Decimal("7150"),
+                 payment_status="paid",    commission_usd=Decimal("7150"),
                  net_owner_usd=Decimal("64350"),
                  special_requests="In-flight Wi-Fi must be active."),
         ]
         for d in mkt_data:
-            obj, created = MarketplaceBooking.objects.get_or_create(
+            obj, _ = MarketplaceBooking.objects.get_or_create(
                 client=d["client"], aircraft=d["aircraft"],
                 departure_datetime=d["departure_datetime"], defaults=d)
             self.marketplace_bookings.append(obj)
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.marketplace_bookings)} marketplace bookings"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # PAYMENT RECORDS (V1)
+    # PAYMENT RECORDS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_payment_records(self):
         self.stdout.write("  → PaymentRecords")
-        for i, m in enumerate(self.memberships[:6]):
+        for m in self.memberships[:6]:
             PaymentRecord.objects.get_or_create(
                 user=m.user, payment_type="membership", membership=m,
                 defaults=dict(
@@ -1337,7 +1602,7 @@ class Command(BaseCommand):
                     stripe_receipt_url=f"https://pay.stripe.com/receipts/{uuid.uuid4().hex}",
                     description=f"{m.tier.display_name} membership payment",
                 ))
-        for i, mb in enumerate(self.marketplace_bookings):
+        for mb in self.marketplace_bookings:
             PaymentRecord.objects.get_or_create(
                 user=mb.client, payment_type="booking", booking=mb,
                 defaults=dict(
@@ -1350,29 +1615,29 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("    ✓ Payment records"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # LEASE INQUIRIES (V1)
+    # LEASE INQUIRIES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_lease_inquiries(self):
         self.stdout.write("  → LeaseInquiries")
         lease_data = [
-            dict(guest_name="Mwangi Capital Ltd", guest_email="fleet@mwangicapital.co.ke",
-                 guest_phone="+254711223344", company="Mwangi Capital Ltd",
-                 asset_type="aircraft", aircraft=self.catalog_aircraft[6],
-                 lease_duration="annual", preferred_start_date=future_date(30),
+            dict(guest_name="Mwangi Capital Ltd",   guest_email="fleet@mwangicapital.co.ke",
+                 guest_phone="+254711223344",         company="Mwangi Capital Ltd",
+                 asset_type="aircraft",              aircraft=self.catalog_aircraft[6],
+                 lease_duration="annual",            preferred_start_date=future_date(30),
                  budget_range="$80,000–$120,000/month",
                  usage_description="Corporate shuttle between Nairobi, Johannesburg and Dubai.",
                  status="pending"),
-            dict(guest_name="KE Tourism Board", guest_email="procurement@tourism.go.ke",
-                 guest_phone="+254202229000", company="Kenya Tourism Board",
-                 asset_type="aircraft", aircraft=self.catalog_aircraft[8],
-                 lease_duration="quarterly", preferred_start_date=future_date(45),
+            dict(guest_name="KE Tourism Board",     guest_email="procurement@tourism.go.ke",
+                 guest_phone="+254202229000",         company="Kenya Tourism Board",
+                 asset_type="aircraft",              aircraft=self.catalog_aircraft[8],
+                 lease_duration="quarterly",         preferred_start_date=future_date(45),
                  budget_range="$200,000–$300,000/quarter",
-                 usage_description="Government delegation transport for Q3 2025 tourism campaign.",
+                 usage_description="Government delegation transport for Q3 tourism campaign.",
                  status="reviewing"),
             dict(guest_name="BlueSea Charters Ltd", guest_email="ops@blueseacharters.co.ke",
-                 guest_phone="+254733445566", company="BlueSea Charters",
-                 asset_type="yacht", yacht=self.catalog_yachts[3],
-                 lease_duration="monthly", preferred_start_date=future_date(15),
+                 guest_phone="+254733445566",         company="BlueSea Charters",
+                 asset_type="yacht",                 yacht=self.catalog_yachts[3],
+                 lease_duration="monthly",           preferred_start_date=future_date(15),
                  budget_range="$150,000–$180,000/month",
                  usage_description="Corporate entertainment charter — Mombasa & Zanzibar.",
                  status="pending"),
@@ -1382,26 +1647,26 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(lease_data)} lease inquiries"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # FLIGHT INQUIRIES (V1)
+    # FLIGHT INQUIRIES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_flight_inquiries(self):
         self.stdout.write("  → FlightInquiries")
         inquiries = [
-            dict(guest_name="Samuel Otieno", guest_email="s.otieno@gmail.com",
+            dict(guest_name="Samuel Otieno",  guest_email="s.otieno@gmail.com",
                  guest_phone="+254714567890",
                  origin_description="Nairobi (NBO)", destination_description="Cape Town (CPT)",
                  approximate_date="Mid-November 2025", passenger_count=4,
                  preferred_aircraft_category="super_midsize",
-                 message="Looking for a super-midsize for a business trip to Cape Town. Flexible on dates."),
+                 message="Looking for a super-midsize for a business trip to Cape Town."),
             dict(guest_name="Yasmin Al-Rashid", guest_email="y.alrashid@hotmail.com",
                  guest_phone="+971501234567",
                  origin_description="Dubai (DXB)", destination_description="Nairobi (NBO)",
                  approximate_date="December 20–28, 2025", passenger_count=6,
                  preferred_aircraft_category="heavy",
                  message="Family Christmas trip. Need heavy jet with sleeping capability."),
-            dict(guest_name="Michael Oloo", guest_email="m.oloo@company.co.ke",
+            dict(guest_name="Michael Oloo",    guest_email="m.oloo@company.co.ke",
                  guest_phone="+254725678901",
-                 origin_description="Nairobi (NBO)", destination_description="Masai Mara (MRE/OLX)",
+                 origin_description="Nairobi (NBO)", destination_description="Masai Mara (MRE)",
                  approximate_date="This weekend", passenger_count=3,
                  preferred_aircraft_category="turboprop",
                  message="Quick safari hop for the weekend. Looking for something affordable."),
@@ -1411,63 +1676,70 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(inquiries)} flight inquiries"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # CONTACT INQUIRIES (V1)
+    # CONTACT INQUIRIES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_contact_inquiries(self):
         self.stdout.write("  → ContactInquiries")
         contacts = [
             dict(full_name="Catherine Mwenda", email="c.mwenda@media.co.ke",
                  phone="+254712000111", company="Nairobi Business Daily",
-                 subject="media", message="Requesting an interview with NJH CEO for our luxury travel feature."),
-            dict(full_name="Robert Kiprono", email="r.kiprono@fastairlines.com",
+                 subject="media",
+                 message="Requesting an interview with NJH CEO for our luxury travel feature."),
+            dict(full_name="Robert Kiprono",   email="r.kiprono@fastairlines.com",
                  phone="+254711222333", company="FastAir Kenya",
-                 subject="partnership", message="Interested in exploring a co-charter partnership arrangement with NJH."),
-            dict(full_name="Aisha Kamau", email="aisha@gmail.com",
+                 subject="partnership",
+                 message="Interested in exploring a co-charter partnership arrangement with NJH."),
+            dict(full_name="Aisha Kamau",      email="aisha@gmail.com",
                  phone="+254799888777", company="",
-                 subject="support", message="My booking reference NJH-2025-00123 — I need to change my return date."),
+                 subject="support",
+                 message="My booking reference NJH-2025-00123 — I need to change my return date."),
             dict(full_name="Tech Startup Ltd", email="ops@techstart.ke",
                  phone="+254711999000", company="Tech Startup Ltd",
-                 subject="general", message="Can you provide a quote for monthly shuttle service between NBO and MBA?"),
+                 subject="general",
+                 message="Can you provide a quote for monthly shuttle service between NBO and MBA?"),
         ]
         for d in contacts:
             ContactInquiry.objects.get_or_create(email=d["email"], defaults=d)
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(contacts)} contact inquiries"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # GROUP CHARTER INQUIRIES (V1)
+    # GROUP CHARTER INQUIRIES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_group_charter_inquiries(self):
         self.stdout.write("  → GroupCharterInquiries")
         groups = [
-            dict(contact_name="Amos Makori", email="a.makori@kcb.co.ke",
-                 phone="+254711000222", company="KCB Group",
-                 group_type="corporate", group_size=45,
-                 origin_description="Nairobi (NBO)", destination_description="Victoria Falls (VFA), Zambia",
+            dict(contact_name="Amos Makori",    email="a.makori@kcb.co.ke",
+                 phone="+254711000222",          company="KCB Group",
+                 group_type="corporate",         group_size=45,
+                 origin_description="Nairobi (NBO)",
+                 destination_description="Victoria Falls (VFA), Zambia",
                  departure_date=future_date(60), return_date=future_date(63),
-                 is_round_trip=True, preferred_aircraft_category="vip_airliner",
-                 catering_required=True, ground_transport_required=True,
+                 is_round_trip=True,             preferred_aircraft_category="vip_airliner",
+                 catering_required=True,         ground_transport_required=True,
                  budget_range="$250,000–$350,000",
-                 additional_notes="Executive team retreat. Need premium catering and ground transfers.",
+                 additional_notes="Executive team retreat. Premium catering and ground transfers.",
                  status="pending"),
             dict(contact_name="AFC Leopards FC", email="travel@afcleopards.co.ke",
-                 phone="+254722111333", company="AFC Leopards FC",
-                 group_type="sports_team", group_size=32,
-                 origin_description="Nairobi (NBO)", destination_description="Accra (ACC), Ghana",
+                 phone="+254722111333",           company="AFC Leopards FC",
+                 group_type="sports_team",        group_size=32,
+                 origin_description="Nairobi (NBO)",
+                 destination_description="Accra (ACC), Ghana",
                  departure_date=future_date(14), return_date=future_date(21),
-                 is_round_trip=True, preferred_aircraft_category="vip_airliner",
-                 catering_required=True, ground_transport_required=True,
+                 is_round_trip=True,              preferred_aircraft_category="vip_airliner",
+                 catering_required=True,          ground_transport_required=True,
                  budget_range="$150,000–$200,000",
                  additional_notes="Squad + technical staff for CAF Champions League away match.",
                  status="pending"),
-            dict(contact_name="Vivienne Oduya", email="v.oduya@weddingco.ke",
-                 phone="+254733444555", company="Celebrations Kenya",
-                 group_type="wedding", group_size=28,
-                 origin_description="Nairobi (NBO)", destination_description="Zanzibar (ZNZ), Tanzania",
+            dict(contact_name="Vivienne Oduya",  email="v.oduya@weddingco.ke",
+                 phone="+254733444555",           company="Celebrations Kenya",
+                 group_type="wedding",            group_size=28,
+                 origin_description="Nairobi (NBO)",
+                 destination_description="Zanzibar (ZNZ), Tanzania",
                  departure_date=future_date(90), return_date=future_date(93),
-                 is_round_trip=True, preferred_aircraft_category="super_midsize",
-                 catering_required=True, ground_transport_required=True,
+                 is_round_trip=True,              preferred_aircraft_category="super_midsize",
+                 catering_required=True,          ground_transport_required=True,
                  budget_range="$80,000–$120,000",
-                 additional_notes="Destination wedding party. Champagne on arrival, décor coordination needed.",
+                 additional_notes="Destination wedding party. Champagne on arrival.",
                  status="pending"),
         ]
         for d in groups:
@@ -1475,72 +1747,78 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(groups)} group charter inquiries"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # AIR CARGO INQUIRIES (V1)
+    # AIR CARGO INQUIRIES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_air_cargo_inquiries(self):
         self.stdout.write("  → AirCargoInquiries")
         cargos = [
-            dict(contact_name="MedSupply Africa", email="logistics@medsupply.co.ke",
-                 phone="+254711555666", company="MedSupply Africa Ltd",
-                 cargo_type="pharma", cargo_description="COVID-19 vaccines and cold-chain medical supplies.",
-                 weight_kg=Decimal("850"), volume_m3=Decimal("4.5"),
+            dict(contact_name="MedSupply Africa",      email="logistics@medsupply.co.ke",
+                 phone="+254711555666",                 company="MedSupply Africa Ltd",
+                 cargo_type="pharma",
+                 cargo_description="COVID-19 vaccines and cold-chain medical supplies.",
+                 weight_kg=Decimal("850"),             volume_m3=Decimal("4.5"),
                  dimensions="120x80x100cm (pallets)",
-                 origin_description="Nairobi (NBO)", destination_description="Juba (JUB), South Sudan",
-                 pickup_date=future_date(2), urgency="express",
-                 is_hazardous=False, requires_temperature_control=True,
-                 insurance_required=True, customs_assistance_needed=True,
-                 additional_notes="WHO-approved vaccine consignment. Time-critical.", status="pending"),
-            dict(contact_name="Nairobi Gem Exchange", email="gems@nbo-gems.co.ke",
-                 phone="+254722666777", company="Nairobi Gem Exchange",
-                 cargo_type="artwork", cargo_description="Precious gemstones and certified diamonds.",
-                 weight_kg=Decimal("12"), volume_m3=Decimal("0.1"),
+                 origin_description="Nairobi (NBO)",   destination_description="Juba (JUB), South Sudan",
+                 pickup_date=future_date(2),            urgency="express",
+                 is_hazardous=False,                   requires_temperature_control=True,
+                 insurance_required=True,              customs_assistance_needed=True,
+                 additional_notes="WHO-approved vaccine consignment. Time-critical.",
+                 status="pending"),
+            dict(contact_name="Nairobi Gem Exchange",  email="gems@nbo-gems.co.ke",
+                 phone="+254722666777",                 company="Nairobi Gem Exchange",
+                 cargo_type="artwork",
+                 cargo_description="Precious gemstones and certified diamonds.",
+                 weight_kg=Decimal("12"),              volume_m3=Decimal("0.1"),
                  dimensions="Secure cases",
-                 origin_description="Nairobi (NBO)", destination_description="Antwerp, Belgium",
-                 pickup_date=future_date(7), urgency="express",
-                 is_hazardous=False, requires_temperature_control=False,
-                 insurance_required=True, customs_assistance_needed=True,
-                 additional_notes="Full security escort required.", status="pending"),
-            dict(contact_name="Safari Motors Kenya", email="imports@safarimotors.co.ke",
-                 phone="+254733777888", company="Safari Motors Kenya",
-                 cargo_type="automotive", cargo_description="3x Range Rover SVR vehicles.",
-                 weight_kg=Decimal("7200"), volume_m3=Decimal("42"),
+                 origin_description="Nairobi (NBO)",   destination_description="Antwerp, Belgium",
+                 pickup_date=future_date(7),            urgency="express",
+                 is_hazardous=False,                   requires_temperature_control=False,
+                 insurance_required=True,              customs_assistance_needed=True,
+                 additional_notes="Full security escort required.",
+                 status="pending"),
+            dict(contact_name="Safari Motors Kenya",   email="imports@safarimotors.co.ke",
+                 phone="+254733777888",                 company="Safari Motors Kenya",
+                 cargo_type="automotive",
+                 cargo_description="3x Range Rover SVR vehicles.",
+                 weight_kg=Decimal("7200"),            volume_m3=Decimal("42"),
                  dimensions="Standard vehicle dimensions",
-                 origin_description="Dubai (DXB)", destination_description="Nairobi (NBO)",
-                 pickup_date=future_date(14), urgency="standard",
-                 is_hazardous=False, requires_temperature_control=False,
-                 insurance_required=True, customs_assistance_needed=True,
-                 additional_notes="RORO or freighter — dealer plate required on delivery.", status="pending"),
+                 origin_description="Dubai (DXB)",     destination_description="Nairobi (NBO)",
+                 pickup_date=future_date(14),           urgency="standard",
+                 is_hazardous=False,                   requires_temperature_control=False,
+                 insurance_required=True,              customs_assistance_needed=True,
+                 additional_notes="RORO or freighter — dealer plate required on delivery.",
+                 status="pending"),
         ]
         for d in cargos:
             AirCargoInquiry.objects.get_or_create(email=d["email"], defaults=d)
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(cargos)} air cargo inquiries"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # AIRCRAFT SALES INQUIRIES (V1)
+    # AIRCRAFT SALES INQUIRIES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_aircraft_sales_inquiries(self):
         self.stdout.write("  → AircraftSalesInquiries")
         sales = [
-            dict(contact_name="James Amani Kariuki", email="amani.sales@gmail.com",
-                 phone="+254712345678", company="Kariuki Holdings",
-                 inquiry_type="buy", preferred_category="heavy",
+            dict(contact_name="James Amani Kariuki",  email="amani.sales@gmail.com",
+                 phone="+254712345678",                company="Kariuki Holdings",
+                 inquiry_type="buy",                  preferred_category="heavy",
                  preferred_make_model="Gulfstream G650 or Global 7500",
-                 budget_range="over_60m", new_or_pre_owned="new",
+                 budget_range="over_60m",             new_or_pre_owned="new",
                  message="Looking to acquire a flagship ultra-long-range jet. Prefer 2022+.",
                  status="pending"),
-            dict(contact_name="East Africa Air Ltd", email="ceo@eaairl.co.ke",
-                 phone="+254700100200", company="East Africa Air Ltd",
-                 inquiry_type="sell", preferred_category="midsize",
-                 aircraft_make="Bombardier", aircraft_model="Learjet 45XR",
-                 year_of_manufacture=2008, serial_number="45-382",
-                 total_flight_hours=6500, asking_price_usd=Decimal("3200000"),
+            dict(contact_name="East Africa Air Ltd",  email="ceo@eaairl.co.ke",
+                 phone="+254700100200",                company="East Africa Air Ltd",
+                 inquiry_type="sell",                 preferred_category="midsize",
+                 aircraft_make="Bombardier",          aircraft_model="Learjet 45XR",
+                 year_of_manufacture=2008,            serial_number="45-382",
+                 total_flight_hours=6500,             asking_price_usd=Decimal("3200000"),
                  message="Selling our Learjet 45XR. CAMP maintenance tracking. Log books available.",
                  status="pending"),
-            dict(contact_name="Safari Connect Ltd", email="fleet@safariconnect.co.ke",
-                 phone="+254733200300", company="Safari Connect Ltd",
-                 inquiry_type="buy", preferred_category="turboprop",
+            dict(contact_name="Safari Connect Ltd",   email="fleet@safariconnect.co.ke",
+                 phone="+254733200300",                company="Safari Connect Ltd",
+                 inquiry_type="buy",                  preferred_category="turboprop",
                  preferred_make_model="Pilatus PC-12 NG or PC-24",
-                 budget_range="2m_5m", new_or_pre_owned="pre_owned",
+                 budget_range="2m_5m",               new_or_pre_owned="pre_owned",
                  message="Expanding our safari air network. Need a versatile turboprop.",
                  status="reviewing"),
         ]
@@ -1549,61 +1827,61 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(sales)} aircraft sales inquiries"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # DOCUMENT UPLOADS (V2)
+    # DOCUMENT UPLOADS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_document_uploads(self):
         self.stdout.write("  → DocumentUploads")
         admin = User.objects.filter(role="admin").first()
         docs = [
-            dict(uploaded_by=admin, doc_type="aoc", linked_to="operator",
+            dict(uploaded_by=admin, doc_type="aoc",          linked_to="operator",
                  related_id=self.operators[0].id,
                  file_name="AfriqJet_AOC_2024.pdf",
                  file_url="https://storage.nairobijethouse.com/docs/afriqjet_aoc_2024.pdf",
                  file_size_kb=1250, notes="Valid AOC — expires 2026-03-15"),
-            dict(uploaded_by=admin, doc_type="insurance", linked_to="operator",
+            dict(uploaded_by=admin, doc_type="insurance",    linked_to="operator",
                  related_id=self.operators[0].id,
                  file_name="AfriqJet_Insurance_Cert.pdf",
                  file_url="https://storage.nairobijethouse.com/docs/afriqjet_insurance.pdf",
-                 file_size_kb=890, notes="Allianz Aviation — hull and liability."),
+                 file_size_kb=890,  notes="Allianz Aviation — hull and liability."),
             dict(uploaded_by=admin, doc_type="airworthiness", linked_to="operator_aircraft",
                  related_id=self.operator_aircraft[0].id,
                  file_name="5Y-AJG_Airworthiness_Cert.pdf",
                  file_url="https://storage.nairobijethouse.com/docs/5y-ajg_airworthiness.pdf",
-                 file_size_kb=450, notes="CAA Kenya airworthiness certificate."),
+                 file_size_kb=450,  notes="CAA Kenya airworthiness certificate."),
             dict(uploaded_by=self.clients[0], doc_type="passport", linked_to="flight_booking",
                  related_id=self.flight_bookings[0].id,
                  file_name="Kariuki_Passport.pdf",
                  file_url="https://storage.nairobijethouse.com/docs/kariuki_passport.pdf",
-                 file_size_kb=320, notes="Primary traveller passport scan."),
-            dict(uploaded_by=admin, doc_type="invoice", linked_to="operator_booking",
+                 file_size_kb=320,  notes="Primary traveller passport scan."),
+            dict(uploaded_by=admin, doc_type="invoice",      linked_to="operator_booking",
                  related_id=self.operator_bookings[0].id,
                  file_name="AfriqJet_Invoice_OB001.pdf",
                  file_url="https://storage.nairobijethouse.com/docs/afriqjet_inv_ob001.pdf",
-                 file_size_kb=180, notes="Operator invoice for NBO–LHR booking."),
+                 file_size_kb=180,  notes="Operator invoice for NBO–LHR booking."),
         ]
         for d in docs:
             DocumentUpload.objects.get_or_create(file_name=d["file_name"], defaults=d)
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(docs)} document uploads"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # CLIENT NOTIFICATIONS (V2)
+    # CLIENT NOTIFICATIONS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_client_notifications(self):
         self.stdout.write("  → ClientNotifications")
         notifs = [
-            dict(user=self.clients[0], notif_type="booking_confirmed",
+            dict(user=self.clients[0],  notif_type="booking_confirmed",
                  title="Your NBO → LHR flight is confirmed!",
                  body="Your Gulfstream G550 charter from Nairobi to London has been confirmed. Departure: Nov 1 at 08:00.",
                  link="/bookings/flights/", is_read=True),
-            dict(user=self.clients[8], notif_type="booking_confirmed",
+            dict(user=self.clients[8],  notif_type="booking_confirmed",
                  title="Your NBO → LHR flight is confirmed!",
                  body="Your Gulfstream G550 charter from Nairobi to London Heathrow is confirmed. Departure in 10 days.",
                  link="/bookings/flights/", is_read=False),
-            dict(user=self.clients[1], notif_type="payment_received",
+            dict(user=self.clients[1],  notif_type="payment_received",
                  title="Payment received — Diani Star Charter",
-                 body="We've received your payment of $22,500 for the Diani Star yacht charter. Confirmation sent to your email.",
+                 body="We've received your payment of $22,500 for the Diani Star yacht charter.",
                  link="/bookings/yachts/", is_read=True),
-            dict(user=self.clients[4], notif_type="quote_received",
+            dict(user=self.clients[4],  notif_type="quote_received",
                  title="Your NBO → DXB quote is ready",
                  body="We've received 2 bids for your heavy jet request to Dubai. View your personalised quote now.",
                  link="/quotes/", is_read=False),
@@ -1611,7 +1889,7 @@ class Command(BaseCommand):
                  title="Zanzibar Breeze charter confirmed",
                  body="Your 7-night Zanzibar Breeze catamaran charter is confirmed. Charter starts in 15 days.",
                  link="/bookings/yachts/", is_read=False),
-            dict(user=self.clients[0], notif_type="reminder",
+            dict(user=self.clients[0],  notif_type="reminder",
                  title="Upcoming flight in 48 hours",
                  body="Your Nairobi → Dubai flight departs in 48 hours. Ground transport arranged.",
                  link="/bookings/flights/", is_read=True),
@@ -1621,10 +1899,11 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(notifs)} notifications"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # WEBHOOK LOGS (V2)
+    # WEBHOOK LOGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_webhook_logs(self):
         self.stdout.write("  → WebhookLogs")
+        count = 0
         for op in self.operators[:3]:
             for event, success, status in [
                 ("booking_created",   True,  200),
@@ -1640,19 +1919,20 @@ class Command(BaseCommand):
                     response_body='{"status":"ok"}' if success else '{"error":"Internal Server Error"}',
                     next_retry=timezone.now() + timedelta(hours=1) if not success else None,
                 )
-        self.stdout.write(self.style.SUCCESS("    ✓ Webhook logs"))
+                count += 1
+        self.stdout.write(self.style.SUCCESS(f"    ✓ {count} webhook logs"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # SAVED ROUTES (V1)
+    # SAVED ROUTES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_saved_routes(self):
         self.stdout.write("  → SavedRoutes")
         routes = [
-            (self.clients[0], "Nairobi–London", "Nairobi (NBO)", "London Heathrow (LHR)", "Monthly board meeting route"),
-            (self.clients[0], "Nairobi–Dubai",  "Nairobi (NBO)", "Dubai (DXB)", "Quarterly investor meetings"),
-            (self.clients[1], "Nairobi–Mara",   "Nairobi (NBO)", "Masai Mara (MRE)", "Weekend safari"),
-            (self.clients[4], "Nairobi–Jo'burg","Nairobi (NBO)", "Johannesburg (JNB)", "Monthly corporate route"),
-            (self.clients[8], "Nairobi–Mumbai", "Nairobi (NBO)", "Mumbai (BOM)", "Trade route"),
+            (self.clients[0], "Nairobi–London",   "Nairobi (NBO)", "London Heathrow (LHR)", "Monthly board meeting route"),
+            (self.clients[0], "Nairobi–Dubai",    "Nairobi (NBO)", "Dubai (DXB)",           "Quarterly investor meetings"),
+            (self.clients[1], "Nairobi–Mara",     "Nairobi (NBO)", "Masai Mara (MRE)",      "Weekend safari"),
+            (self.clients[4], "Nairobi–Jo'burg",  "Nairobi (NBO)", "Johannesburg (JNB)",    "Monthly corporate route"),
+            (self.clients[8], "Nairobi–Mumbai",   "Nairobi (NBO)", "Mumbai (BOM)",          "Trade route"),
         ]
         for user, name, origin, dest, notes in routes:
             SavedRoute.objects.get_or_create(user=user, name=name, defaults=dict(
@@ -1660,7 +1940,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(routes)} saved routes"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # DISPUTES (V1)
+    # DISPUTES
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_disputes(self):
         self.stdout.write("  → Disputes")
@@ -1674,34 +1954,33 @@ class Command(BaseCommand):
                     status="resolved",
                     resolution="NJH applied a 5% credit ($5,525) to client's account as goodwill gesture. Operator notified to rectify avionics.",
                     resolved_at=timezone.now() - timedelta(days=140),
-                )
-            )
+                ))
         self.stdout.write(self.style.SUCCESS("    ✓ Disputes"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # EMAIL LOGS (V1 + V2)
+    # EMAIL LOGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_email_logs(self):
         self.stdout.write("  → EmailLogs")
         admin = User.objects.filter(role="admin").first()
         emails = [
-            dict(sent_by=admin, to_email="amani@gmail.com", to_name="James Amani Kariuki",
+            dict(sent_by=admin, to_email="amani@gmail.com",          to_name="James Amani Kariuki",
                  subject="Your NJH Flight Booking Confirmation — NBO → LHR",
                  body="Dear James, your Gulfstream G550 charter has been confirmed...",
                  inquiry_type="flight_booking", success=True),
-            dict(sent_by=admin, to_email="ops@afriqjet.co.ke", to_name="AfriqJet Ops",
+            dict(sent_by=admin, to_email="ops@afriqjet.co.ke",        to_name="AfriqJet Ops",
                  subject="RFQ — Heavy Jet NBO → DXB, 10 pax, 30 days",
                  body="Dear AfriqJet team, we have a new RFQ requiring a heavy jet...",
                  inquiry_type="rfq", success=True),
-            dict(sent_by=admin, to_email="finance@afriqjet.co.ke", to_name="AfriqJet Finance",
+            dict(sent_by=admin, to_email="finance@afriqjet.co.ke",    to_name="AfriqJet Finance",
                  subject="Payout Initiated — $88,000 USD for Booking NBO-LHR",
                  body="Dear AfriqJet, your payout of $88,000 has been initiated via SWIFT...",
                  inquiry_type="payout", success=True),
-            dict(sent_by=admin, to_email="sophia@waweru.co.ke", to_name="Sophia Waweru",
+            dict(sent_by=admin, to_email="sophia@waweru.co.ke",       to_name="Sophia Waweru",
                  subject="Your NJH Yacht Charter Confirmation — Diani Star",
                  body="Dear Sophia, your Diani Star yacht charter has been confirmed...",
                  inquiry_type="yacht_charter", success=True),
-            dict(sent_by=admin, to_email="dispatch@afriqjet.co.ke", to_name="AfriqJet Dispatch",
+            dict(sent_by=admin, to_email="dispatch@afriqjet.co.ke",   to_name="AfriqJet Dispatch",
                  subject="New Operator Booking — NBO → LHR, G550, Nov 10",
                  body="Dear AfriqJet, a new booking has been dispatched to your fleet...",
                  inquiry_type="operator", success=True),
@@ -1711,49 +1990,49 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(emails)} email logs"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # JOB POSTINGS (V1)
+    # JOB POSTINGS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_job_postings(self):
         self.stdout.write("  → JobPostings")
         jobs = [
-            dict(title="Charter Sales Manager", department="charter", location="nairobi",
-                 job_type="full_time", is_active=True, is_featured=True,
-                 deadline=future_date(30),
+            dict(title="Charter Sales Manager",
+                 department="charter",    location="nairobi", job_type="full_time",
+                 is_active=True, is_featured=True, deadline=future_date(30),
                  description="Lead our charter sales team. Own the client pipeline from inquiry to confirmed booking.",
                  requirements="5+ years aviation sales. Network in East African HNW market. Strong negotiation skills.",
                  benefits="Competitive base + uncapped commission. Medical, car allowance.",
                  salary_range="KES 350,000–500,000/month + commission"),
-            dict(title="Partner Relations Manager — Operators", department="partnerships", location="nairobi",
-                 job_type="full_time", is_active=True, is_featured=True,
-                 deadline=future_date(21),
+            dict(title="Partner Relations Manager — Operators",
+                 department="partnerships", location="nairobi", job_type="full_time",
+                 is_active=True, is_featured=True, deadline=future_date(21),
                  description="Manage and grow NJH's charter operator network across Africa, Middle East and Europe.",
                  requirements="Aviation operations background. Knowledge of AOC regulations. 4+ years in B2B partnerships.",
                  benefits="Competitive salary, travel allowance, medical insurance.",
                  salary_range="KES 280,000–400,000/month"),
-            dict(title="Senior Concierge Executive", department="concierge", location="nairobi",
-                 job_type="full_time", is_active=True, is_featured=False,
-                 deadline=future_date(14),
+            dict(title="Senior Concierge Executive",
+                 department="concierge",  location="nairobi", job_type="full_time",
+                 is_active=True, is_featured=False, deadline=future_date(14),
                  description="Deliver white-glove service to NJH's premium members from booking to touchdown.",
                  requirements="Luxury hospitality or airline experience. Impeccable communication. Available 24/7.",
                  benefits="Medical, performance bonus, travel perks.",
                  salary_range="KES 150,000–220,000/month"),
-            dict(title="Full-Stack Engineer (Django/React)", department="it", location="nairobi",
-                 job_type="full_time", is_active=True, is_featured=True,
-                 deadline=future_date(45),
+            dict(title="Full-Stack Engineer (Django/React)",
+                 department="it",         location="nairobi", job_type="full_time",
+                 is_active=True, is_featured=True, deadline=future_date(45),
                  description="Build and scale the NJH platform — bookings, operator portal, payments.",
                  requirements="Django REST, React, Postgres. AWS experience. 3+ years.",
                  benefits="Competitive salary, remote flexibility, equity options.",
                  salary_range="KES 200,000–350,000/month"),
-            dict(title="Finance & Compliance Analyst", department="finance", location="nairobi",
-                 job_type="full_time", is_active=True, is_featured=False,
-                 deadline=future_date(28),
+            dict(title="Finance & Compliance Analyst",
+                 department="finance",    location="nairobi", job_type="full_time",
+                 is_active=True, is_featured=False, deadline=future_date(28),
                  description="Own the financial controls, operator payout reconciliation and CAA compliance reporting.",
                  requirements="CPA/ACCA. Aviation finance experience a plus. Excel expert.",
                  benefits="Medical, pension, performance bonus.",
                  salary_range="KES 180,000–260,000/month"),
-            dict(title="Marketing & Content Specialist", department="marketing", location="remote",
-                 job_type="full_time", is_active=True, is_featured=False,
-                 deadline=future_date(35),
+            dict(title="Marketing & Content Specialist",
+                 department="marketing",  location="remote",  job_type="full_time",
+                 is_active=True, is_featured=False, deadline=future_date(35),
                  description="Own NJH's brand voice across digital channels — content, social, email campaigns.",
                  requirements="3+ years luxury brand or travel marketing. Portfolio required.",
                  benefits="Remote work, creative freedom, travel perks.",
@@ -1766,7 +2045,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"    ✓ {len(self.job_postings)} job postings"))
 
     # ─────────────────────────────────────────────────────────────────────────
-    # JOB APPLICATIONS (V1)
+    # JOB APPLICATIONS
     # ─────────────────────────────────────────────────────────────────────────
     def _seed_job_applications(self):
         self.stdout.write("  → JobApplications")
@@ -1775,47 +2054,53 @@ class Command(BaseCommand):
 
         applications = [
             dict(job=self.job_postings[0], full_name="Kevin Mwangi",
-                 email="k.mwangi@gmail.com", phone="+254711888999",
-                 nationality="Kenyan", current_role="Senior Charter Broker, Jetlink Express",
+                 email="k.mwangi@gmail.com",      phone="+254711888999",
+                 nationality="Kenyan",             current_role="Senior Charter Broker, Jetlink Express",
                  linkedin_url="https://linkedin.com/in/kevinmwangi",
                  cover_letter="I have 7 years in East African charter sales and have closed over $5M in bookings...",
-                 years_experience=7, resume_url="https://storage.nairobijethouse.com/cvs/kevin_mwangi_cv.pdf",
+                 years_experience=7,
+                 resume_url="https://storage.nairobijethouse.com/cvs/kevin_mwangi_cv.pdf",
                  status="shortlisted"),
             dict(job=self.job_postings[0], full_name="Amina Sheikh",
-                 email="a.sheikh@aviation.ae", phone="+971554321987",
-                 nationality="Kenyan/UAE", current_role="Charter Sales Executive, VistaJet Dubai",
+                 email="a.sheikh@aviation.ae",    phone="+971554321987",
+                 nationality="Kenyan/UAE",         current_role="Charter Sales Executive, VistaJet Dubai",
                  linkedin_url="https://linkedin.com/in/aminasheikh",
                  cover_letter="My 5 years with VistaJet in the Middle East and Africa has equipped me...",
-                 years_experience=5, resume_url="https://storage.nairobijethouse.com/cvs/amina_sheikh_cv.pdf",
+                 years_experience=5,
+                 resume_url="https://storage.nairobijethouse.com/cvs/amina_sheikh_cv.pdf",
                  status="interview"),
             dict(job=self.job_postings[1], full_name="Brian Ochieng",
                  email="b.ochieng@operators.co.ke", phone="+254722777888",
-                 nationality="Kenyan", current_role="AOC Compliance Manager, Kenya Airways",
+                 nationality="Kenyan",              current_role="AOC Compliance Manager, Kenya Airways",
                  linkedin_url="https://linkedin.com/in/brianochieng",
                  cover_letter="Having managed operator compliance at KQ for 6 years, I understand the unique...",
-                 years_experience=6, resume_url="https://storage.nairobijethouse.com/cvs/brian_ochieng_cv.pdf",
+                 years_experience=6,
+                 resume_url="https://storage.nairobijethouse.com/cvs/brian_ochieng_cv.pdf",
                  status="reviewing"),
             dict(job=self.job_postings[3], full_name="Sylvia Aluoch",
-                 email="s.aluoch@techke.co.ke", phone="+254733666555",
-                 nationality="Kenyan", current_role="Senior Django Developer, Andela",
+                 email="s.aluoch@techke.co.ke",   phone="+254733666555",
+                 nationality="Kenyan",             current_role="Senior Django Developer, Andela",
                  linkedin_url="https://linkedin.com/in/sylviaaluoch",
                  portfolio_url="https://github.com/sylviaaluoch",
                  cover_letter="I'm a full-stack Django/React engineer with 4 years at Andela...",
-                 years_experience=4, resume_url="https://storage.nairobijethouse.com/cvs/sylvia_aluoch_cv.pdf",
+                 years_experience=4,
+                 resume_url="https://storage.nairobijethouse.com/cvs/sylvia_aluoch_cv.pdf",
                  status="shortlisted"),
             dict(job=self.job_postings[2], full_name="Monica Njoroge",
-                 email="m.njoroge@luxury.ke", phone="+254744555444",
-                 nationality="Kenyan", current_role="VIP Concierge, Fairmont Nairobi",
+                 email="m.njoroge@luxury.ke",     phone="+254744555444",
+                 nationality="Kenyan",             current_role="VIP Concierge, Fairmont Nairobi",
                  linkedin_url="https://linkedin.com/in/monicanjoroge",
                  cover_letter="Five years delivering ultra-luxury hospitality at Fairmont has prepared me...",
-                 years_experience=5, resume_url="https://storage.nairobijethouse.com/cvs/monica_njoroge_cv.pdf",
+                 years_experience=5,
+                 resume_url="https://storage.nairobijethouse.com/cvs/monica_njoroge_cv.pdf",
                  status="offered"),
             dict(job=self.job_postings[5], full_name="Daniel Kimani",
-                 email="d.kimani@creativeke.co", phone="+254755444333",
-                 nationality="Kenyan", current_role="Content Lead, Jumia Kenya",
+                 email="d.kimani@creativeke.co",  phone="+254755444333",
+                 nationality="Kenyan",             current_role="Content Lead, Jumia Kenya",
                  portfolio_url="https://danielkimani.com",
                  cover_letter="I've led digital content for Jumia's luxury vertical for 3 years...",
-                 years_experience=3, resume_url="https://storage.nairobijethouse.com/cvs/daniel_kimani_cv.pdf",
+                 years_experience=3,
+                 resume_url="https://storage.nairobijethouse.com/cvs/daniel_kimani_cv.pdf",
                  status="received"),
         ]
         for d in applications:
