@@ -1,5 +1,6 @@
 // src/hooks/useAuth.js
 import { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../services/api'; // Adjust path as needed
 
 const AuthContext = createContext();
 
@@ -7,18 +8,20 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Your auth logic here
   useEffect(() => {
-    // Check for existing session, token, etc.
     const checkAuth = async () => {
       try {
-        // Example: get user from localStorage or API
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        const accessToken = localStorage.getItem('access');
+        if (accessToken) {
+          // Fetch user profile with the stored token
+          const response = await authAPI.profile();
+          setUser(response.data);
         }
       } catch (error) {
         console.error('Auth error:', error);
+        // If token is invalid, clear it
+        localStorage.removeItem('access');
+        localStorage.removeItem('refresh');
       } finally {
         setLoading(false);
       }
@@ -27,14 +30,41 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  const login = async (email, password) => {
-    // Your login logic
+  const login = async (username, password) => {
+    try {
+      // Call your actual login API
+      const response = await authAPI.login({ username, password });
+      
+      // Store tokens
+      if (response.data.access) {
+        localStorage.setItem('access', response.data.access);
+      }
+      if (response.data.refresh) {
+        localStorage.setItem('refresh', response.data.refresh);
+      }
+      
+      // Fetch and store user data
+      const profileResponse = await authAPI.profile();
+      const userData = profileResponse.data;
+      setUser(userData);
+      
+      // Also store user in localStorage for quick access (optional)
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return userData;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error; // Re-throw to be caught by your component
+    }
   };
 
   const logout = () => {
-    // Your logout logic
     setUser(null);
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
     localStorage.removeItem('user');
+    // Optional: Call logout API if your backend has one
+    // authAPI.logout();
   };
 
   const value = {
@@ -42,7 +72,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
-    // Add any other auth methods you need
+    isAuthenticated: !!user,
   };
 
   return (

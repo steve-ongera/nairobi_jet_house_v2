@@ -40,7 +40,7 @@ def api_root(request):
 urlpatterns = [
 
     # ── Django admin panel (internal staff use) ────────────────────────────
-    path('admin-panel/', admin.site.urls),
+    path('admin/', admin.site.urls),
 
     # ── Health & info ─────────────────────────────────────────────────────
     path('health/', health_check, name='health-check'),

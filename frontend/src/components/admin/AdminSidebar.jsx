@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
+import { useAuth } from '../../hooks/useAuth' 
 
 const NAV = [
   { section: 'Overview' },
