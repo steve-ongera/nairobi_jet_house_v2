@@ -1,347 +1,289 @@
-// ═══════════════════════════════════════════════════════════════════════════════
-// NairobiJetHouse V2 — services/api.js
-// Centralised Axios instance with JWT auto-refresh + all API calls
-// ═══════════════════════════════════════════════════════════════════════════════
-import axios from 'axios'
+import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const BASE = import.meta.env.VITE_API_URL || '/api';
 
-// ─── Axios instance ───────────────────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
-})
+const api = axios.create({ baseURL: BASE });
 
-// ─── Request interceptor — attach access token ────────────────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token')
-    if (token) config.headers.Authorization = `Bearer ${token}`
-    return config
-  },
-  (error) => Promise.reject(error)
-)
+// ── Attach access token ──────────────────────────────────────────────────────
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('access');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// ─── Response interceptor — auto-refresh on 401 ───────────────────────────────
-let _refreshing = false
-let _queue      = []
-
-const processQueue = (error, token = null) => {
-  _queue.forEach(({ resolve, reject }) => error ? reject(error) : resolve(token))
-  _queue = []
-}
+// ── Auto-refresh on 401 ───────────────────────────────────────────────────────
+let refreshing = false;
+let queue = [];
 
 api.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const original = error.config
-    if (error.response?.status !== 401 || original._retry) {
-      return Promise.reject(error.response?.data || error)
+  res => res,
+  async err => {
+    const original = err.config;
+    if (err.response?.status === 401 && !original._retry) {
+      if (refreshing) {
+        return new Promise((resolve, reject) => queue.push({ resolve, reject }))
+          .then(token => { original.headers.Authorization = `Bearer ${token}`; return api(original); });
+      }
+      original._retry = true;
+      refreshing = true;
+      try {
+        const refresh = localStorage.getItem('refresh');
+        const { data } = await axios.post(`${BASE}/auth/refresh/`, { refresh });
+        localStorage.setItem('access', data.access);
+        queue.forEach(p => p.resolve(data.access));
+        queue = [];
+        original.headers.Authorization = `Bearer ${data.access}`;
+        return api(original);
+      } catch (e) {
+        queue.forEach(p => p.reject(e));
+        queue = [];
+        localStorage.removeItem('access');
+        localStorage.removeItem('refresh');
+        window.location.href = '/login';
+      } finally {
+        refreshing = false;
+      }
     }
-    if (_refreshing) {
-      return new Promise((resolve, reject) => {
-        _queue.push({ resolve, reject })
-      }).then((token) => {
-        original.headers.Authorization = `Bearer ${token}`
-        return api(original)
-      })
-    }
-    original._retry = true
-    _refreshing     = true
-
-    const refresh = localStorage.getItem('refresh_token')
-    if (!refresh) {
-      _refreshing = false
-      localStorage.removeItem('access_token')
-      window.location.href = '/login'
-      return Promise.reject(error)
-    }
-
-    try {
-      const { data } = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh })
-      localStorage.setItem('access_token', data.access)
-      api.defaults.headers.common.Authorization = `Bearer ${data.access}`
-      processQueue(null, data.access)
-      original.headers.Authorization = `Bearer ${data.access}`
-      return api(original)
-    } catch (err) {
-      processQueue(err, null)
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      window.location.href = '/login'
-      return Promise.reject(err)
-    } finally {
-      _refreshing = false
-    }
+    return Promise.reject(err);
   }
-)
+);
 
-// ─── Helper — unwrap data ──────────────────────────────────────────────────────
-const get  = (url, params)  => api.get(url, { params }).then(r => r.data)
-const post = (url, body)    => api.post(url, body).then(r => r.data)
-const put  = (url, body)    => api.put(url, body).then(r => r.data)
-const patch= (url, body)    => api.patch(url, body).then(r => r.data)
-const del  = (url)          => api.delete(url).then(r => r.data)
-
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // AUTH
-// ═══════════════════════════════════════════════════════════════════════════════
-export const authApi = {
-  register : (data)  => post('/auth/register/', data),
-  login    : (data)  => post('/auth/login/',    data),
-  refresh  : (token) => post('/auth/refresh/',  { refresh: token }),
-  profile  : ()      => get('/auth/profile/'),
-  update   : (data)  => patch('/auth/profile/', data),
-}
+// ══════════════════════════════════════════════════════════════════════════════
+export const authAPI = {
+  register: d => api.post('/auth/register/', d),
+  login:    d => api.post('/auth/login/', d),
+  refresh:  d => api.post('/auth/refresh/', d),
+  profile:  ()  => api.get('/auth/profile/'),
+  updateProfile: d => api.patch('/auth/profile/', d),
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PUBLIC CATALOG
-// ═══════════════════════════════════════════════════════════════════════════════
-export const searchAirports   = (q)      => get('/airports/', { search: q })
-export const getAircraft      = (params) => get('/aircraft/', params)
-export const getAircraftById  = (id)     => get(`/aircraft/${id}/`)
-export const getYachts        = (params) => get('/yachts/', params)
-export const getYachtById     = (id)     => get(`/yachts/${id}/`)
+// ══════════════════════════════════════════════════════════════════════════════
+// CATALOG
+// ══════════════════════════════════════════════════════════════════════════════
+export const catalogAPI = {
+  airports:  params => api.get('/airports/', { params }),
+  aircraft:  params => api.get('/aircraft/', { params }),
+  yachts:    params => api.get('/yachts/', { params }),
+  // V2 public operator listings
+  opAircraft: params => api.get('/operator-aircraft/', { params }),
+  opYachts:   params => api.get('/operator-yachts/', { params }),
+  opAircraftDetail: id => api.get(`/operator-aircraft/${id}/`),
+  opYachtDetail:    id => api.get(`/operator-yachts/${id}/`),
+};
 
-// V2 — approved operator listings
-export const getOperatorAircraft     = (params) => get('/operator-aircraft/', params)
-export const getOperatorAircraftById = (id)     => get(`/operator-aircraft/${id}/`)
-export const getOperatorYachts       = (params) => get('/operator-yachts/', params)
-export const getOperatorYachtById    = (id)     => get(`/operator-yachts/${id}/`)
+// ══════════════════════════════════════════════════════════════════════════════
+// BOOKINGS & INQUIRIES
+// ══════════════════════════════════════════════════════════════════════════════
+export const bookingAPI = {
+  create:    d  => api.post('/bookings/', d),
+  track:     ref => api.get(`/bookings/track/${ref}/`),
+  byEmail:   email => api.get('/bookings/by-email/', { params: { email } }),
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BOOKINGS & INQUIRIES (PUBLIC)
-// ═══════════════════════════════════════════════════════════════════════════════
-export const createFlightBooking = (data)  => post('/bookings/', data)
-export const trackFlightBooking  = (ref)   => get(`/bookings/track/${ref}/`)
-export const bookingsByEmail     = (email) => get('/bookings/by-email/', { email })
+export const charterAPI = {
+  create: d  => api.post('/charters/', d),
+  track:  ref => api.get(`/charters/track/${ref}/`),
+};
 
-export const createYachtCharter  = (data) => post('/charters/', data)
-export const trackYachtCharter   = (ref)  => get(`/charters/track/${ref}/`)
+export const leaseAPI        = { create: d => api.post('/leases/', d) };
+export const flightInqAPI    = { create: d => api.post('/flight-inquiries/', d) };
+export const contactAPI      = { create: d => api.post('/contacts/', d) };
+export const groupCharterAPI = { create: d => api.post('/group-charters/', d) };
+export const cargoAPI        = { create: d => api.post('/cargo/', d) };
+export const salesAPI        = { create: d => api.post('/aircraft-sales/', d) };
 
-export const createLeaseInquiry  = (data) => post('/leases/', data)
-export const createFlightInquiry = (data) => post('/flight-inquiries/', data)
-export const createContact       = (data) => post('/contacts/', data)
-export const createGroupCharter  = (data) => post('/group-charters/', data)
-export const createCargo         = (data) => post('/cargo/', data)
-export const createAircraftSales = (data) => post('/aircraft-sales/', data)
+// ══════════════════════════════════════════════════════════════════════════════
+// JOBS
+// ══════════════════════════════════════════════════════════════════════════════
+export const jobsAPI = {
+  list:   params => api.get('/jobs/', { params }),
+  get:    id => api.get(`/jobs/${id}/`),
+  apply:  d  => api.post('/job-applications/', d),
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// JOBS (PUBLIC)
-// ═══════════════════════════════════════════════════════════════════════════════
-export const getJobs       = (params) => get('/jobs/', params)
-export const getJobById    = (id)     => get(`/jobs/${id}/`)
-export const applyForJob   = (data)   => post('/job-applications/', data)
+// ══════════════════════════════════════════════════════════════════════════════
+// MEMBERSHIP
+// ══════════════════════════════════════════════════════════════════════════════
+export const membershipAPI = {
+  tiers:   () => api.get('/membership-tiers/'),
+  my:      () => api.get('/memberships/my/'),
+  create:  d  => api.post('/memberships/create_membership/', d),
+  list:    () => api.get('/memberships/'),
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MEMBERSHIP & MARKETPLACE
-// ═══════════════════════════════════════════════════════════════════════════════
-export const membershipApi = {
-  getTiers      : ()     => get('/membership-tiers/'),
-  getMy         : ()     => get('/memberships/my/'),
-  create        : (data) => post('/memberships/create_membership/', data),
-  getAll        : ()     => get('/memberships/'),
-}
+// ══════════════════════════════════════════════════════════════════════════════
+// MARKETPLACE
+// ══════════════════════════════════════════════════════════════════════════════
+export const marketplaceAPI = {
+  aircraft: params => api.get('/marketplace-aircraft/', { params }),
+  book:     d      => api.post('/marketplace-bookings/', d),
+  myBookings: ()   => api.get('/marketplace-bookings/'),
+};
 
-export const marketplaceApi = {
-  getAircraft   : (params) => get('/marketplace-aircraft/', params),
-  getAircraftById:(id)     => get(`/marketplace-aircraft/${id}/`),
-  addAircraft   : (data)   => post('/marketplace-aircraft/', data),
-  updateAircraft: (id, d)  => patch(`/marketplace-aircraft/${id}/`, d),
-  approve       : (id)     => post(`/marketplace-aircraft/${id}/approve/`),
+export const savedRoutesAPI = {
+  list:   ()  => api.get('/saved-routes/'),
+  create: d   => api.post('/saved-routes/', d),
+  delete: id  => api.delete(`/saved-routes/${id}/`),
+};
 
-  getBookings   : (params) => get('/marketplace-bookings/', params),
-  createBooking : (data)   => post('/marketplace-bookings/', data),
-
-  getLogs       : (id)     => get(`/marketplace-aircraft/${id}/maintenance_logs/`),
-}
-
-export const maintenanceApi = {
-  getAll  : (params) => get('/maintenance-logs/', params),
-  create  : (data)   => post('/maintenance-logs/', data),
-  update  : (id, d)  => patch(`/maintenance-logs/${id}/`, d),
-  remove  : (id)     => del(`/maintenance-logs/${id}/`),
-}
-
-export const savedRoutesApi = {
-  getAll  : ()     => get('/saved-routes/'),
-  create  : (data) => post('/saved-routes/', data),
-  remove  : (id)   => del(`/saved-routes/${id}/`),
-}
-
-export const paymentsApi = {
-  getAll  : (params) => get('/payments/', params),
-}
-
-export const disputesApi = {
-  getAll  : ()     => get('/disputes/'),
-  create  : (data) => post('/disputes/', data),
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // NOTIFICATIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-export const notificationsApi = {
-  getAll      : ()   => get('/notifications/'),
-  unreadCount : ()   => get('/notifications/unread_count/'),
-  markRead    : (id) => post(`/notifications/${id}/mark_read/`),
-  markAllRead : ()   => post('/notifications/mark_all_read/'),
-}
+// ══════════════════════════════════════════════════════════════════════════════
+export const notifAPI = {
+  list:       ()  => api.get('/notifications/'),
+  unread:     ()  => api.get('/notifications/unread_count/'),
+  markRead:   id  => api.post(`/notifications/${id}/mark_read/`),
+  markAllRead: () => api.post('/notifications/mark_all_read/'),
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // DOCUMENTS
-// ═══════════════════════════════════════════════════════════════════════════════
-export const documentsApi = {
-  getAll  : (params) => get('/documents/', params),
-  upload  : (data)   => post('/documents/', data),
-  remove  : (id)     => del(`/documents/${id}/`),
-}
+// ══════════════════════════════════════════════════════════════════════════════
+export const docsAPI = {
+  list:   params => api.get('/documents/', { params }),
+  create: d      => api.post('/documents/', d),
+  delete: id     => api.delete(`/documents/${id}/`),
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// OPERATOR PORTAL (V2)
-// ═══════════════════════════════════════════════════════════════════════════════
-export const operatorApi = {
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARDS
+// ══════════════════════════════════════════════════════════════════════════════
+export const dashboardAPI = {
+  client: () => api.get('/dashboard/client/'),
+  owner:  () => api.get('/dashboard/owner/'),
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OPERATOR PORTAL
+// ══════════════════════════════════════════════════════════════════════════════
+export const operatorAPI = {
   // Aircraft
-  getMyAircraft    : (params) => get('/my-aircraft/', params),
-  getAircraftById  : (id)     => get(`/my-aircraft/${id}/`),
-  addAircraft      : (data)   => post('/my-aircraft/', data),
-  updateAircraft   : (id, d)  => patch(`/my-aircraft/${id}/`, d),
-  deleteAircraft   : (id)     => del(`/my-aircraft/${id}/`),
-
+  myAircraft:       params => api.get('/my-aircraft/', { params }),
+  createAircraft:   d      => api.post('/my-aircraft/', d),
+  updateAircraft:   (id,d) => api.patch(`/my-aircraft/${id}/`, d),
+  deleteAircraft:   id     => api.delete(`/my-aircraft/${id}/`),
   // Yachts
-  getMyYachts      : (params) => get('/my-yachts/', params),
-  getYachtById     : (id)     => get(`/my-yachts/${id}/`),
-  addYacht         : (data)   => post('/my-yachts/', data),
-  updateYacht      : (id, d)  => patch(`/my-yachts/${id}/`, d),
-  deleteYacht      : (id)     => del(`/my-yachts/${id}/`),
-
+  myYachts:         params => api.get('/my-yachts/', { params }),
+  createYacht:      d      => api.post('/my-yachts/', d),
+  updateYacht:      (id,d) => api.patch(`/my-yachts/${id}/`, d),
   // Availability
-  getBlocks        : (params) => get('/availability-blocks/', params),
-  addBlock         : (data)   => post('/availability-blocks/', data),
-  updateBlock      : (id, d)  => patch(`/availability-blocks/${id}/`, d),
-  deleteBlock      : (id)     => del(`/availability-blocks/${id}/`),
-
-  // RFQ bids
-  getBids          : (params) => get('/rfq-bids/', params),
-  submitBid        : (data)   => post('/rfq-bids/', data),
-  updateBid        : (id, d)  => patch(`/rfq-bids/${id}/`, d),
-
+  blocks:           params => api.get('/availability-blocks/', { params }),
+  createBlock:      d      => api.post('/availability-blocks/', d),
+  deleteBlock:      id     => api.delete(`/availability-blocks/${id}/`),
+  // RFQ
+  rfqBids:          params => api.get('/rfq-bids/', { params }),
+  submitBid:        d      => api.post('/rfq-bids/', d),
   // Bookings
-  getBookings      : (params) => get('/operator-bookings/', params),
-  acceptBooking    : (id, d)  => post(`/operator-bookings/${id}/accept/`, d),
-  rejectBooking    : (id, d)  => post(`/operator-bookings/${id}/reject/`, d),
-
+  opBookings:       params => api.get('/operator-bookings/', { params }),
+  acceptBooking:    (id,d) => api.post(`/operator-bookings/${id}/accept/`, d),
+  rejectBooking:    (id,d) => api.post(`/operator-bookings/${id}/reject/`, d),
   // Reviews
-  getReviews       : ()       => get('/operator-reviews/'),
+  reviews:          params => api.get('/operator-reviews/', { params }),
+};
 
-  // Payouts (read via admin endpoint if operator)
-  getPayouts       : ()       => get('/admin/payouts/'),
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ADMIN — CORE
-// ═══════════════════════════════════════════════════════════════════════════════
-export const adminApi = {
-  overview        : ()          => get('/admin/overview/'),
+// ══════════════════════════════════════════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════════════════════════════════════════
+export const adminAPI = {
+  overview: () => api.get('/admin/overview/'),
 
   // Flight bookings
-  getBookings     : (params)    => get('/admin/flight-bookings/', params),
-  getBookingById  : (id)        => get(`/admin/flight-bookings/${id}/`),
-  updateBooking   : (id, d)     => patch(`/admin/flight-bookings/${id}/`, d),
-  setPrice        : (id, d)     => post(`/admin/flight-bookings/${id}/set_price/`, d),
-  sendRFQ         : (id, d)     => post(`/admin/flight-bookings/${id}/send_rfq/`, d),
-  assignOperator  : (id, d)     => post(`/admin/flight-bookings/${id}/assign_operator/`, d),
-  revenue         : ()          => get('/admin/flight-bookings/revenue/'),
+  bookings:        params  => api.get('/admin/flight-bookings/', { params }),
+  getBooking:      id      => api.get(`/admin/flight-bookings/${id}/`),
+  createBooking:   d       => api.post('/admin/flight-bookings/', d),
+  updateBooking:   (id,d)  => api.patch(`/admin/flight-bookings/${id}/`, d),
+  setPrice:        (id,d)  => api.post(`/admin/flight-bookings/${id}/set_price/`, d),
+  assignOperator:  (id,d)  => api.post(`/admin/flight-bookings/${id}/assign_operator/`, d),
+  sendRFQ:         (id,d)  => api.post(`/admin/flight-bookings/${id}/send_rfq/`, d),
+  revenue:         ()      => api.get('/admin/flight-bookings/revenue/'),
 
   // Yacht charters
-  getCharters     : (params)    => get('/admin/yacht-charters/', params),
-  getCharterById  : (id)        => get(`/admin/yacht-charters/${id}/`),
-  updateCharter   : (id, d)     => patch(`/admin/yacht-charters/${id}/`, d),
-  setCharterPrice : (id, d)     => post(`/admin/yacht-charters/${id}/set_price/`, d),
+  charters:        params  => api.get('/admin/yacht-charters/', { params }),
+  setCharterPrice: (id,d)  => api.post(`/admin/yacht-charters/${id}/set_price/`, d),
 
   // Inquiries
-  getInquiries    : ()          => get('/admin/inquiries/'),
-  getLeases       : (params)    => get('/admin/leases/', params),
-  replyLease      : (id, d)     => post(`/admin/leases/${id}/reply/`, d),
-  getContacts     : (params)    => get('/admin/contacts/', params),
-  getGroups       : (params)    => get('/admin/group-charters/', params),
-  replyGroup      : (id, d)     => post(`/admin/group-charters/${id}/reply/`, d),
-  getCargo        : (params)    => get('/admin/cargo/', params),
-  getSales        : (params)    => get('/admin/aircraft-sales/', params),
+  inquiries:       ()      => api.get('/admin/inquiries/'),
+  leases:          params  => api.get('/admin/leases/', { params }),
+  replyLease:      (id,d)  => api.post(`/admin/leases/${id}/reply/`, d),
+  contacts:        params  => api.get('/admin/contacts/', { params }),
+  groups:          params  => api.get('/admin/group-charters/', { params }),
+  cargo:           params  => api.get('/admin/cargo/', { params }),
+  aircraftSales:   params  => api.get('/admin/aircraft-sales/', { params }),
 
   // Users
-  getUsers        : (params)    => get('/admin/users/', params),
-  getUserById     : (id)        => get(`/admin/users/${id}/`),
-  updateUser      : (id, d)     => patch(`/admin/users/${id}/`, d),
-  toggleActive    : (id)        => post(`/admin/users/${id}/toggle_active/`),
-  changeRole      : (id, role)  => post(`/admin/users/${id}/change_role/`, { role }),
+  users:           params  => api.get('/admin/users/', { params }),
+  toggleUser:      id      => api.post(`/admin/users/${id}/toggle_active/`),
+  changeRole:      (id,d)  => api.post(`/admin/users/${id}/change_role/`, d),
 
   // Marketplace
-  getMarketplace  : (params)    => get('/admin/marketplace/', params),
-  updateMktStatus : (id, d)     => post(`/admin/marketplace/${id}/update_status/`, d),
+  marketplace:     params  => api.get('/admin/marketplace/', { params }),
+  updateMktStatus: (id,d)  => api.post(`/admin/marketplace/${id}/update_status/`, d),
 
   // Email
-  getEmailLogs    : (params)    => get('/admin/email-logs/', params),
-  sendEmail       : (data)      => post('/admin/send-email/', data),
+  emailLogs:       params  => api.get('/admin/email-logs/', { params }),
+  sendEmail:       d       => api.post('/admin/send-email/', d),
+  priceCalc:       d       => api.post('/admin/price-calculator/', d),
 
   // Commission
-  getCommission   : ()          => get('/admin/commission/'),
-  createCommission: (data)      => post('/admin/commission/', data),
-
-  // Price calculator
-  calculate       : (data)      => post('/admin/price-calculator/', data),
+  commission:      ()      => api.get('/admin/commission/'),
+  createCommission: d      => api.post('/admin/commission/', d),
 
   // Jobs
-  getJobs         : (params)    => get('/admin/jobs/', params),
-  createJob       : (data)      => post('/admin/jobs/', data),
-  updateJob       : (id, d)     => patch(`/admin/jobs/${id}/`, d),
-  deleteJob       : (id)        => del(`/admin/jobs/${id}/`),
-  toggleJobActive : (id)        => post(`/admin/jobs/${id}/toggle_active/`),
-  getApplications : (params)    => get('/admin/job-applications/', params),
-  updateAppStatus : (id, d)     => post(`/admin/job-applications/${id}/update_status/`, d),
+  jobs:            params  => api.get('/admin/jobs/', { params }),
+  createJob:       d       => api.post('/admin/jobs/', d),
+  updateJob:       (id,d)  => api.patch(`/admin/jobs/${id}/`, d),
+  toggleJob:       id      => api.post(`/admin/jobs/${id}/toggle_active/`),
+  jobApplications: params  => api.get('/admin/job-applications/', { params }),
+  updateAppStatus: (id,d)  => api.post(`/admin/job-applications/${id}/update_status/`, d),
 
-  // V2 — Operators
-  getOperators      : (params)  => get('/admin/operators/', params),
-  getOperatorById   : (id)      => get(`/admin/operators/${id}/`),
-  createOperator    : (data)    => post('/admin/operators/', data),
-  updateOperator    : (id, d)   => patch(`/admin/operators/${id}/`, d),
-  activateOperator  : (id)      => post(`/admin/operators/${id}/activate/`),
-  suspendOperator   : (id)      => post(`/admin/operators/${id}/suspend/`),
-  changeTier        : (id, t)   => post(`/admin/operators/${id}/change_tier/`, { tier: t }),
-  getOpAircraft     : (id)      => get(`/admin/operators/${id}/aircraft/`),
-  getOpYachts       : (id)      => get(`/admin/operators/${id}/yachts/`),
-  getOpBookings     : (id)      => get(`/admin/operators/${id}/bookings/`),
-  getOpPayouts      : (id)      => get(`/admin/operators/${id}/payouts/`),
-  getOpReviews      : (id)      => get(`/admin/operators/${id}/reviews/`),
-  getOpWebhooks     : (id)      => get(`/admin/operators/${id}/webhooks/`),
+  // V2 Operators
+  operators:       params  => api.get('/admin/operators/', { params }),
+  getOperator:     id      => api.get(`/admin/operators/${id}/`),
+  createOperator:  d       => api.post('/admin/operators/', d),
+  updateOperator:  (id,d)  => api.patch(`/admin/operators/${id}/`, d),
+  activateOp:      id      => api.post(`/admin/operators/${id}/activate/`),
+  suspendOp:       id      => api.post(`/admin/operators/${id}/suspend/`),
+  changeTier:      (id,d)  => api.post(`/admin/operators/${id}/change_tier/`, d),
+  opAircraft:      id      => api.get(`/admin/operators/${id}/aircraft/`),
+  opYachts:        id      => api.get(`/admin/operators/${id}/yachts/`),
+  opBookings:      id      => api.get(`/admin/operators/${id}/bookings/`),
+  opPayouts:       id      => api.get(`/admin/operators/${id}/payouts/`),
+  opReviews:       id      => api.get(`/admin/operators/${id}/reviews/`),
+  opWebhooks:      id      => api.get(`/admin/operators/${id}/webhooks/`),
 
-  approveAircraft   : (id)      => post(`/my-aircraft/${id}/approve/`),
-  rejectAircraft    : (id)      => post(`/my-aircraft/${id}/reject/`),
+  // Approve/reject aircraft
+  approveAircraft: id      => api.post(`/my-aircraft/${id}/approve/`),
+  rejectAircraft:  id      => api.post(`/my-aircraft/${id}/reject/`),
+  approveYacht:    id      => api.post(`/my-yachts/${id}/approve/`),
 
-  acceptBid         : (id)      => post(`/rfq-bids/${id}/accept/`),
-  shortlistBid      : (id)      => post(`/rfq-bids/${id}/shortlist/`),
+  // RFQ bids
+  rfqBids:         params  => api.get('/rfq-bids/', { params }),
+  acceptBid:       id      => api.post(`/rfq-bids/${id}/accept/`),
+  shortlistBid:    id      => api.post(`/rfq-bids/${id}/shortlist/`),
 
-  // V2 — Commission rules
-  getCommRules      : ()        => get('/admin/commission-rules/'),
-  createCommRule    : (data)    => post('/admin/commission-rules/', data),
-  updateCommRule    : (id, d)   => patch(`/admin/commission-rules/${id}/`, d),
-  toggleCommRule    : (id)      => post(`/admin/commission-rules/${id}/toggle_active/`),
+  // Commission rules
+  commissionRules: ()      => api.get('/admin/commission-rules/'),
+  createRule:      d       => api.post('/admin/commission-rules/', d),
+  updateRule:      (id,d)  => api.patch(`/admin/commission-rules/${id}/`, d),
+  toggleRule:      id      => api.post(`/admin/commission-rules/${id}/toggle_active/`),
 
-  // V2 — Payouts
-  getPayouts        : (params)  => get('/admin/payouts/', params),
-  markPaid          : (id, d)   => post(`/admin/payouts/${id}/mark_paid/`, d),
-  markProcessing    : (id)      => post(`/admin/payouts/${id}/mark_processing/`),
+  // Payouts
+  payouts:         params  => api.get('/admin/payouts/', { params }),
+  markPaid:        (id,d)  => api.post(`/admin/payouts/${id}/mark_paid/`, d),
+  markProcessing:  id      => api.post(`/admin/payouts/${id}/mark_processing/`),
 
-  // V2 — Webhooks
-  getWebhooks       : (params)  => get('/admin/webhooks/', params),
-  retryWebhook      : (id)      => post(`/admin/webhooks/${id}/retry/`),
-}
+  // Webhooks
+  webhooks:        params  => api.get('/admin/webhooks/', { params }),
+  retryWebhook:    id      => api.post(`/admin/webhooks/${id}/retry/`),
 
-// ─── Dashboards ───────────────────────────────────────────────────────────────
-export const dashboardApi = {
-  client : () => get('/dashboard/client/'),
-  owner  : () => get('/dashboard/owner/'),
-}
+  // Documents
+  documents:       params  => api.get('/admin/documents/', { params }),
 
-export default api
+  // Marketplace aircraft
+  mktAircraft:     params  => api.get('/marketplace-aircraft/', { params }),
+  approveMkt:      id      => api.post(`/marketplace-aircraft/${id}/approve/`),
+};
+
+export default api;
