@@ -4249,3 +4249,405 @@ input:checked + .toggle-slider:before {
     align-items: flex-start;
   }
 }
+
+/* ── Member Sidebar Styles ───────────────────────────────────────────────── */
+.sidebar-member {
+  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+}
+
+.sidebar-member .sidebar-logo-icon {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+.sidebar-member .sidebar-role-badge {
+  color: var(--gold-light);
+}
+
+.sidebar-member .sidebar-link.active {
+  background: rgba(200, 164, 90, 0.12);
+  color: var(--gold-light);
+}
+
+.sidebar-member .sidebar-link.active i {
+  color: var(--gold);
+}
+
+.sidebar-member .sidebar-avatar {
+  background: rgba(200, 164, 90, 0.2);
+  border-color: rgba(200, 164, 90, 0.4);
+  color: var(--gold-light);
+}
+
+.sidebar-member .sidebar-logout:hover {
+  background: rgba(200, 164, 90, 0.15);
+  color: var(--gold-light);
+}
+
+/* Membership badge in sidebar */
+.sidebar-membership {
+  padding: 0.75rem;
+  margin: 0.5rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.membership-badge-sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(200, 164, 90, 0.15);
+  border: 1px solid rgba(200, 164, 90, 0.3);
+  border-radius: var(--r-full);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gold-light);
+}
+
+.membership-badge-sidebar i {
+  font-size: 0.65rem;
+  color: var(--gold);
+}
+
+/* Collapsed state adjustments */
+.sidebar-member.collapsed .sidebar-membership {
+  display: none;
+}
+
+.sidebar-member.collapsed .sidebar-user-role {
+  display: none;
+}
+
+
+/* ── Member Portal Styles ────────────────────────────────────────────────── */
+.membership-banner {
+  background: linear-gradient(135deg, var(--gold-pale) 0%, var(--white) 100%);
+  border: 1px solid rgba(200, 164, 90, 0.3);
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.membership-banner-content {
+  flex: 1;
+}
+
+.membership-tier {
+  font-weight: 700;
+  color: var(--gold-dark);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.membership-benefits {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.membership-benefits span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.membership-card {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  color: var(--white);
+}
+
+.membership-card-header {
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.membership-card-body {
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.membership-points {
+  text-align: center;
+}
+
+.points-label {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  display: block;
+}
+
+.points-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.membership-benefits-list {
+  font-size: 0.75rem;
+}
+
+.membership-benefits-list ul {
+  margin: 0.25rem 0 0 1rem;
+  list-style: none;
+}
+
+.membership-benefits-list li {
+  margin: 0.15rem 0;
+}
+
+/* Fleet Grid */
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.fleet-card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: var(--t-slow);
+}
+
+.fleet-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.fleet-card-image {
+  height: 160px;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: var(--gold);
+}
+
+.fleet-card-body {
+  padding: 1.25rem;
+}
+
+.fleet-card-name {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.fleet-card-model {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-bottom: 0.75rem;
+}
+
+.fleet-card-specs {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-bottom: 0.75rem;
+}
+
+.fleet-card-specs i {
+  color: var(--gold);
+}
+
+.fleet-card-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 0.5rem;
+}
+
+.fleet-card-price span {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--gray-400);
+}
+
+.fleet-card-amenities {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: var(--gold);
+}
+
+/* Aircraft Result Item */
+.aircraft-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--gray-100);
+  transition: var(--t);
+}
+
+.aircraft-result-item:hover {
+  background: var(--gray-50);
+}
+
+.aircraft-result-info {
+  flex: 1;
+}
+
+.aircraft-result-name {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.aircraft-result-details {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-bottom: 0.25rem;
+}
+
+.aircraft-result-amenities {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+
+.aircraft-result-right {
+  text-align: right;
+}
+
+.aircraft-result-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 0.5rem;
+}
+
+.aircraft-result-price span {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--gray-400);
+}
+
+/* Routes List */
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.route-card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  transition: var(--t);
+}
+
+.route-card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--gray-200);
+}
+
+.route-card-info {
+  flex: 1;
+}
+
+.route-card-name {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.route-card-path {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-bottom: 0.25rem;
+}
+
+.route-card-path i {
+  color: var(--gold);
+  font-size: 0.7rem;
+}
+
+.route-card-notes {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+.route-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .membership-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .membership-benefits {
+    justify-content: center;
+  }
+  
+  .membership-card-body {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .fleet-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .aircraft-result-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .aircraft-result-right {
+    text-align: center;
+  }
+  
+  .route-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .route-card-path {
+    justify-content: center;
+  }
+}
