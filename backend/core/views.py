@@ -1525,22 +1525,258 @@ class OwnerDashboardView(APIView):
 # HELPERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _send_and_log(sent_by, to_email, to_name, subject, body, inquiry_type, related_id=None):
+def _build_quote_email_html(guest_name, origin_code, destination_code,
+                             departure_date, passenger_count,
+                             quoted_price, reference, custom_message=''):
+    """Build a clean HTML email for flight quotes."""
+    custom_block = f"""
+        <tr>
+          <td style="padding:0 40px 20px;">
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#334155;">
+              {custom_message}
+            </p>
+          </td>
+        </tr>
+    """ if custom_message else ""
+
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
+        <tr><td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+            <!-- Header -->
+            <tr>
+              <td style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:36px 40px;text-align:center;">
+                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">
+                  NAIROBIJETHOUSE
+                </h1>
+                <p style="margin:8px 0 0;color:#94a3b8;font-size:13px;letter-spacing:2px;">
+                  PRIVATE AVIATION
+                </p>
+              </td>
+            </tr>
+
+            <!-- Title -->
+            <tr>
+              <td style="padding:36px 40px 20px;">
+                <h2 style="margin:0;color:#0f172a;font-size:20px;font-weight:600;">
+                  Your Flight Quote is Ready
+                </h2>
+                <p style="margin:10px 0 0;color:#64748b;font-size:14px;">
+                  Dear {guest_name}, we have prepared a personalised quote for your upcoming flight.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Custom message if provided -->
+            {custom_block}
+
+            <!-- Route card -->
+            <tr>
+              <td style="padding:0 40px 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0"
+                       style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                  <tr>
+                    <td style="padding:24px;text-align:center;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="text-align:center;width:40%;">
+                            <div style="font-size:28px;font-weight:700;color:#0f172a;">{origin_code}</div>
+                            <div style="font-size:12px;color:#64748b;margin-top:4px;">ORIGIN</div>
+                          </td>
+                          <td style="text-align:center;width:20%;">
+                            <div style="font-size:22px;color:#94a3b8;">✈</div>
+                          </td>
+                          <td style="text-align:center;width:40%;">
+                            <div style="font-size:28px;font-weight:700;color:#0f172a;">{destination_code}</div>
+                            <div style="font-size:12px;color:#64748b;margin-top:4px;">DESTINATION</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <!-- Details row -->
+                  <tr>
+                    <td style="border-top:1px solid #e2e8f0;padding:16px 24px;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="text-align:center;width:33%;">
+                            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Date</div>
+                            <div style="font-size:13px;font-weight:600;color:#334155;margin-top:4px;">{departure_date}</div>
+                          </td>
+                          <td style="text-align:center;width:33%;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;">
+                            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Passengers</div>
+                            <div style="font-size:13px;font-weight:600;color:#334155;margin-top:4px;">{passenger_count}</div>
+                          </td>
+                          <td style="text-align:center;width:33%;">
+                            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Reference</div>
+                            <div style="font-size:13px;font-weight:600;color:#334155;margin-top:4px;">{str(reference)[:8].upper()}</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Price -->
+            <tr>
+              <td style="padding:0 40px 32px;">
+                <table width="100%" cellpadding="0" cellspacing="0"
+                       style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:10px;">
+                  <tr>
+                    <td style="padding:28px;text-align:center;">
+                      <div style="font-size:12px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;">
+                        Total Quoted Price
+                      </div>
+                      <div style="font-size:38px;font-weight:700;color:#ffffff;margin-top:8px;">
+                        USD {float(quoted_price):,.0f}
+                      </div>
+                      <div style="font-size:12px;color:#64748b;margin-top:6px;">
+                        All-inclusive · Subject to availability confirmation
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- CTA -->
+            <tr>
+              <td style="padding:0 40px 32px;text-align:center;">
+                <p style="margin:0 0 16px;font-size:14px;color:#64748b;">
+                  To confirm your booking or ask any questions, please reply to this email
+                  or contact your dedicated aviation concierge.
+                </p>
+                <a href="mailto:bookings@nairobijethouse.com"
+                   style="display:inline-block;background:#0f172a;color:#ffffff;
+                          padding:14px 32px;border-radius:8px;text-decoration:none;
+                          font-size:14px;font-weight:600;letter-spacing:0.5px;">
+                  Confirm My Booking
+                </a>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+                <p style="margin:0;font-size:12px;color:#94a3b8;">
+                  NairobiJetHouse · Private Aviation · Nairobi, Kenya
+                </p>
+                <p style="margin:6px 0 0;font-size:11px;color:#cbd5e1;">
+                  This quote is valid for 48 hours. Prices are subject to fuel surcharges and airport fees.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+    """
+
+
+def _send_and_log(sent_by, to_email, to_name, subject, body,
+                  inquiry_type, related_id=None, html_message=None):
+    """Send email and log it. Returns True on success."""
+    from django.core.mail import EmailMultiAlternatives
+
     success = True
     err     = ''
     try:
-        send_mail(
-            subject=subject, message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[to_email], fail_silently=False,
+        msg = EmailMultiAlternatives(
+            subject      = subject,
+            body         = body,          # plain text fallback
+            from_email   = settings.DEFAULT_FROM_EMAIL,
+            to           = [to_email],
         )
+        if html_message:
+            msg.attach_alternative(html_message, "text/html")
+        msg.send(fail_silently=False)
     except Exception as e:
         success = False
         err     = str(e)
 
     EmailLog.objects.create(
-        sent_by=sent_by, to_email=to_email, to_name=to_name or '',
-        subject=subject, body=body, inquiry_type=inquiry_type,
-        related_id=related_id, success=success, error_msg=err,
+        sent_by      = sent_by,
+        to_email     = to_email,
+        to_name      = to_name or '',
+        subject      = subject,
+        body         = body,
+        inquiry_type = inquiry_type,
+        related_id   = related_id,
+        success      = success,
+        error_msg    = err,
     )
     return success
+
+
+# ── Replace set_price action inside AdminFlightBookingViewSet ─────────────────
+
+    @action(detail=True, methods=['post'])
+    def set_price(self, request, pk=None):
+        booking = self.get_object()
+        ser     = FlightBookingPriceSerializer(data=request.data)
+        if ser.is_valid():
+            data = ser.validated_data
+
+            booking.quoted_price_usd  = data['quoted_price_usd']
+            booking.operator_cost_usd = data.get('operator_cost_usd')
+            booking.commission_pct    = data['commission_pct']
+            if data.get('status'):
+                booking.status = data['status']
+            booking.save()
+
+            if data.get('send_email') and booking.guest_email:
+                custom_msg = data.get('email_message', '').strip()
+
+                # Plain text fallback
+                plain = (
+                    f"Dear {booking.guest_name},\n\n"
+                    + (f"{custom_msg}\n\n" if custom_msg else "")
+                    + f"Your flight from {booking.origin.code} to {booking.destination.code} "
+                    f"has been quoted at USD {booking.quoted_price_usd:,.2f}.\n\n"
+                    f"Departure : {booking.departure_date}\n"
+                    f"Passengers: {booking.passenger_count}\n"
+                    f"Reference : {str(booking.reference)[:8].upper()}\n\n"
+                    f"To confirm, reply to this email or contact your aviation concierge.\n\n"
+                    f"NairobiJetHouse Team"
+                )
+
+                # Rich HTML email
+                html = _build_quote_email_html(
+                    guest_name      = booking.guest_name,
+                    origin_code     = booking.origin.code,
+                    destination_code= booking.destination.code,
+                    departure_date  = booking.departure_date,
+                    passenger_count = booking.passenger_count,
+                    quoted_price    = booking.quoted_price_usd,
+                    reference       = booking.reference,
+                    custom_message  = custom_msg,
+                )
+
+                email_sent = _send_and_log(
+                    sent_by      = request.user,
+                    to_email     = booking.guest_email,
+                    to_name      = booking.guest_name,
+                    subject      = f'Your Flight Quote — {booking.origin.code}→{booking.destination.code} | NairobiJetHouse',
+                    body         = plain,
+                    inquiry_type = 'flight_booking',
+                    related_id   = booking.id,
+                    html_message = html,
+                )
+
+                if not email_sent:
+                    # Still return success for the price update, just flag the email failure
+                    response_data = FlightBookingAdminSerializer(booking).data
+                    response_data['email_warning'] = 'Price saved but email delivery failed. Check email logs.'
+                    return Response(response_data)
+
+            return Response(FlightBookingAdminSerializer(booking).data)
+        return Response(ser.errors, status=400)
