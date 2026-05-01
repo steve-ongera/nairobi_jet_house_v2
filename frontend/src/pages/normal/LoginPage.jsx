@@ -13,7 +13,7 @@ const PORTAL = {
 }
 
 export default function LoginPage() {
-  const auth = useAuth()          // guard against undefined hook
+  const auth = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
   const from      = location.state?.from?.pathname || null
@@ -28,7 +28,6 @@ export default function LoginPage() {
   const submit = async (e) => {
     e.preventDefault()
 
-    // Safety check — if hook isn't wired up yet, show a clear error
     if (!auth?.login) {
       setError('Authentication is not configured. Please check useAuth.')
       return
@@ -41,7 +40,6 @@ export default function LoginPage() {
       const user = await auth.login(form.username, form.password)
       navigate(from || PORTAL[user?.role] || '/')
     } catch (err) {
-      // Axios wraps the response — errors come from err.response.data
       const data = err?.response?.data
       const msg =
         data?.detail ||
@@ -71,17 +69,11 @@ export default function LoginPage() {
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{
-              width: 56, height: 56,
-              background: 'var(--navy)',
-              borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1rem',
-              fontSize: '1.4rem',
-              color: 'var(--gold)',
-            }}>
-              <i className="bi bi-airplane-fill" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Nairobi Jet House"
+              style={{ height: '3.5rem', width: 'auto', margin: '0 auto 1rem', display: 'block' }}
+            />
             <h2 style={{ marginBottom: '0.25rem' }}>Welcome back</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>
               Sign in to your NairobiJetHouse account

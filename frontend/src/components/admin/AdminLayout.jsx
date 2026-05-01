@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
+import AdminNavbar from './AdminNavbar'
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
@@ -22,6 +23,11 @@ export default function AdminLayout() {
         />
       )}
       <main className={`dash-main${collapsed ? ' sidebar-collapsed' : ''}`}>
+        <AdminNavbar 
+          collapsed={collapsed} 
+          setCollapsed={setCollapsed}
+          setMobile={setMobile}
+        />
         <div className="dash-content">
           <Outlet />
         </div>

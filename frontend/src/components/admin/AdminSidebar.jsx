@@ -1,3 +1,4 @@
+// AdminSidebar.jsx (Updated)
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth' 
 
@@ -34,13 +35,17 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
 
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}${mobileOpen ? ' mobile-open' : ''}`}>
-      {/* Logo */}
+      {/* Logo Area - White background */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon"><i className="bi bi-airplane-fill" /></div>
-        {!collapsed && (
-          <div>
-            <div className="sidebar-logo-text">Nairobi<span>JH</span></div>
-            <div className="sidebar-role-badge">Admin</div>
+        {collapsed ? (
+          <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
+            <div>
+              <div className="sidebar-logo-text">Nairobi<span>JetHouse</span></div>
+              <div className="sidebar-role-badge">Admin</div>
+            </div>
           </div>
         )}
       </div>

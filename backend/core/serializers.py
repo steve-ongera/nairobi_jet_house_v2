@@ -258,15 +258,35 @@ class FlightBookingAdminSerializer(serializers.ModelSerializer):
 
 
 class FlightBookingPriceSerializer(serializers.Serializer):
-    quoted_price_usd = serializers.DecimalField(max_digits=12, decimal_places=2)
-    operator_cost_usd = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
-    commission_pct   = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, allow_null=True)
-    status           = serializers.ChoiceField(
-        choices=['inquiry', 'rfq_sent', 'quoted', 'confirmed', 'in_flight', 'completed', 'cancelled'],
-        required=False
+    quoted_price_usd  = serializers.DecimalField(max_digits=12, decimal_places=2)
+    operator_cost_usd = serializers.DecimalField(
+        max_digits=12, decimal_places=2, 
+        required=False, 
+        allow_null=True,
+        default=None
     )
-    send_email    = serializers.BooleanField(default=True)
-    email_message = serializers.CharField(required=False, default='')
+    commission_pct    = serializers.DecimalField(
+        max_digits=5, decimal_places=2, 
+        required=False, 
+        allow_null=True,
+        default=None
+    )
+    status            = serializers.ChoiceField(
+        choices=['inquiry', 'rfq_sent', 'quoted', 'confirmed', 'in_flight', 'completed', 'cancelled'],
+        required=False,
+        allow_null=True,
+        default=None
+    )
+    send_email        = serializers.BooleanField(default=True)
+    email_message     = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def to_internal_value(self, data):
+        # Coerce empty strings to None for decimal fields before validation
+        mutable = data.copy() if hasattr(data, 'copy') else dict(data)
+        for field in ('operator_cost_usd', 'commission_pct'):
+            if mutable.get(field) == '':
+                mutable[field] = None
+        return super().to_internal_value(mutable)
 
     def validate(self, data):
         if not data.get('commission_pct'):

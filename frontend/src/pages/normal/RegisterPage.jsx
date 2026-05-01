@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'  // ✅ CORRECT
+import { useAuth } from '../../hooks/useAuth'
 import PublicNavbar from '../../components/common/PublicNavbar'
 import PublicFooter from '../../components/common/PublicFooter'
 
@@ -44,10 +44,14 @@ export default function RegisterPage() {
       <PublicNavbar />
       <div style={{ minHeight: '100vh', background: 'var(--off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 1rem 3rem' }}>
         <div style={{ width: '100%', maxWidth: 540 }}>
+
+          {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{ width: 56, height: 56, background: 'var(--navy)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.4rem', color: 'var(--gold)' }}>
-              <i className="bi bi-person-plus" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Nairobi Jet House"
+              style={{ height: '3.5rem', width: 'auto', margin: '0 auto 1rem', display: 'block' }}
+            />
             <h2 style={{ marginBottom: '0.25rem' }}>Create your account</h2>
             <p style={{ fontSize: '0.875rem' }}>Join NairobiJetHouse to access the member fleet</p>
           </div>
