@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'  // Fixed import
+import { useAuth } from '../../hooks/useAuth'
 
 const SERVICES = [
   { icon: 'bi-airplane',          label: 'Private Jet Charter',  desc: 'Airport to airport, worldwide',        href: '/book-flight' },
@@ -19,11 +19,9 @@ const PORTAL_MAP = {
   operator: '/operator',
 }
 
-// ... rest of your component remains exactly the same
-
 export default function PublicNavbar({ dark = false }) {
-  const { user, logout }    = useAuth()
-  const navigate            = useNavigate()
+  const { user, logout }        = useAuth()
+  const navigate                = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [drawerOpen, setDrawer] = useState(false)
   const [servOpen, setServ]     = useState(false)
@@ -37,7 +35,6 @@ export default function PublicNavbar({ dark = false }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (servRef.current && !servRef.current.contains(e.target)) setServ(false)
@@ -47,7 +44,6 @@ export default function PublicNavbar({ dark = false }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Lock scroll when drawer open
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
@@ -65,29 +61,79 @@ export default function PublicNavbar({ dark = false }) {
           border-bottom-color: rgba(255,255,255,0.1) !important;
           backdrop-filter: blur(12px);
         }
-        .navbar-dark-mode .navbar-logo-text,
         .navbar-dark-mode .navbar-links a,
         .navbar-dark-mode .dropdown-toggle { color: rgba(255,255,255,0.92) !important; }
         .navbar-dark-mode .navbar-links a:hover,
-        .navbar-dark-mode .dropdown-toggle:hover { background: rgba(255,255,255,0.1) !important; color: #fff !important; }
+        .navbar-dark-mode .dropdown-toggle:hover { background: transparent !important; color: inherit !important; }
         .navbar-dark-mode .sign-in-btn { border-color: rgba(255,255,255,0.5) !important; color: #fff !important; }
         .navbar-dark-mode .sign-in-btn:hover { background: rgba(255,255,255,0.15) !important; }
         .navbar-dark-mode .navbar-cta-btn { background: var(--gold) !important; color: var(--navy) !important; }
         .navbar-dark-mode .navbar-toggle { color: #fff !important; }
+        .navbar-dark-mode .navbar-logo-wordmark { color: rgba(255,255,255,0.88) !important; }
+        .navbar-dark-mode .navbar-logo-divider  { color: rgba(255,255,255,0.4) !important; }
+
+        /* Nav links — no hover background, underline active only */
+        .navbar-links a {
+          background: transparent !important;
+          text-decoration: none !important;
+        }
+        .navbar-links a:hover {
+          background: transparent !important;
+          text-decoration: none !important;
+        }
+        .navbar-links a.active {
+          text-decoration: underline !important;
+          text-underline-offset: 4px !important;
+          text-decoration-thickness: 2px !important;
+          background: transparent !important;
+        }
+
+        /* Logo lockup */
+        .navbar-logo {
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+          text-decoration: none !important;
+        }
+        .navbar-logo-wordmark {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          font-size: 0.82rem;
+          color: var(--navy);
+          letter-spacing: 0.01em;
+        }
+        .navbar-logo-divider {
+          color: var(--gray-400, #aaa);
+          font-weight: 300;
+          font-size: 1rem;
+          line-height: 1;
+        }
+        .navbar-logo-name {
+          font-weight: 700;
+          white-space: nowrap;
+        }
       `}</style>
 
       <nav className={navbarClass}>
         <div className="navbar-inner">
+
           {/* Logo */}
           <Link to="/" className="navbar-logo">
-            <i className="bi bi-airplane-fill" style={{ color: 'var(--gold)', fontSize: '1.2rem' }} />
-            <span className="navbar-logo-text">
-              Nairobi<span>Jet</span>House
+            <img
+              src="/logo.png"
+              alt="Nairobi Jet House"
+              style={{ height: '2.24em', width: 'auto', display: 'block' }}
+            />
+            <span className="navbar-logo-wordmark">
+              <span className="navbar-logo-divider">|</span>
+              <span className="navbar-logo-name">Nairobi Jet House</span>
             </span>
           </Link>
 
           {/* Desktop Nav */}
           <ul className="navbar-links">
+            <li><NavLink to="/" end>Home</NavLink></li>
             <li><NavLink to="/fleet">Fleet</NavLink></li>
             <li><NavLink to="/yachts">Yachts</NavLink></li>
 
@@ -122,8 +168,8 @@ export default function PublicNavbar({ dark = false }) {
               )}
             </li>
 
-            <li><NavLink to="/about">About</NavLink></li>
-            <li><NavLink to="/careers">Careers</NavLink></li>
+            <li><NavLink to="/private-charter">Private Charter</NavLink></li>
+            <li><NavLink to="/air-cargo">Air Cargo</NavLink></li>
             <li><NavLink to="/contact">Contact</NavLink></li>
           </ul>
 
@@ -161,7 +207,7 @@ export default function PublicNavbar({ dark = false }) {
               </div>
             ) : (
               <>
-                <Link to="/login"    className="sign-in-btn">Sign In</Link>
+                <Link to="/login" className="sign-in-btn">Sign In</Link>
                 <Link to="/book-flight" className="btn btn-gold btn-sm navbar-cta-btn">
                   <i className="bi bi-airplane" /> Book Now
                 </Link>
@@ -178,9 +224,9 @@ export default function PublicNavbar({ dark = false }) {
       <div className={`drawer-overlay${drawerOpen ? ' open' : ''}`} onClick={() => setDrawer(false)} />
       <div className={`drawer${drawerOpen ? ' open' : ''}`}>
         <div className="drawer-header">
-          <div className="drawer-logo">
-            <i className="bi bi-airplane-fill" style={{ color: 'var(--gold)' }} />
-            Nairobi<span>Jet</span>House
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '1.8rem', width: 'auto', display: 'block' }} />
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--navy)' }}>Nairobi Jet House</span>
           </div>
           <button className="drawer-close" onClick={() => setDrawer(false)}>
             <i className="bi bi-x-lg" />
@@ -190,11 +236,12 @@ export default function PublicNavbar({ dark = false }) {
         <nav className="drawer-nav">
           <div className="drawer-section-label">Book</div>
           {[
-            ['/book-flight', 'bi-airplane',    'Book a Flight'],
-            ['/book-yacht',  'bi-water',       'Charter a Yacht'],
-            ['/fleet',       'bi-grid-3x3',    'Browse Fleet'],
-            ['/yachts',      'bi-grid-3x3',    'Browse Yachts'],
-            ['/track',       'bi-search',       'Track Booking'],
+            ['/',            'bi-house',     'Home'],
+            ['/book-flight', 'bi-airplane',  'Book a Flight'],
+            ['/book-yacht',  'bi-water',     'Charter a Yacht'],
+            ['/fleet',       'bi-grid-3x3',  'Browse Fleet'],
+            ['/yachts',      'bi-grid-3x3',  'Browse Yachts'],
+            ['/track',       'bi-search',    'Track Booking'],
           ].map(([to, icon, label]) => (
             <Link key={to} to={to} className="drawer-link" onClick={() => setDrawer(false)}>
               <i className={`bi ${icon}`} />{label}
@@ -204,11 +251,11 @@ export default function PublicNavbar({ dark = false }) {
           <div className="drawer-divider" />
           <div className="drawer-section-label">Explore</div>
           {[
-            ['/services',   'bi-grid',          'Services'],
-            ['/membership', 'bi-star',           'Membership'],
-            ['/about',      'bi-info-circle',    'About'],
-            ['/careers',    'bi-briefcase',      'Careers'],
-            ['/contact',    'bi-envelope',       'Contact'],
+            ['/services',        'bi-grid',     'Services'],
+            ['/membership',      'bi-star',      'Membership'],
+            ['/private-charter', 'bi-airplane',  'Private Charter'],
+            ['/air-cargo',       'bi-boxes',     'Air Cargo'],
+            ['/contact',         'bi-envelope',  'Contact'],
           ].map(([to, icon, label]) => (
             <Link key={to} to={to} className="drawer-link" onClick={() => setDrawer(false)}>
               <i className={`bi ${icon}`} />{label}
