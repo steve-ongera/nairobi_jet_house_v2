@@ -4701,7 +4701,7 @@ input:checked + .toggle-slider:before {
 }
 
 /* Logo Region - White */
-.navbar-logo {
+.xnavbar-logo {
   display: flex;
   align-items: center;
   gap: 12px;
