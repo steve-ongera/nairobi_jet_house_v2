@@ -921,345 +921,558 @@ textarea.form-control { min-height: 110px; resize: vertical; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ADMIN DASHBOARD STYLES
+   Clean, minimal design system — white sidebar, crisp typography
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Admin Layout Shell */
+/* ── Admin Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  --adm-sidebar-w:      256px;
+  --adm-sidebar-col:     72px;
+  --adm-header-h:        64px;
+  --adm-bg:             #f8fafc;
+  --adm-surface:        #ffffff;
+  --adm-border:         #e2e8f0;
+  --adm-border-light:   #f1f5f9;
+  --adm-text:           #1e293b;
+  --adm-text-muted:     #64748b;
+  --adm-text-faint:     #94a3b8;
+  --adm-primary:        #0B1C36;
+  --adm-primary-hover:  #142C54;
+  --adm-accent:         #C8A45A;
+  --adm-accent-light:   #F6EDD8;
+  --adm-accent-dark:    #9C7830;
+  --adm-success:        #10b981;
+  --adm-success-light:  #d1fae5;
+  --adm-warning:        #f59e0b;
+  --adm-warning-light:  #fef3c7;
+  --adm-danger:         #ef4444;
+  --adm-danger-light:   #fee2e2;
+  --adm-info:           #3b82f6;
+  --adm-info-light:     #dbeafe;
+  --adm-r:              8px;
+  --adm-r-lg:           12px;
+  --adm-r-xl:           16px;
+  --adm-shadow-sm:      0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --adm-shadow:         0 4px 6px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.04);
+  --adm-shadow-lg:      0 10px 20px rgba(0,0,0,.07), 0 4px 8px rgba(0,0,0,.04);
+  --adm-t:              0.18s ease;
+}
+
+/* ── Admin Layout Shell ──────────────────────────────────────────────────── */
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background: var(--gray-50);
+  background: var(--adm-bg);
 }
 
-/* Main Content Area */
+/* ── Main Content ────────────────────────────────────────────────────────── */
 .dash-main {
   flex: 1;
-  margin-left: 260px;
-  transition: margin-left 0.25s var(--ease);
+  margin-left: var(--adm-sidebar-w);
+  transition: margin-left var(--adm-t);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--adm-bg);
 }
 
-.dash-main.sidebar-collapsed {
-  margin-left: 70px;
-}
+.dash-main.sidebar-collapsed { margin-left: var(--adm-sidebar-col); }
 
 .dash-content {
-  padding: 1.75rem 2rem;
+  padding: 1.5rem 2rem;
   max-width: 1400px;
   width: 100%;
 }
 
-/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .sidebar {
   position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 260px;
-  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
-  color: rgba(255, 255, 255, 0.7);
+  top: 0; left: 0; bottom: 0;
+  width: var(--adm-sidebar-w);
+  background: var(--adm-surface);
+  border-right: 1px solid var(--adm-border);
   display: flex;
   flex-direction: column;
   z-index: 800;
-  transition: width 0.25s var(--ease);
+  transition: width var(--adm-t);
   overflow: hidden;
 }
 
-.sidebar.collapsed {
-  width: 70px;
-}
-
-.sidebar.mobile-open {
-  transform: translateX(0);
-}
+.sidebar.collapsed { width: var(--adm-sidebar-col); }
 
 /* Sidebar Logo */
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 1.5rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  height: var(--adm-header-h);
+  border-bottom: 1px solid var(--adm-border-light);
+  flex-shrink: 0;
 }
 
 .sidebar-logo-icon {
-  width: 38px;
-  height: 38px;
-  background: var(--gold);
-  border-radius: var(--r);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--navy);
-  font-size: 1.15rem;
+  width: 36px; height: 36px;
+  background: var(--adm-primary);
+  border-radius: var(--adm-r);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--adm-accent);
+  font-size: 1rem;
   flex-shrink: 0;
 }
 
 .sidebar-logo-text {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  color: var(--white);
-  line-height: 1.2;
+  color: var(--adm-text);
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity var(--adm-t);
 }
 
-.sidebar-logo-text span {
-  color: var(--gold);
-}
+.sidebar-logo-text span { color: var(--adm-accent); }
 
 .sidebar-role-badge {
   font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gold-light);
-  margin-top: 0.2rem;
+  color: var(--adm-text-faint);
+  display: block;
+  margin-top: 1px;
 }
 
-/* Sidebar Navigation */
+.sidebar.collapsed .sidebar-logo-text { opacity: 0; pointer-events: none; }
+
+/* Sidebar Nav */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 0 0.75rem;
+  padding: 0.75rem 0.625rem;
+  scrollbar-width: none;
 }
+.sidebar-nav::-webkit-scrollbar { display: none; }
 
 .sidebar-section-label {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  padding: 0.75rem 0.75rem 0.5rem;
-  margin-top: 0.5rem;
+  color: var(--adm-text-faint);
+  padding: 0.75rem 0.625rem 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity var(--adm-t);
 }
+
+.sidebar.collapsed .sidebar-section-label { opacity: 0; }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.7rem 0.85rem;
-  margin: 0.15rem 0;
-  border-radius: var(--r);
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.84rem;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  margin: 0.1rem 0;
+  border-radius: var(--adm-r);
+  color: var(--adm-text-muted);
+  font-size: 0.82rem;
   font-weight: 500;
-  transition: var(--t);
+  transition: all var(--adm-t);
   text-decoration: none;
   cursor: pointer;
   background: transparent;
   border: none;
   width: 100%;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  font-family: var(--font-body);
 }
 
 .sidebar-link i {
-  font-size: 1.1rem;
-  width: 24px;
-  color: rgba(255, 255, 255, 0.45);
-  transition: var(--t);
+  font-size: 1.05rem;
+  width: 22px;
+  flex-shrink: 0;
+  color: var(--adm-text-faint);
+  transition: color var(--adm-t);
 }
+
+.sidebar-link span {
+  opacity: 1;
+  transition: opacity var(--adm-t);
+}
+
+.sidebar.collapsed .sidebar-link { justify-content: center; padding: 0.6rem; }
+.sidebar.collapsed .sidebar-link span { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+.sidebar.collapsed .sidebar-link i { width: auto; margin: 0; }
 
 .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--white);
+  background: var(--adm-bg);
+  color: var(--adm-text);
 }
-
-.sidebar-link:hover i {
-  color: var(--gold);
-}
+.sidebar-link:hover i { color: var(--adm-accent); }
 
 .sidebar-link.active {
-  background: rgba(200, 164, 90, 0.12);
-  color: var(--gold-light);
+  background: var(--adm-accent-light);
+  color: var(--adm-accent-dark);
+  font-weight: 600;
 }
-
-.sidebar-link.active i {
-  color: var(--gold);
-}
-
-/* Collapsed state */
-.sidebar.collapsed .sidebar-link {
-  justify-content: center;
-  padding: 0.7rem;
-}
-
-.sidebar.collapsed .sidebar-link i {
-  margin: 0;
-  width: auto;
-}
-
-.sidebar.collapsed .sidebar-section-label {
-  text-align: center;
-  font-size: 0.5rem;
-  padding: 0.5rem 0;
-}
+.sidebar-link.active i { color: var(--adm-accent); }
 
 /* Sidebar Footer */
 .sidebar-footer {
-  padding: 1rem 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: auto;
+  padding: 0.75rem 0.625rem;
+  border-top: 1px solid var(--adm-border-light);
 }
 
 .sidebar-user {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.25rem 0;
+  gap: 0.65rem;
+  padding: 0.5rem 0.625rem;
 }
 
 .sidebar-avatar {
-  width: 34px;
-  height: 34px;
-  background: rgba(200, 164, 90, 0.2);
-  border: 1.5px solid rgba(200, 164, 90, 0.4);
+  width: 32px; height: 32px;
+  background: var(--adm-accent-light);
+  border: 1.5px solid var(--adm-accent);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gold-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--adm-accent-dark);
   flex-shrink: 0;
 }
 
 .sidebar-user-info {
   flex: 1;
   overflow: hidden;
+  opacity: 1;
+  transition: opacity var(--adm-t);
 }
+.sidebar.collapsed .sidebar-user-info { opacity: 0; pointer-events: none; width: 0; }
 
 .sidebar-user-name {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--white);
+  color: var(--adm-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .sidebar-user-role {
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.62rem;
+  color: var(--adm-text-faint);
   text-transform: capitalize;
 }
 
 .sidebar-logout {
-  background: rgba(255, 255, 255, 0.05);
+  background: none;
   border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--r);
+  width: 28px; height: 28px;
+  border-radius: var(--adm-r);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--adm-text-faint);
+  transition: all var(--adm-t);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.sidebar-logout:hover { background: var(--adm-danger-light); color: var(--adm-danger); }
+
+/* Sidebar role variants — kept minimal, just icon color tweaks */
+.sidebar-owner .sidebar-logo-icon,
+.sidebar-operator .sidebar-logo-icon,
+.sidebar-member .sidebar-logo-icon { background: var(--adm-primary); color: var(--adm-accent); }
+
+/* ── Admin Navbar (Topbar) ───────────────────────────────────────────────── */
+.admin-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--adm-header-h);
+  background: var(--adm-surface);
+  border-bottom: 1px solid var(--adm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-shadow: var(--adm-shadow-sm);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Admin toggle button */
+.admin-navbar .navbar-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px; height: 36px;
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r);
+  color: var(--adm-text-muted);
+  font-size: 1rem;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.5);
-  transition: var(--t);
+  transition: all var(--adm-t);
+}
+.admin-navbar .navbar-toggle:hover {
+  background: var(--adm-accent-light);
+  border-color: var(--adm-accent);
+  color: var(--adm-accent-dark);
+}
+
+/* Topbar page title area */
+.xnavbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.navbar-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.logo-main {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--adm-text);
+}
+
+.logo-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--adm-accent);
+}
+
+.navbar-role-badge {
+  background: var(--adm-accent-light);
+  color: var(--adm-accent-dark);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-left: 0.5rem;
+}
+
+.navbar-right { display: flex; align-items: center; gap: 0.5rem; }
+
+/* Profile dropdown trigger */
+.profile-dropdown { position: relative; }
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.75rem 0.35rem 0.45rem;
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--adm-t);
+  font-family: var(--font-body);
+}
+.profile-trigger:hover {
+  background: var(--adm-accent-light);
+  border-color: var(--adm-accent);
+}
+
+.profile-avatar {
+  width: 30px; height: 30px;
+  background: var(--adm-primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--adm-accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.profile-info { display: flex; flex-direction: column; text-align: left; }
+.profile-name { font-size: 0.8rem; font-weight: 600; color: var(--adm-text); }
+.profile-role { font-size: 0.65rem; color: var(--adm-text-faint); }
+
+.profile-trigger i { color: var(--adm-text-faint); font-size: 0.7rem; }
+
+/* Profile dropdown menu */
+.admin-navbar .dropdown-menu,
+.profile-dropdown .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  transform: none;
+  min-width: 240px;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-xl);
+  box-shadow: var(--adm-shadow-lg);
+  overflow: hidden;
+  animation: adminMenuIn 0.15s ease;
+  z-index: 1000;
+}
+@keyframes adminMenuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--adm-bg);
+  border-bottom: 1px solid var(--adm-border-light);
+}
+
+.dropdown-avatar {
+  width: 38px; height: 38px;
+  background: var(--adm-primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
   font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--adm-accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
-.sidebar-logout:hover {
-  background: rgba(220, 53, 69, 0.2);
-  color: #ef8989;
+.dropdown-user-info { flex: 1; overflow: hidden; }
+.dropdown-user-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--adm-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dropdown-user-email {
+  font-size: 0.68rem;
+  color: var(--adm-text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ── Dashboard Header ─────────────────────────────────────────────────────── */
+.dropdown-divider { height: 1px; background: var(--adm-border-light); margin: 0.3rem 0; }
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  color: var(--adm-text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--adm-t);
+  text-align: left;
+  font-family: var(--font-body);
+  text-decoration: none;
+}
+.dropdown-item:hover { background: var(--adm-bg); color: var(--adm-text); }
+.dropdown-item i { width: 18px; font-size: 0.9rem; color: var(--adm-text-faint); }
+.dropdown-item:hover i { color: var(--adm-accent); }
+.dropdown-item.logout { color: var(--adm-danger); }
+.dropdown-item.logout:hover { background: var(--adm-danger-light); }
+.dropdown-item.logout i { color: var(--adm-danger); }
+
+/* ── Dash Header ─────────────────────────────────────────────────────────── */
 .dash-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--gray-100);
+  border-bottom: 1px solid var(--adm-border-light);
 }
 
-.dash-header-left h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.2rem;
-}
+.dash-header-left h2 { font-size: 1.35rem; margin-bottom: 0.15rem; color: var(--adm-text); }
+.dash-header-left p  { font-size: 0.78rem; color: var(--adm-text-faint); margin: 0; }
 
-.dash-header-left p {
-  font-size: 0.8rem;
-  color: var(--gray-400);
-  margin: 0;
-}
-
-/* ── Stat Grid ────────────────────────────────────────────────────────────── */
+/* ── Stat Grid ───────────────────────────────────────────────────────────── */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem 1.25rem;
-  transition: var(--t-slow);
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 1.1rem 1.25rem;
+  transition: all var(--adm-t);
   position: relative;
   overflow: hidden;
 }
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.stat-card.gold {
-  border-left: 3px solid var(--gold);
-}
-
-.stat-card.red {
-  border-left: 3px solid var(--red);
-}
-
-.stat-card.green {
-  border-left: 3px solid var(--green);
-}
-
-.stat-card.navy {
-  border-left: 3px solid var(--navy);
-}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--adm-shadow); }
+.stat-card.gold   { border-left: 3px solid var(--adm-accent); }
+.stat-card.red    { border-left: 3px solid var(--adm-danger); }
+.stat-card.green  { border-left: 3px solid var(--adm-success); }
+.stat-card.navy   { border-left: 3px solid var(--adm-primary); }
 
 .stat-card-icon {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 1.75rem;
-  color: var(--gray-200);
-  opacity: 0.6;
+  top: 1rem; right: 1rem;
+  font-size: 1.6rem;
+  color: var(--adm-border);
+  opacity: 0.7;
 }
 
 .stat-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--gray-400);
-  margin-bottom: 0.5rem;
+  color: var(--adm-text-faint);
+  margin-bottom: 0.4rem;
 }
 
 .stat-value {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: var(--navy);
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--adm-text);
   line-height: 1.1;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
-/* ── Table Card ───────────────────────────────────────────────────────────── */
+.stat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  color: var(--adm-accent);
+  text-decoration: none;
+  margin-top: 0.4rem;
+  transition: gap var(--adm-t);
+}
+.stat-link:hover { gap: 0.45rem; }
+.stat-link i { font-size: 0.6rem; }
+
+/* ── Table Card ──────────────────────────────────────────────────────────── */
 .table-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
   overflow: hidden;
 }
 
@@ -1267,3697 +1480,883 @@ textarea.form-control { min-height: 110px; resize: vertical; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-100);
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--adm-border-light);
 }
 
 .table-card-title {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--navy);
+  color: var(--adm-text);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
+.table-card-title i { color: var(--adm-accent); font-size: 0.95rem; }
 
-.table-card-title i {
-  color: var(--gold);
-  font-size: 1rem;
-}
-
-.table-scroll {
-  overflow-x: auto;
-}
-
-.table-scroll table {
-  width: 100%;
-  border-collapse: collapse;
-}
+.table-scroll { overflow-x: auto; }
+.table-scroll table { width: 100%; border-collapse: collapse; background: var(--adm-surface); }
 
 .table-scroll th {
   text-align: left;
-  padding: 0.9rem 1.25rem;
-  font-size: 0.7rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--gray-400);
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-100);
+  color: var(--adm-text-faint);
+  background: var(--adm-bg);
+  border-bottom: 1px solid var(--adm-border-light);
 }
 
 .table-scroll td {
-  padding: 0.85rem 1.25rem;
-  font-size: 0.85rem;
-  color: var(--gray-600);
-  border-bottom: 1px solid var(--gray-100);
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--adm-text-muted);
+  border-bottom: 1px solid var(--adm-border-light);
 }
+.table-scroll tr:last-child td { border-bottom: none; }
+.table-scroll tbody tr:hover { background: var(--adm-bg); }
 
-.table-scroll tr:last-child td {
-  border-bottom: none;
-}
-
-.table-scroll tbody tr:hover {
-  background: var(--gray-50);
-}
-
-.td-name {
-  font-weight: 600;
-  color: var(--navy);
-}
-
-.td-price {
+.td-name  { font-weight: 600; color: var(--adm-text); }
+.td-price { font-family: monospace; font-weight: 600; color: var(--adm-text); }
+.td-ref {
   font-family: monospace;
-  font-weight: 600;
-  color: var(--navy);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--adm-text);
+  background: var(--adm-bg);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+.td-email { font-size: 0.68rem; color: var(--adm-text-faint); margin-top: 0.1rem; }
+.td-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.table-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--adm-text-faint);
+  font-size: 0.82rem;
+}
+.table-empty i {
+  font-size: 1.75rem;
+  display: block;
+  margin-bottom: 0.6rem;
+  opacity: 0.4;
 }
 
-/* ── Admin Forms ──────────────────────────────────────────────────────────── */
+/* ── Admin Forms ─────────────────────────────────────────────────────────── */
 .admin-form {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.75rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 1.5rem;
 }
 
-.admin-form-section {
-  margin-bottom: 2rem;
-}
-
+.admin-form-section { margin-bottom: 1.75rem; }
 .admin-form-section h4 {
-  font-size: 1rem;
-  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.875rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--adm-border-light);
+  color: var(--adm-text);
 }
 
-/* ── Admin Filters ────────────────────────────────────────────────────────── */
+/* ── Admin Filters ───────────────────────────────────────────────────────── */
 .admin-filters {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 0.875rem 1.1rem;
+  margin-bottom: 1.25rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.875rem;
   align-items: flex-end;
 }
 
-.admin-filter-group {
-  flex: 1;
-  min-width: 160px;
-}
-
+.admin-filter-group { flex: 1; min-width: 160px; }
 .admin-filter-group label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--gray-400);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--adm-text-faint);
   display: block;
   margin-bottom: 0.3rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-/* ── Pagination ───────────────────────────────────────────────────────────── */
-.admin-pagination {
+/* Filter bar (pills version) */
+.filter-bar {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 0.875rem 1.1rem;
+  margin-bottom: 1.25rem;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
-  padding: 1rem;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  align-items: flex-end;
 }
 
-.pagination-btn {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  padding: 0.4rem 0.8rem;
-  border-radius: var(--r);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: var(--t);
-  color: var(--gray-600);
+.filter-group { flex: 1; min-width: 180px; }
+.filter-group label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--adm-text-faint);
+  display: block;
+  margin-bottom: 0.3rem;
 }
 
-.pagination-btn:hover:not(:disabled) {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: var(--white);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination-btn.active {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--white);
-}
-
-/* ── Admin Actions Bar ────────────────────────────────────────────────────── */
+/* ── Admin Actions Bar ───────────────────────────────────────────────────── */
 .admin-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.admin-actions-left {
-  display: flex;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 }
+.admin-actions-left  { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.admin-actions-right { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 
-.admin-actions-right {
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.admin-pagination {
   display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-/* ── Responsive Admin ─────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .dash-main {
-    margin-left: 0;
-  }
-  
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.25s var(--ease);
-    z-index: 1000;
-  }
-  
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-  
-  .dash-content {
-    padding: 1.25rem;
-  }
-  
-  .stat-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .dash-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .stat-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .table-scroll th,
-  .table-scroll td {
-    padding: 0.6rem 0.85rem;
-    font-size: 0.75rem;
-  }
-  
-  .admin-filters {
-    flex-direction: column;
-  }
-  
-  .admin-filter-group {
-    width: 100%;
-  }
-}
-
-/* ── Loading Spinner for Admin ────────────────────────────────────────────── */
-.spinner-ring {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--gray-200);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-/* ── Additional Admin Table Styles ────────────────────────────────────────── */
-.table-empty {
-  text-align: center;
-  padding: 3rem;
-  color: var(--gray-400);
-  font-size: 0.875rem;
-}
-
-.table-empty i {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 0.75rem;
-  opacity: 0.5;
-}
-
-.td-ref {
-  font-family: monospace;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--navy);
-  background: var(--gray-50);
-  padding: 0.2rem 0.45rem;
-  border-radius: var(--r-sm);
-  display: inline-block;
-}
-
-.td-email {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-top: 0.15rem;
-}
-
-.td-actions {
-  display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 0.4rem;
-  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding: 0.875rem;
 }
 
-/* Status badge variants - ensure all colors exist */
-.badge-amber {
-  background: var(--amber-light);
-  color: var(--amber);
+.pagination-btn {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--adm-r);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all var(--adm-t);
+  color: var(--adm-text-muted);
+  font-family: var(--font-body);
 }
+.pagination-btn:hover:not(:disabled) { background: var(--adm-primary); border-color: var(--adm-primary); color: #fff; }
+.pagination-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pagination-btn.active { background: var(--adm-accent); border-color: var(--adm-accent); color: #fff; }
 
-.badge-navy {
-  background: var(--blue-light);
-  color: var(--navy);
-}
+/* ── Badges (admin context) ──────────────────────────────────────────────── */
+.badge-pending   { background: var(--adm-warning-light); color: #92400e; animation: adminPulse 2s infinite; }
+.badge-new       { background: var(--adm-accent-light);  color: var(--adm-accent-dark); animation: adminPulse 2s infinite; }
+.badge-replied   { background: var(--adm-success-light); color: #065f46; }
+.badge-archived  { background: #f1f5f9; color: #64748b; }
+.badge-disputed  { background: var(--adm-danger-light);  color: var(--adm-danger); border-left: 2px solid var(--adm-danger); }
+@keyframes adminPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
 
-.badge-green {
-  background: var(--green-light);
-  color: var(--green);
-}
+/* ── Status badges ───────────────────────────────────────────────────────── */
+.badge-amber   { background: var(--adm-warning-light); color: #92400e; }
+.badge-navy    { background: var(--adm-info-light);    color: #1e40af; }
+.badge-green   { background: var(--adm-success-light); color: #065f46; }
+.badge-gray    { background: #f1f5f9;                  color: #64748b; }
+.badge-red     { background: var(--adm-danger-light);  color: #991b1b; }
 
-.badge-gray {
-  background: var(--gray-100);
-  color: var(--gray-500);
-}
+/* Booking/status pill variants */
+.status-received   { background: #f1f5f9; color: #475569; }
+.status-reviewing  { background: var(--adm-info-light); color: #1e40af; }
+.status-shortlisted{ background: var(--adm-accent-light); color: var(--adm-accent-dark); }
+.status-interview  { background: var(--adm-warning-light); color: #92400e; }
+.status-offered    { background: var(--adm-success-light); color: #065f46; }
+.status-hired      { background: var(--adm-success); color: #fff; }
+.status-rejected   { background: var(--adm-danger-light); color: #991b1b; }
+.status-active     { background: var(--adm-success-light); color: #065f46; }
+.status-maintenance{ background: var(--adm-danger-light); color: #991b1b; }
+.status-inactive   { background: #f1f5f9; color: #64748b; }
 
-.badge-red {
-  background: var(--red-light);
-  color: var(--red);
-}
+/* ── Modal (admin) ───────────────────────────────────────────────────────── */
+.modal-body { max-height: 60vh; overflow-y: auto; }
+.modal-body::-webkit-scrollbar { width: 4px; }
 
-/* Detail rows for modals */
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  padding: 0.7rem 0;
-  border-bottom: 1px solid var(--gray-100);
-  font-size: 0.875rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--adm-border-light);
+  font-size: 0.82rem;
 }
+.detail-row:last-child { border-bottom: none; }
+.detail-key { color: var(--adm-text-faint); font-weight: 500; flex-shrink: 0; min-width: 110px; }
+.detail-val { color: var(--adm-text); font-weight: 500; text-align: right; word-break: break-word; }
 
-.detail-row:last-child {
-  border-bottom: none;
-}
-
-.detail-key {
-  color: var(--gray-400);
-  font-weight: 500;
-  flex-shrink: 0;
-  min-width: 120px;
-}
-
-.detail-val {
-  color: var(--navy);
-  font-weight: 500;
-  text-align: right;
-  word-break: break-word;
-}
-
-/* Modal improvements */
-.modal-body {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.modal-body::-webkit-scrollbar {
-  width: 4px;
-}
-
-/* Admin filter bar enhancements */
-.filter-bar {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-}
-
-.filter-group {
-  flex: 1;
-  min-width: 180px;
-}
-
-.filter-group label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--gray-400);
-  display: block;
-  margin-bottom: 0.35rem;
-}
-
-/* Checkbox styling */
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--gold);
-}
-
-/* Responsive table for mobile */
-@media (max-width: 768px) {
-  .table-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .table-scroll table {
-    min-width: 800px;
-  }
-  
-  .detail-row {
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-  
-  .detail-key {
-    min-width: auto;
-  }
-  
-  .detail-val {
-    text-align: left;
-  }
-  
-  .modal-body {
-    max-height: 70vh;
-  }
-}
-
-/* Action buttons hover states */
-.td-actions .btn-xs {
-  padding: 0.3rem 0.7rem;
-}
-
-.td-actions .btn-xs i {
-  font-size: 0.75rem;
-}
-
-/* Status badge hover effect */
-.badge {
-  transition: var(--t);
-}
-
-/* Loading state for table rows */
-.table-loading {
-  position: relative;
-  min-height: 200px;
-}
-
-/* Info alert for RFQ modal */
-.alert-info {
-  background: var(--blue-light);
-  border: 1px solid #BED1EF;
-  color: var(--navy);
-}
-
-/* Form hint styling */
-.form-hint {
-  display: block;
-  margin-top: 0.35rem;
-  font-size: 0.7rem;
-  color: var(--gray-400);
-}
-
-/* Date/time display */
-.datetime-display {
-  font-family: monospace;
-  font-size: 0.8rem;
-}
-
-/* ── Yacht Charter Specific Styles ────────────────────────────────────────── */
-.yacht-detail-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-}
-
-.yacht-detail-header {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  padding: 1.5rem;
-  color: var(--white);
-}
-
-.yacht-detail-header h3 {
-  color: var(--white);
-  margin-bottom: 0.5rem;
-}
-
-.yacht-detail-header p {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-}
-
-.yacht-specs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  padding: 1.5rem;
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.yacht-spec {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.yacht-spec i {
-  font-size: 1.25rem;
-  color: var(--gold);
-  width: 32px;
-}
-
-.yacht-spec-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--gray-400);
-}
-
-.yacht-spec-value {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--navy);
-}
-
-/* Water-themed accent for yacht charts */
-.water-accent {
-  background: linear-gradient(135deg, #0B1C36 0%, #1a4a6e 100%);
-}
-
-.charter-route {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-}
-
-.charter-route i {
-  color: var(--gold);
-  font-size: 0.7rem;
-}
-
-.charter-duration {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: var(--gold-pale);
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--r-full);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--gold-dark);
-}
-
-/* Guest info with avatar */
-.guest-avatar {
-  width: 32px;
-  height: 32px;
-  background: var(--gray-100);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.8rem;
-}
-
-.guest-info-compact {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Date range picker style for charters */
-.date-range {
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--gray-600);
-  background: var(--gray-50);
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--r-sm);
-  display: inline-block;
-}
-
-/* Cabin/amenities badges */
-.amenity-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: var(--gray-50);
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--r-full);
-  font-size: 0.65rem;
-  color: var(--gray-600);
-}
-
-.amenity-badge i {
-  font-size: 0.6rem;
-  color: var(--gold);
-}
-
-/* Charter-specific alert */
+.alert-info  { background: var(--adm-info-light); border: 1px solid #bfdbfe; color: #1e40af; }
+.alert-amber { background: var(--adm-warning-light); border: 1px solid #fde68a; color: #92400e; }
 .alert-charter {
-  background: linear-gradient(135deg, rgba(11,28,54,0.05) 0%, rgba(200,164,90,0.05) 100%);
-  border-left: 3px solid var(--gold);
+  background: linear-gradient(135deg, rgba(11,28,54,0.04) 0%, rgba(200,164,90,0.04) 100%);
+  border-left: 3px solid var(--adm-accent);
 }
 
-/* Responsive yacht table */
-@media (max-width: 768px) {
-  .yacht-specs {
-    grid-template-columns: 1fr;
-  }
-  
-  .yacht-spec {
-    padding: 0.5rem 0;
-  }
-  
-  .charter-route {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
+/* ── Spinner (admin) ─────────────────────────────────────────────────────── */
+.spinner-ring {
+  width: 36px; height: 36px;
+  border: 2px solid var(--adm-border);
+  border-top-color: var(--adm-accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
 }
 
-/* ── Marketplace Specific Styles ───────────────────────────────────────────── */
-.marketplace-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  transition: var(--t-slow);
-}
-
-.marketplace-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.marketplace-header {
-  background: linear-gradient(135deg, var(--gold-pale) 0%, var(--white) 100%);
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.marketplace-header h3 {
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.marketplace-header h3 i {
-  color: var(--gold);
-  font-size: 1.25rem;
-}
-
-.marketplace-stats {
-  display: flex;
-  gap: 1.5rem;
-  margin-top: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.marketplace-stat {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-}
-
-.marketplace-stat-label {
-  color: var(--gray-400);
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.marketplace-stat-value {
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 0.9rem;
-}
-
-/* Aircraft thumbnail in marketplace */
-.aircraft-thumb {
-  width: 40px;
-  height: 40px;
-  background: var(--gray-50);
-  border-radius: var(--r);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gold);
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.aircraft-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.aircraft-details {
-  flex: 1;
-}
-
-.aircraft-manufacturer {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-bottom: 0.15rem;
-}
-
-.aircraft-model-name {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.85rem;
-}
-
-/* Route visualization */
-.route-visual {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-}
-
-.route-point {
-  font-weight: 600;
-  color: var(--navy);
-}
-
-.route-arrow {
-  color: var(--gold);
-  font-size: 0.7rem;
-}
-
-.airport-codes {
-  font-family: monospace;
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-top: 0.15rem;
-}
-
-/* Commission breakdown */
-.commission-breakdown {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.2rem;
-}
-
-.commission-amount {
-  font-weight: 700;
-  color: var(--gold-dark);
-}
-
-.commission-percent {
-  font-size: 0.6rem;
-  color: var(--gray-400);
-}
-
-/* Status badge animations */
-.badge-pending {
-  background: var(--amber-light);
-  color: var(--amber);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.badge-disputed {
-  background: var(--red-light);
-  color: var(--red);
-  border-left: 2px solid var(--red);
-}
-
-/* Marketplace filter tabs */
-.marketplace-tabs {
-  display: flex;
-  gap: 0.5rem;
-  border-bottom: 2px solid var(--gray-100);
-  margin-bottom: 1.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.marketplace-tab {
-  background: none;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--gray-400);
-  cursor: pointer;
-  transition: var(--t);
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-}
-
-.marketplace-tab:hover {
-  color: var(--navy);
-}
-
-.marketplace-tab.active {
-  color: var(--navy);
-  border-bottom-color: var(--gold);
-}
-
-.marketplace-tab i {
-  margin-right: 0.5rem;
-  font-size: 0.9rem;
-}
-
-/* Revenue summary card */
-.revenue-summary {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  border-radius: var(--r-lg);
+/* ── Quick Actions (shared across owner/staff/operator) ──────────────────── */
+.welcome-section {
+  background: linear-gradient(135deg, var(--adm-accent-light) 0%, var(--adm-surface) 100%);
+  border-radius: var(--adm-r-lg);
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
+  border: 1px solid rgba(200,164,90,0.2);
+}
+.welcome-title   { font-size: 0.95rem; font-weight: 600; color: var(--adm-text); margin-bottom: 0.2rem; }
+.welcome-subtitle{ font-size: 0.78rem; color: var(--adm-text-faint); }
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.875rem;
+  margin-top: 1.25rem;
+}
+
+.quick-action-card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 1rem 1.1rem;
+  transition: all var(--adm-t);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.quick-action-card:hover { transform: translateY(-2px); box-shadow: var(--adm-shadow); border-color: var(--adm-accent); }
+
+.quick-action-icon {
+  width: 40px; height: 40px;
+  background: var(--adm-accent-light);
+  border-radius: var(--adm-r);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.quick-action-icon i { color: var(--adm-accent-dark); font-size: 1.1rem; }
+
+.quick-action-title { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; margin-bottom: 0.1rem; }
+.quick-action-desc  { font-size: 0.68rem; color: var(--adm-text-faint); }
+
+/* ── Action Card ─────────────────────────────────────────────────────────── */
+.action-card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 0.875rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: all var(--adm-t);
+}
+.action-card:hover { box-shadow: var(--adm-shadow); border-color: var(--adm-border); transform: translateY(-1px); }
+.action-card-title    { font-size: 0.85rem; font-weight: 600; color: var(--adm-text); margin-bottom: 0.1rem; }
+.action-card-subtitle { font-size: 0.7rem; color: var(--adm-text-faint); margin: 0; }
+
+/* ── Settings ────────────────────────────────────────────────────────────── */
+.settings-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); margin-bottom: 1.25rem; overflow: hidden; }
+.settings-card-header { padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--adm-border-light); background: var(--adm-bg); }
+.settings-card-header h4 { font-size: 0.85rem; margin: 0; display: flex; align-items: center; gap: 0.45rem; color: var(--adm-text); }
+.settings-card-header i { color: var(--adm-accent); }
+.settings-card-body { padding: 1.25rem; }
+
+.rule-item {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--adm-border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
-  color: var(--white);
+  gap: 0.5rem;
+}
+.rule-item:last-child { border-bottom: none; }
+.rule-name { font-weight: 600; color: var(--adm-text); font-size: 0.82rem; margin-bottom: 0.1rem; }
+.rule-meta { font-size: 0.68rem; color: var(--adm-text-faint); display: flex; gap: 0.875rem; flex-wrap: wrap; }
+.rule-value { font-weight: 600; color: var(--adm-accent); }
+
+/* ── Toggle Switch ───────────────────────────────────────────────────────── */
+.toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--adm-border);
+  transition: 0.25s; border-radius: 34px;
+}
+.toggle-slider:before {
+  position: absolute; content: "";
+  height: 16px; width: 16px;
+  left: 3px; bottom: 3px;
+  background: #fff;
+  transition: 0.25s; border-radius: 50%;
+}
+input:checked + .toggle-slider { background: var(--adm-success); }
+input:checked + .toggle-slider:before { transform: translateX(18px); }
+
+/* ── Checkbox ────────────────────────────────────────────────────────────── */
+input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--adm-accent); }
+
+/* ── User/Operator/Inquiry page stats ───────────────────────────────────── */
+.users-stats, .inquiry-stats, .operator-stats,
+.careers-stats, .payout-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
 }
 
-.revenue-summary-item {
+.user-stat-card, .inquiry-stat-card, .operator-stat-card,
+.careers-stat-card, .payout-stat-card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 0.875rem;
   text-align: center;
+  transition: all var(--adm-t);
 }
-
-.revenue-summary-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.7;
-  margin-bottom: 0.25rem;
+.user-stat-card:hover, .inquiry-stat-card:hover,
+.operator-stat-card:hover, .payout-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--adm-shadow-sm);
 }
+.user-stat-card.active { border-color: var(--adm-accent); background: var(--adm-accent-light); }
 
-.revenue-summary-value {
-  font-size: 1.5rem;
+.user-stat-number, .inquiry-stat-number, .operator-stat-number,
+.careers-stat-number, .payout-stat-number {
+  font-size: 1.4rem;
   font-weight: 700;
-  font-family: var(--font-display);
+  color: var(--adm-text);
+}
+.payout-stat-number.pending    { color: var(--adm-warning); }
+.payout-stat-number.processing { color: var(--adm-info); }
+.payout-stat-number.paid       { color: var(--adm-success); }
+
+.user-stat-label, .inquiry-stat-label, .operator-stat-label,
+.careers-stat-label, .payout-stat-label {
+  font-size: 0.65rem;
+  color: var(--adm-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
 }
 
-.revenue-summary-value small {
-  font-size: 0.75rem;
-  font-weight: 400;
-  opacity: 0.7;
+/* ── User Avatars with role color ────────────────────────────────────────── */
+.user-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 0.82rem;
+  flex-shrink: 0;
 }
+.user-avatar.client   { background: var(--adm-info-light);    color: #1e40af; }
+.user-avatar.owner    { background: var(--adm-accent-light);  color: var(--adm-accent-dark); }
+.user-avatar.operator { background: var(--adm-success-light); color: #065f46; }
+.user-avatar.staff    { background: #f1f5f9;                  color: #475569; }
+.user-avatar.admin    { background: var(--adm-danger-light);  color: #991b1b; }
 
-/* Responsive marketplace */
-@media (max-width: 768px) {
-  .marketplace-stats {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .revenue-summary {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-  
-  .revenue-summary-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .revenue-summary-label {
-    margin-bottom: 0;
-  }
-  
-  .aircraft-info {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .commission-breakdown {
-    align-items: flex-start;
-  }
+.user-info-compact { display: flex; align-items: center; gap: 0.65rem; }
+.user-name  { font-weight: 600; color: var(--adm-text); font-size: 0.82rem; margin-bottom: 0.1rem; }
+.user-email { font-size: 0.68rem; color: var(--adm-text-faint); }
+
+.membership-badge {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  background: var(--adm-accent-light); padding: 0.15rem 0.55rem;
+  border-radius: 999px; font-size: 0.62rem; font-weight: 600;
+  color: var(--adm-accent-dark);
 }
+.membership-status { font-size: 0.58rem; color: var(--adm-text-faint); margin-top: 0.1rem; }
 
-/* ── Inquiries Page Specific Styles ───────────────────────────────────────── */
+.role-select {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  border-radius: 5px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: var(--adm-t);
+  color: var(--adm-text-muted);
+}
+.role-select:hover { border-color: var(--adm-accent); }
+.role-select:focus { outline: none; border-color: var(--adm-primary); box-shadow: 0 0 0 2px rgba(11,28,54,0.08); }
+
+/* ── Inquiry Cards ───────────────────────────────────────────────────────── */
 .inquiry-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  margin-bottom: 1rem;
-  transition: var(--t-slow);
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  margin-bottom: 0.875rem;
+  transition: all var(--adm-t);
   overflow: hidden;
-  position: relative;
 }
-
-.inquiry-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.inquiry-card.new {
-  border-left: 3px solid var(--gold);
-  background: linear-gradient(90deg, rgba(200,164,90,0.02) 0%, var(--white) 100%);
-}
-
-.inquiry-card.read {
-  opacity: 0.85;
-}
+.inquiry-card:hover { box-shadow: var(--adm-shadow); border-color: var(--adm-border); }
+.inquiry-card.new { border-left: 3px solid var(--adm-accent); }
+.inquiry-card.read { opacity: 0.82; }
 
 .inquiry-header {
-  display: flex;
-  align-items: flex-start;
+  display: flex; align-items: flex-start;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem 0.75rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  padding: 1rem 1.25rem 0.65rem;
+  flex-wrap: wrap; gap: 0.75rem;
 }
 
 .inquiry-avatar {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--gold-pale) 0%, var(--gray-50) 100%);
+  width: 40px; height: 40px;
+  background: var(--adm-bg);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  color: var(--gold-dark);
-  flex-shrink: 0;
-}
-
-.inquiry-info {
-  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: var(--adm-accent-dark); flex-shrink: 0;
 }
 
 .inquiry-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--navy);
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  font-size: 0.9rem; font-weight: 600; color: var(--adm-text);
+  margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
 }
-
 .inquiry-meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap;
+  font-size: 0.68rem; color: var(--adm-text-faint); margin-bottom: 0.4rem;
 }
-
-.inquiry-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.inquiry-meta-item i {
-  font-size: 0.65rem;
-}
+.inquiry-meta-item { display: flex; align-items: center; gap: 0.2rem; }
+.inquiry-meta-item i { font-size: 0.62rem; }
 
 .inquiry-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--gray-50);
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--r-full);
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--gray-600);
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  background: var(--adm-bg); padding: 0.15rem 0.55rem;
+  border-radius: 999px; font-size: 0.62rem; font-weight: 600; color: var(--adm-text-muted);
 }
 
-.inquiry-type-badge i {
-  font-size: 0.6rem;
-}
-
-.inquiry-body {
-  padding: 0 1.5rem 1rem;
-}
-
+.inquiry-body { padding: 0 1.25rem 0.875rem; }
 .inquiry-message {
-  background: var(--gray-50);
-  border-radius: var(--r);
-  padding: 1rem;
-  font-size: 0.85rem;
-  line-height: 1.65;
-  color: var(--gray-600);
-  margin-bottom: 1rem;
-  border-left: 2px solid var(--gold);
+  background: var(--adm-bg); border-radius: var(--adm-r);
+  padding: 0.875rem; font-size: 0.82rem; line-height: 1.6;
+  color: var(--adm-text-muted); margin-bottom: 0.875rem;
+  border-left: 2px solid var(--adm-accent);
 }
 
 .inquiry-details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--gray-100);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--adm-border-light);
 }
-
-.inquiry-detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 0.75rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.inquiry-detail-label {
-  color: var(--gray-400);
-  font-weight: 500;
-}
-
-.inquiry-detail-value {
-  color: var(--navy);
-  font-weight: 600;
-}
+.inquiry-detail-item { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; flex-wrap: wrap; gap: 0.4rem; }
+.inquiry-detail-label { color: var(--adm-text-faint); font-weight: 500; }
+.inquiry-detail-value { color: var(--adm-text); font-weight: 600; }
 
 .inquiry-actions {
-  display: flex;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem 1.25rem;
-  border-top: 1px solid var(--gray-100);
-  background: var(--gray-50);
-}
-
-/* Reply Modal Styles */
-.reply-modal .modal {
-  max-width: 560px;
-}
-
-.reply-preview {
-  background: var(--gray-50);
-  border-radius: var(--r);
-  padding: 1rem;
-  margin: 1rem 0;
-  font-size: 0.85rem;
-  border-left: 2px solid var(--gold);
-}
-
-.reply-preview-header {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--gold);
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Quick reply templates */
-.quick-replies {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--gray-100);
+  display: flex; gap: 0.4rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--adm-border-light);
+  background: var(--adm-bg);
 }
 
 .quick-reply-btn {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  padding: 0.3rem 0.8rem;
-  border-radius: var(--r-full);
-  font-size: 0.7rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
   cursor: pointer;
-  transition: var(--t);
-  color: var(--gray-600);
-}
-
-.quick-reply-btn:hover {
-  background: var(--gold-pale);
-  border-color: var(--gold);
-  color: var(--gold-dark);
-}
-
-/* Inquiry stats cards */
-.inquiry-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.inquiry-stat-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem;
-  text-align: center;
-  transition: var(--t);
-}
-
-.inquiry-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.inquiry-stat-number {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--navy);
-  font-family: var(--font-display);
-}
-
-.inquiry-stat-label {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
-}
-
-/* Status badge variations */
-.badge-new {
-  background: var(--gold-pale);
-  color: var(--gold-dark);
-  animation: pulse 2s infinite;
-}
-
-.badge-replied {
-  background: var(--green-light);
-  color: var(--green);
-}
-
-.badge-archived {
-  background: var(--gray-100);
-  color: var(--gray-500);
-}
-
-/* Responsive inquiries */
-@media (max-width: 768px) {
-  .inquiry-header {
-    flex-direction: column;
-  }
-  
-  .inquiry-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
-  }
-  
-  .inquiry-details {
-    grid-template-columns: 1fr;
-  }
-  
-  .inquiry-actions {
-    flex-wrap: wrap;
-  }
-  
-  .inquiry-actions .btn {
-    flex: 1;
-    justify-content: center;
-  }
-  
-  .inquiry-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ── Users Page Specific Styles ───────────────────────────────────────────── */
-.users-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.user-stat-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem;
-  text-align: center;
-  transition: var(--t);
-  cursor: pointer;
-}
-
-.user-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-  border-color: var(--gray-200);
-}
-
-.user-stat-card.active {
-  border-color: var(--gold);
-  background: linear-gradient(135deg, var(--gold-pale) 0%, var(--white) 100%);
-}
-
-.user-stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--navy);
-  font-family: var(--font-display);
-}
-
-.user-stat-label {
-  font-size: 0.65rem;
-  color: var(--gray-400);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
-}
-
-/* User avatar with role color */
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-.user-avatar.client {
-  background: var(--blue-light);
-  color: var(--navy);
-}
-
-.user-avatar.owner {
-  background: var(--gold-pale);
-  color: var(--gold-dark);
-}
-
-.user-avatar.operator {
-  background: var(--green-light);
-  color: var(--green);
-}
-
-.user-avatar.staff {
-  background: var(--gray-100);
-  color: var(--gray-600);
-}
-
-.user-avatar.admin {
-  background: var(--red-light);
-  color: var(--red);
-}
-
-.user-info-compact {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.user-details {
-  flex: 1;
-}
-
-.user-name {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.85rem;
-  margin-bottom: 0.15rem;
-}
-
-.user-email {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-}
-
-/* Membership badge */
-.membership-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--gold-pale);
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--r-full);
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--gold-dark);
-}
-
-.membership-status {
-  font-size: 0.6rem;
-  color: var(--gray-400);
-  margin-top: 0.15rem;
-}
-
-/* Toggle switch styling */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--gray-300);
-  transition: 0.3s;
-  border-radius: 34px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-  background-color: var(--green);
-}
-
-input:checked + .toggle-slider:before {
-  transform: translateX(20px);
-}
-
-/* Role dropdown in table */
-.role-select {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.72rem;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--gray-200);
-  background: var(--white);
-  cursor: pointer;
+  transition: all var(--adm-t);
+  color: var(--adm-text-muted);
   font-family: var(--font-body);
-  transition: var(--t);
 }
+.quick-reply-btn:hover { background: var(--adm-accent-light); border-color: var(--adm-accent); color: var(--adm-accent-dark); }
 
-.role-select:hover {
-  border-color: var(--gold);
-}
-
-.role-select:focus {
-  outline: none;
-  border-color: var(--navy);
-  box-shadow: 0 0 0 2px rgba(11,28,54,0.1);
-}
-
-/* User detail modal */
-.user-detail-section {
-  margin-bottom: 1.5rem;
-}
-
-.user-detail-section h4 {
-  font-size: 0.85rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--gray-100);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.user-detail-section h4 i {
-  color: var(--gold);
-  font-size: 0.9rem;
-}
-
-.activity-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--gray-100);
-  font-size: 0.8rem;
-}
-
-.activity-icon {
-  width: 28px;
-  height: 28px;
-  background: var(--gray-50);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  color: var(--gold);
-}
-
-.activity-detail {
-  flex: 1;
-}
-
-.activity-title {
-  font-weight: 500;
-  color: var(--navy);
-  margin-bottom: 0.15rem;
-}
-
-.activity-time {
-  font-size: 0.65rem;
-  color: var(--gray-400);
-}
-
-/* Responsive users table */
-@media (max-width: 1024px) {
-  .users-stats {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .users-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .user-info-compact {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .users-stats {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Careers Page - Clean & Simple ───────────────────────────────────────── */
-.careers-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.careers-stat-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem;
-  text-align: center;
-}
-
-.careers-stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.careers-stat-label {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-top: 0.25rem;
-}
-
-/* Application status badges - simple */
-.status-received { background: var(--gray-100); color: var(--gray-600); }
-.status-reviewing { background: var(--blue-light); color: var(--navy); }
-.status-shortlisted { background: var(--gold-pale); color: var(--gold-dark); }
-.status-interview { background: var(--amber-light); color: var(--amber); }
-.status-offered { background: var(--green-light); color: var(--green); }
-.status-hired { background: var(--green); color: white; }
-.status-rejected { background: var(--red-light); color: var(--red); }
-
-/* Simple job card for mobile */
-.job-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.job-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-}
-
-.job-card-title {
-  font-weight: 600;
-  color: var(--navy);
-}
-
-.job-card-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-bottom: 0.75rem;
-}
-
-.job-card-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .careers-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .careers-stats {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Settings Page - Clean & Simple ──────────────────────────────────────── */
-.settings-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  margin-bottom: 1.5rem;
-  overflow: hidden;
-}
-
-.settings-card-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--gray-100);
-  background: var(--gray-50);
-}
-
-.settings-card-header h4 {
-  font-size: 0.9rem;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.settings-card-header i {
-  color: var(--gold);
-}
-
-.settings-card-body {
-  padding: 1.5rem;
-}
-
-/* Simple rule row for mobile */
-.rule-item {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--gray-100);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.rule-item:last-child {
-  border-bottom: none;
-}
-
-.rule-info {
-  flex: 1;
-}
-
-.rule-name {
-  font-weight: 600;
-  color: var(--navy);
-  margin-bottom: 0.15rem;
-}
-
-.rule-meta {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.rule-value {
-  font-weight: 600;
-  color: var(--gold);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .settings-card-body {
-    padding: 1rem;
-  }
-  
-  .rule-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .rule-meta {
-    font-size: 0.65rem;
-  }
-}
-
-/* ── Email Logs Page - Clean & Simple ────────────────────────────────────── */
-.email-preview {
-  background: var(--gray-50);
-  border-radius: var(--r);
-  padding: 0.75rem;
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--gray-500);
-  max-height: 100px;
-  overflow-y: auto;
-  word-break: break-word;
-  white-space: pre-wrap;
-  line-height: 1.5;
-}
-
-.email-subject {
-  font-weight: 500;
-  color: var(--navy);
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.email-subject:hover {
-  white-space: normal;
-  word-break: break-word;
-}
-
-/* Send email form compact */
-.send-email-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.send-email-card h4 {
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .email-subject {
-    max-width: 180px;
-  }
-  
-  .send-email-card {
-    padding: 1rem;
-  }
-}
-
-/* ── Operator Aircraft Page - Clean & Simple ─────────────────────────────── */
-.aircraft-detail-group {
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.aircraft-detail-group:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.aircraft-detail-group label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--gray-400);
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.aircraft-detail-group p {
-  font-size: 0.85rem;
-  color: var(--navy);
-  font-weight: 500;
-  margin: 0;
-}
-
-/* Aircraft status quick badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--r-full);
-  font-size: 0.65rem;
-  font-weight: 600;
-}
-
-.status-active { background: var(--green-light); color: var(--green); }
-.status-maintenance { background: var(--red-light); color: var(--red); }
-.status-pending { background: var(--amber-light); color: var(--amber); }
-.status-inactive { background: var(--gray-100); color: var(--gray-500); }
-
-/* Responsive aircraft grid for mobile */
-@media (max-width: 768px) {
-  .aircraft-detail-group {
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-  }
-}
-
-/* ── Operators Page - Clean & Simple ─────────────────────────────────────── */
-.operator-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.operator-stat-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem;
-  text-align: center;
-}
-
-.operator-stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.operator-stat-label {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-top: 0.25rem;
-}
-
-/* Operator detail tabs content */
-.detail-section {
-  margin-top: 1rem;
-}
-
-.detail-item {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--gray-100);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.detail-item:last-child {
-  border-bottom: none;
-}
-
-.detail-item-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--gray-400);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.detail-item-value {
-  font-weight: 500;
-  color: var(--navy);
-}
-
-/* Tier selector cards */
-.tier-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  padding: 1rem;
-  border: 1.5px solid var(--gray-200);
-  border-radius: var(--r);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.tier-option:hover {
-  border-color: var(--gold);
-  background: var(--gold-pale);
-}
-
-.tier-option.selected {
-  border-color: var(--gold);
-  background: var(--gold-pale);
-}
-
-.tier-icon {
-  color: var(--gold);
-  font-size: 1.1rem;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.tier-title {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.875rem;
-  margin-bottom: 0.2rem;
-}
-
-.tier-desc {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-}
-
-/* Yacht card in operator detail */
-.yacht-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--gray-50);
-  border-radius: var(--r);
-  border: 1px solid var(--gray-100);
-  margin-bottom: 0.5rem;
-}
-
-.yacht-card:last-child {
-  margin-bottom: 0;
-}
-
-.yacht-name {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.875rem;
-}
-
-.yacht-specs {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .operator-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .operator-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .detail-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .yacht-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
-
-/* ── Payouts Page - Clean & Simple ───────────────────────────────────────── */
-.payout-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.payout-stat-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1rem;
-  text-align: center;
-}
-
-.payout-stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--navy);
-}
+.quick-replies { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.875rem; padding: 0.4rem 0; border-bottom: 1px solid var(--adm-border-light); }
 
-.payout-stat-number.pending {
-  color: var(--amber);
+.reply-preview {
+  background: var(--adm-bg); border-radius: var(--adm-r);
+  padding: 0.875rem; margin: 0.875rem 0;
+  font-size: 0.82rem; border-left: 2px solid var(--adm-accent);
 }
+.reply-preview-header { font-size: 0.65rem; font-weight: 600; color: var(--adm-accent); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
-.payout-stat-number.processing {
-  color: var(--navy);
-}
-
-.payout-stat-number.paid {
-  color: var(--green);
-}
-
-.payout-stat-label {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-top: 0.25rem;
-}
-
-/* Payout summary row */
-.payout-summary {
-  background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
-  border-radius: var(--r-lg);
-  padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  border: 1px solid var(--gray-100);
-}
-
-.payout-summary-item {
-  text-align: center;
-}
-
-.payout-summary-label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--gray-400);
-  margin-bottom: 0.25rem;
-}
-
-.payout-summary-value {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .payout-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .payout-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .payout-summary {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .payout-summary-item {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .payout-summary-label {
-    margin-bottom: 0;
-  }
-}
-
-/* ── Staff Dashboard - Clean & Simple ────────────────────────────────────── */
-.welcome-section {
-  background: linear-gradient(135deg, var(--gold-pale) 0%, var(--white) 100%);
-  border-radius: var(--r-lg);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(200, 164, 90, 0.2);
-}
-
-.welcome-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--navy);
-  margin-bottom: 0.25rem;
-}
-
-.welcome-subtitle {
-  font-size: 0.8rem;
-  color: var(--gray-400);
-}
-
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.quick-action-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.quick-action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.quick-action-icon {
-  width: 44px;
-  height: 44px;
-  background: var(--gold-pale);
-  border-radius: var(--r);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.quick-action-icon i {
-  color: var(--gold-dark);
-  font-size: 1.2rem;
-}
-
-.quick-action-content {
-  flex: 1;
-}
-
-.quick-action-title {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.15rem;
-}
-
-.quick-action-desc {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .welcome-section {
-    padding: 1rem;
-  }
-  
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-  
-  .quick-action-card {
-    padding: 1rem;
-  }
-}
-
-/* ── Owner Dashboard Specific Styles ─────────────────────────────────────── */
-.alert-amber {
-  background: var(--amber-light);
-  border: 1px solid #DFBD7A;
-  color: var(--amber);
-}
-
-.btn-outline-amber {
-  background: transparent;
-  border: 1.5px solid var(--amber);
-  color: var(--amber);
-}
-
-.btn-outline-amber:hover {
-  background: var(--amber);
-  color: var(--white);
-}
-
-/* Quick action cards (reuse from staff dashboard) */
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.quick-action-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.quick-action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.quick-action-icon {
-  width: 44px;
-  height: 44px;
-  background: var(--gold-pale);
-  border-radius: var(--r);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.quick-action-icon i {
-  color: var(--gold-dark);
-  font-size: 1.2rem;
-}
-
-.quick-action-content {
-  flex: 1;
-}
-
-.quick-action-title {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.15rem;
-}
-
-.quick-action-desc {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-  
-  .quick-action-card {
-    padding: 1rem;
-  }
-  
-  .alert-amber {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-/* ── Owner Sidebar Styles ────────────────────────────────────────────────── */
-.sidebar-owner {
-  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
-}
-
-.sidebar-owner .sidebar-logo-icon {
-  background: var(--gold);
-  color: var(--navy);
-}
-
-.sidebar-owner .sidebar-role-badge {
-  color: var(--gold-light);
-}
-
-.sidebar-owner .sidebar-link.active {
-  background: rgba(200, 164, 90, 0.12);
-  color: var(--gold-light);
-}
-
-.sidebar-owner .sidebar-link.active i {
-  color: var(--gold);
-}
-
-.sidebar-owner .sidebar-avatar {
-  background: rgba(200, 164, 90, 0.2);
-  border-color: rgba(200, 164, 90, 0.4);
-  color: var(--gold-light);
-}
-
-.sidebar-owner .sidebar-logout:hover {
-  background: rgba(200, 164, 90, 0.15);
-  color: var(--gold-light);
-}
-
-/* ── Owner Aircraft Page Styles ──────────────────────────────────────────── */
-.empty-state {
-  background: var(--white);
-  border: 2px dashed var(--gray-200);
-  border-radius: var(--r-xl);
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-.empty-state i {
-  font-size: 3rem;
-  color: var(--gray-200);
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  margin-bottom: 0.75rem;
-  font-size: 1.2rem;
-  color: var(--navy);
-}
-
-.empty-state p {
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
-  color: var(--gray-400);
-}
-
-.aircraft-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.aircraft-card-item {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  transition: var(--t-slow);
-}
-
-.aircraft-card-item:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.aircraft-card-left {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  flex: 1;
-}
-
-.aircraft-icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  border-radius: var(--r);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.aircraft-icon i {
-  color: var(--gold);
-  font-size: 1.5rem;
-}
-
-.aircraft-info {
-  flex: 1;
-}
-
-.aircraft-name {
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.aircraft-details {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin-bottom: 0.25rem;
-}
-
-.aircraft-rate {
-  font-size: 0.8rem;
-  color: var(--gray-600);
-  font-weight: 500;
-}
-
-.aircraft-card-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.hours-to-service {
-  text-align: center;
-  padding: 0 0.5rem;
-}
-
-.hours-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--gray-400);
-  margin-bottom: 0.2rem;
-}
-
-.hours-value {
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--navy);
-}
-
-.hours-value.urgent {
-  color: var(--red);
-}
-
-.approved-badge {
-  font-size: 0.7rem;
-  color: var(--green);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .aircraft-card-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .aircraft-card-left {
-    width: 100%;
-  }
-  
-  .aircraft-card-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .empty-state {
-    padding: 2rem 1rem;
-  }
-  
-  .empty-state i {
-    font-size: 2rem;
-  }
-}
-
-/* ── Operator Sidebar Styles ──────────────────────────────────────────────── */
-.sidebar-operator {
-  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
-}
-
-.sidebar-operator .sidebar-logo-icon {
-  background: var(--gold);
-  color: var(--navy);
-}
-
-.sidebar-operator .sidebar-role-badge {
-  color: var(--gold-light);
-}
-
-.sidebar-operator .sidebar-section-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  padding: 0.75rem 0.75rem 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.sidebar-operator .sidebar-link.active {
-  background: rgba(200, 164, 90, 0.12);
-  color: var(--gold-light);
-}
-
-.sidebar-operator .sidebar-link.active i {
-  color: var(--gold);
-}
-
-.sidebar-operator .sidebar-avatar {
-  background: rgba(200, 164, 90, 0.2);
-  border-color: rgba(200, 164, 90, 0.4);
-  color: var(--gold-light);
-}
-
-.sidebar-operator .sidebar-logout:hover {
-  background: rgba(200, 164, 90, 0.15);
-  color: var(--gold-light);
-}
-
-.sidebar-operator .sidebar-collapse-btn,
-.sidebar-operator .sidebar-expand-btn {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.sidebar-operator .sidebar-collapse-btn:hover,
-.sidebar-operator .sidebar-expand-btn:hover {
-  color: var(--gold-light);
-}
-
-/* ── Operator Dashboard Specific Styles ──────────────────────────────────── */
-.stat-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.7rem;
-  color: var(--gold);
-  text-decoration: none;
-  margin-top: 0.5rem;
-  transition: var(--t);
-}
-
-.stat-link:hover {
-  gap: 0.5rem;
-  color: var(--gold-light);
-}
-
-.stat-link i {
-  font-size: 0.6rem;
-}
+/* ── Aircraft / Fleet (admin) ────────────────────────────────────────────── */
+.aircraft-list, .yacht-list { display: flex; flex-direction: column; gap: 0.875rem; }
 
-.action-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
+.aircraft-card-item, .yacht-card-item {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
   padding: 1rem 1.25rem;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  transition: var(--t-slow);
+  gap: 1rem; flex-wrap: wrap;
+  transition: all var(--adm-t);
 }
+.aircraft-card-item:hover, .yacht-card-item:hover { box-shadow: var(--adm-shadow); border-color: var(--adm-border); }
 
-.action-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-  transform: translateY(-2px);
+.aircraft-card-left, .yacht-card-left { display: flex; align-items: center; gap: 1rem; flex: 1; }
+.aircraft-card-right, .yacht-card-right { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
+
+.aircraft-icon, .yacht-icon {
+  width: 52px; height: 52px;
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
+.aircraft-icon i, .yacht-icon i { color: var(--adm-accent); font-size: 1.35rem; }
 
-.action-card-content {
-  flex: 1;
-}
+.aircraft-name, .yacht-name { font-weight: 700; color: var(--adm-text); font-size: 0.92rem; margin-bottom: 0.2rem; }
+.aircraft-details, .yacht-details { font-size: 0.72rem; color: var(--adm-text-faint); margin-bottom: 0.2rem; }
+.aircraft-rate, .yacht-rate { font-size: 0.78rem; color: var(--adm-text-muted); font-weight: 500; }
 
-.action-card-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--navy);
-  margin-bottom: 0.15rem;
-}
+.hours-to-service { text-align: center; padding: 0 0.4rem; }
+.hours-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--adm-text-faint); margin-bottom: 0.15rem; }
+.hours-value { font-weight: 700; font-size: 0.92rem; color: var(--adm-text); }
+.hours-value.urgent { color: var(--adm-danger); }
+.approved-badge { font-size: 0.68rem; color: var(--adm-success); display: inline-flex; align-items: center; gap: 0.2rem; }
 
-.action-card-subtitle {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin: 0;
-}
+.aircraft-detail-group { margin-bottom: 0.875rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--adm-border-light); }
+.aircraft-detail-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.aircraft-detail-group label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--adm-text-faint); display: block; margin-bottom: 0.2rem; }
+.aircraft-detail-group p { font-size: 0.82rem; color: var(--adm-text); font-weight: 500; margin: 0; }
 
-.btn-outline-navy {
-  background: transparent;
-  border: 1.5px solid var(--navy);
-  color: var(--navy);
-}
-
-.btn-outline-navy:hover {
-  background: var(--navy);
-  color: var(--white);
-}
-
-.btn-amber {
-  background: var(--amber);
-  color: var(--white);
-}
-
-.btn-amber:hover {
-  background: var(--amber-dark);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .action-card {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .action-card-content {
-    text-align: center;
-  }
-  
-  .stat-link {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 640px) {
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Operator Bookings Page Styles ───────────────────────────────────────── */
-.booking-pending-card {
-  border-bottom: 1px solid var(--gray-100);
-  padding: 1rem 1.25rem;
-  transition: var(--t);
-}
-
-.booking-pending-card:last-child {
-  border-bottom: none;
-}
-
-.booking-pending-card:hover {
-  background: var(--gray-50);
-}
-
-.booking-pending-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.booking-reference {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.booking-details {
-  font-size: 0.8rem;
-  color: var(--gray-500);
-  margin-bottom: 0.15rem;
-}
-
-.booking-date {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-}
-
-.booking-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
+/* ── Bookings ────────────────────────────────────────────────────────────── */
 .booking-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid var(--gray-100);
-  cursor: pointer;
-  transition: var(--t);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem 1.1rem; border-bottom: 1px solid var(--adm-border-light);
+  cursor: pointer; transition: var(--adm-t);
 }
+.booking-item:hover { background: var(--adm-bg); }
+.booking-item:last-child { border-bottom: none; }
+.booking-item-left { flex: 1; }
+.booking-item-right { display: flex; align-items: center; gap: 0.65rem; }
 
-.booking-item:hover {
-  background: var(--gray-50);
-}
+.booking-pending-card { border-bottom: 1px solid var(--adm-border-light); padding: 0.875rem 1.1rem; transition: var(--adm-t); }
+.booking-pending-card:last-child { border-bottom: none; }
+.booking-pending-card:hover { background: var(--adm-bg); }
+.booking-pending-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.4rem; }
+.booking-reference { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; margin-bottom: 0.2rem; }
+.booking-details   { font-size: 0.78rem; color: var(--adm-text-muted); margin-bottom: 0.1rem; }
+.booking-date      { font-size: 0.68rem; color: var(--adm-text-faint); }
+.booking-actions   { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.booking-ref-note  { font-size: 0.68rem; color: var(--adm-text-faint); margin-top: 0.1rem; }
 
-.booking-item:last-child {
-  border-bottom: none;
-}
-
-.booking-item-left {
-  flex: 1;
-}
-
-.booking-item-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.booking-ref-note {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  margin-top: 0.15rem;
-}
-
-.btn-outline-red {
-  background: transparent;
-  border: 1.5px solid var(--red);
-  color: var(--red);
-}
-
-.btn-outline-red:hover {
-  background: var(--red);
-  color: var(--white);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .booking-pending-header {
-    flex-direction: column;
-  }
-  
-  .booking-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-  
-  .booking-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .booking-item-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-}
-
-/* ── Operator Profile Page Styles ───────────────────────────────────────── */
-.quick-action-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r);
-  color: var(--navy);
-  text-decoration: none;
-  transition: var(--t);
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.quick-action-link:hover {
-  background: var(--white);
-  border-color: var(--gold);
-  box-shadow: var(--shadow-sm);
-  transform: translateX(4px);
-}
-
-.quick-action-link i:first-child {
-  color: var(--gold);
-  font-size: 1rem;
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.review-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  transition: var(--t-slow);
-}
-
-.review-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-}
-
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.review-stars {
-  display: flex;
-  gap: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.review-stars i {
-  font-size: 0.9rem;
-}
-
-.review-date {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-}
-
-.review-comment {
-  font-size: 0.85rem;
-  color: var(--gray-600);
-  line-height: 1.6;
-  margin-bottom: 0.75rem;
-}
-
-.review-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.review-author {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  font-style: italic;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .profile-two-col {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .review-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .quick-action-link {
-    padding: 0.6rem 0.9rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .profile-two-col {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Operator Yachts Page Styles ─────────────────────────────────────────── */
-.yacht-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.yacht-card-item {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  transition: var(--t-slow);
-}
-
-.yacht-card-item:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-200);
-  transform: translateY(-2px);
-}
-
-.yacht-card-left {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  flex: 1;
-}
-
-.yacht-icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  border-radius: var(--r);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.yacht-icon i {
-  color: var(--gold);
-  font-size: 1.5rem;
-}
-
-.yacht-info {
-  flex: 1;
-}
-
-.yacht-name {
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.yacht-details {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin-bottom: 0.25rem;
-}
-
-.yacht-rate {
-  font-size: 0.8rem;
-  color: var(--gray-600);
-  font-weight: 500;
-}
-
-.yacht-card-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .yacht-card-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .yacht-card-left {
-    width: 100%;
-  }
-  
-  .yacht-card-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .yacht-icon {
-    width: 48px;
-    height: 48px;
-  }
-  
-  .yacht-icon i {
-    font-size: 1.2rem;
-  }
-}
-
-/* ── Operator Availability Page Styles ───────────────────────────────────── */
-.block-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--gray-100);
-  transition: var(--t);
-}
-
-.block-item:last-child {
-  border-bottom: none;
-}
-
-.block-item:hover {
-  background: var(--gray-50);
-}
-
-.block-info {
-  flex: 1;
-}
-
-.block-title {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.block-dates {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.block-dates i {
-  font-size: 0.7rem;
-}
-
-.block-notes {
-  color: var(--gray-500);
-  font-style: italic;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .block-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  
-  .block-title {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .block-dates {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-/* ── Operator RFQ Page Styles ────────────────────────────────────────────── */
+/* ── RFQ / Routes ────────────────────────────────────────────────────────── */
 .rfq-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--gray-100);
-  transition: var(--t);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.875rem 1.1rem; border-bottom: 1px solid var(--adm-border-light);
+  transition: var(--adm-t);
 }
-
-.rfq-item:last-child {
-  border-bottom: none;
-}
-
-.rfq-item:hover {
-  background: var(--gray-50);
-}
-
-.rfq-item.past {
-  opacity: 0.8;
-}
-
-.rfq-info {
-  flex: 1;
-}
-
-.rfq-booking {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.rfq-details {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin-bottom: 0.25rem;
-}
-
-.rfq-route {
-  font-size: 0.7rem;
-  color: var(--gray-500);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.rfq-route i {
-  font-size: 0.65rem;
-  color: var(--gold);
-}
-
-.client-price {
-  color: var(--green);
-  font-weight: 500;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .rfq-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  
-  .rfq-booking {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-/* ── Member Sidebar Styles ───────────────────────────────────────────────── */
-.sidebar-member {
-  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
-}
-
-.sidebar-member .sidebar-logo-icon {
-  background: var(--gold);
-  color: var(--navy);
-}
-
-.sidebar-member .sidebar-role-badge {
-  color: var(--gold-light);
-}
-
-.sidebar-member .sidebar-link.active {
-  background: rgba(200, 164, 90, 0.12);
-  color: var(--gold-light);
-}
-
-.sidebar-member .sidebar-link.active i {
-  color: var(--gold);
-}
-
-.sidebar-member .sidebar-avatar {
-  background: rgba(200, 164, 90, 0.2);
-  border-color: rgba(200, 164, 90, 0.4);
-  color: var(--gold-light);
-}
-
-.sidebar-member .sidebar-logout:hover {
-  background: rgba(200, 164, 90, 0.15);
-  color: var(--gold-light);
-}
-
-/* Membership badge in sidebar */
-.sidebar-membership {
-  padding: 0.75rem;
-  margin: 0.5rem 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.membership-badge-sidebar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: rgba(200, 164, 90, 0.15);
-  border: 1px solid rgba(200, 164, 90, 0.3);
-  border-radius: var(--r-full);
-  padding: 0.35rem 0.75rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--gold-light);
-}
-
-.membership-badge-sidebar i {
-  font-size: 0.65rem;
-  color: var(--gold);
-}
-
-/* Collapsed state adjustments */
-.sidebar-member.collapsed .sidebar-membership {
-  display: none;
-}
-
-.sidebar-member.collapsed .sidebar-user-role {
-  display: none;
-}
-
-
-/* ── Member Portal Styles ────────────────────────────────────────────────── */
-.membership-banner {
-  background: linear-gradient(135deg, var(--gold-pale) 0%, var(--white) 100%);
-  border: 1px solid rgba(200, 164, 90, 0.3);
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.membership-banner-content {
-  flex: 1;
-}
-
-.membership-tier {
-  font-weight: 700;
-  color: var(--gold-dark);
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.membership-benefits {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  font-size: 0.75rem;
-  color: var(--gray-500);
-}
-
-.membership-benefits span {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.membership-card {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  color: var(--white);
-}
-
-.membership-card-header {
-  padding: 1rem 1.25rem;
-  background: rgba(0, 0, 0, 0.1);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.membership-card-body {
-  padding: 1.25rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.membership-points {
-  text-align: center;
-}
-
-.points-label {
-  font-size: 0.7rem;
-  opacity: 0.7;
-  display: block;
-}
-
-.points-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gold);
-}
-
-.membership-benefits-list {
-  font-size: 0.75rem;
-}
-
-.membership-benefits-list ul {
-  margin: 0.25rem 0 0 1rem;
-  list-style: none;
-}
-
-.membership-benefits-list li {
-  margin: 0.15rem 0;
-}
-
-/* Fleet Grid */
-.fleet-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.fleet-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  transition: var(--t-slow);
-}
-
-.fleet-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-}
-
-.fleet-card-image {
-  height: 160px;
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  color: var(--gold);
-}
-
-.fleet-card-body {
-  padding: 1.25rem;
-}
-
-.fleet-card-name {
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 1rem;
-  margin-bottom: 0.2rem;
-}
-
-.fleet-card-model {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin-bottom: 0.75rem;
-}
-
-.fleet-card-specs {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: var(--gray-500);
-  margin-bottom: 0.75rem;
-}
-
-.fleet-card-specs i {
-  color: var(--gold);
-}
-
-.fleet-card-price {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 0.5rem;
-}
-
-.fleet-card-price span {
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: var(--gray-400);
-}
-
-.fleet-card-amenities {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  color: var(--gold);
-}
-
-/* Aircraft Result Item */
-.aircraft-result-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--gray-100);
-  transition: var(--t);
-}
-
-.aircraft-result-item:hover {
-  background: var(--gray-50);
-}
-
-.aircraft-result-info {
-  flex: 1;
-}
-
-.aircraft-result-name {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.aircraft-result-details {
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin-bottom: 0.25rem;
-}
-
-.aircraft-result-amenities {
-  display: flex;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-  color: var(--gold);
-}
-
-.aircraft-result-right {
-  text-align: right;
-}
-
-.aircraft-result-price {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 0.5rem;
-}
-
-.aircraft-result-price span {
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: var(--gray-400);
-}
-
-/* Routes List */
-.routes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+.rfq-item:hover { background: var(--adm-bg); }
+.rfq-item:last-child { border-bottom: none; }
+.rfq-item.past { opacity: 0.75; }
+.rfq-booking { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.rfq-details { font-size: 0.72rem; color: var(--adm-text-faint); margin-bottom: 0.15rem; }
+.rfq-route   { font-size: 0.68rem; color: var(--adm-text-muted); display: flex; align-items: center; gap: 0.2rem; }
+.rfq-route i { font-size: 0.62rem; color: var(--adm-accent); }
+.client-price { color: var(--adm-success); font-weight: 500; }
 
 .route-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: var(--r-lg);
+  background: var(--adm-surface); border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg); padding: 0.875rem 1.1rem;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.875rem; flex-wrap: wrap; transition: var(--adm-t);
+}
+.route-card:hover { box-shadow: var(--adm-shadow-sm); }
+.route-card-name { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; margin-bottom: 0.2rem; }
+.route-card-path { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--adm-text-muted); margin-bottom: 0.2rem; }
+.route-card-path i { color: var(--adm-accent); font-size: 0.68rem; }
+.route-card-notes { font-size: 0.68rem; color: var(--adm-text-faint); font-style: italic; }
+.route-card-actions { display: flex; gap: 0.4rem; }
+
+/* ── Yacht detail ────────────────────────────────────────────────────────── */
+.yacht-detail-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); overflow: hidden; margin-bottom: 1.25rem; }
+.yacht-detail-header { background: var(--adm-primary); padding: 1.25rem; color: #fff; }
+.yacht-detail-header h3 { color: #fff; margin-bottom: 0.4rem; }
+.yacht-detail-header p { color: rgba(255,255,255,0.65); margin: 0; }
+
+.yacht-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.875rem; padding: 1.25rem; background: var(--adm-bg); border-bottom: 1px solid var(--adm-border-light); }
+.yacht-spec { display: flex; align-items: center; gap: 0.65rem; }
+.yacht-spec i { font-size: 1.1rem; color: var(--adm-accent); width: 28px; }
+.yacht-spec-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--adm-text-faint); }
+.yacht-spec-value { font-size: 0.85rem; font-weight: 600; color: var(--adm-text); }
+
+.yacht-card { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.875rem; background: var(--adm-bg); border-radius: var(--adm-r); border: 1px solid var(--adm-border-light); margin-bottom: 0.4rem; }
+.yacht-card:last-child { margin-bottom: 0; }
+
+/* ── Block items (availability) ──────────────────────────────────────────── */
+.block-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.875rem 1.1rem; border-bottom: 1px solid var(--adm-border-light); transition: var(--adm-t);
+}
+.block-item:last-child { border-bottom: none; }
+.block-item:hover { background: var(--adm-bg); }
+.block-title { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.block-dates { font-size: 0.72rem; color: var(--adm-text-faint); display: flex; align-items: center; gap: 0.2rem; flex-wrap: wrap; }
+.block-dates i { font-size: 0.65rem; }
+.block-notes { color: var(--adm-text-muted); font-style: italic; }
+
+/* ── Payout summary ──────────────────────────────────────────────────────── */
+.payout-summary {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 0.875rem;
+}
+.payout-summary-item { text-align: center; }
+.payout-summary-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--adm-text-faint); margin-bottom: 0.2rem; }
+.payout-summary-value { font-size: 1rem; font-weight: 700; color: var(--adm-text); }
+
+/* ── Operator details ────────────────────────────────────────────────────── */
+.detail-section { margin-top: 0.875rem; }
+.detail-item {
+  padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--adm-border-light);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;
+}
+.detail-item:last-child { border-bottom: none; }
+.detail-item-label { font-size: 0.65rem; font-weight: 600; color: var(--adm-text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.detail-item-value { font-weight: 500; color: var(--adm-text); font-size: 0.82rem; }
+
+.tier-option {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 0.875rem; border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r); background: transparent;
+  cursor: pointer; text-align: left; transition: all var(--adm-t); width: 100%;
+  font-family: var(--font-body);
+}
+.tier-option:hover { border-color: var(--adm-accent); background: var(--adm-accent-light); }
+.tier-option.selected { border-color: var(--adm-accent); background: var(--adm-accent-light); }
+.tier-icon { color: var(--adm-accent); font-size: 1rem; margin-top: 2px; flex-shrink: 0; }
+.tier-title { font-weight: 600; color: var(--adm-text); font-size: 0.82rem; margin-bottom: 0.15rem; }
+.tier-desc  { font-size: 0.72rem; color: var(--adm-text-faint); }
+
+/* ── Marketplace ─────────────────────────────────────────────────────────── */
+.marketplace-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); overflow: hidden; transition: all var(--adm-t); }
+.marketplace-card:hover { box-shadow: var(--adm-shadow); }
+.marketplace-header { background: var(--adm-bg); padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--adm-border-light); }
+.marketplace-header h3 { margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem; color: var(--adm-text); }
+.marketplace-header h3 i { color: var(--adm-accent); font-size: 1.1rem; }
+.marketplace-stats { display: flex; gap: 1.25rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.marketplace-stat { display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.78rem; }
+.marketplace-stat-label { color: var(--adm-text-faint); font-size: 0.68rem; font-weight: 500; }
+.marketplace-stat-value { font-weight: 700; color: var(--adm-text); font-size: 0.85rem; }
+
+.aircraft-thumb { width: 36px; height: 36px; background: var(--adm-bg); border-radius: var(--adm-r); display: flex; align-items: center; justify-content: center; color: var(--adm-accent); font-size: 1rem; flex-shrink: 0; }
+.aircraft-info  { display: flex; align-items: center; gap: 0.65rem; }
+.aircraft-manufacturer { font-size: 0.65rem; color: var(--adm-text-faint); margin-bottom: 0.1rem; }
+.aircraft-model-name   { font-weight: 600; color: var(--adm-text); font-size: 0.82rem; }
+
+.route-visual { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+.route-point  { font-weight: 600; color: var(--adm-text); }
+.route-arrow  { color: var(--adm-accent); font-size: 0.65rem; }
+.airport-codes{ font-family: monospace; font-size: 0.65rem; color: var(--adm-text-faint); margin-top: 0.1rem; }
+
+.commission-breakdown { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
+.commission-amount { font-weight: 700; color: var(--adm-accent-dark); }
+.commission-percent { font-size: 0.58rem; color: var(--adm-text-faint); }
+
+.revenue-summary {
+  background: var(--adm-primary);
+  border-radius: var(--adm-r-lg);
   padding: 1rem 1.25rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  transition: var(--t);
+  margin-bottom: 1.25rem;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 0.875rem;
 }
+.revenue-summary-item { text-align: center; }
+.revenue-summary-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.6); margin-bottom: 0.2rem; }
+.revenue-summary-value { font-size: 1.35rem; font-weight: 700; color: #fff; }
+.revenue-summary-value small { font-size: 0.7rem; font-weight: 400; opacity: 0.65; }
 
-.route-card:hover {
-  box-shadow: var(--shadow-sm);
-  border-color: var(--gray-200);
+.marketplace-tabs { display: flex; gap: 0.3rem; border-bottom: 2px solid var(--adm-border-light); margin-bottom: 1.25rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.marketplace-tab { background: none; border: none; padding: 0.65rem 1rem; font-size: 0.82rem; font-weight: 500; color: var(--adm-text-faint); cursor: pointer; transition: var(--adm-t); white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: var(--font-body); }
+.marketplace-tab:hover { color: var(--adm-text); }
+.marketplace-tab.active { color: var(--adm-text); border-bottom-color: var(--adm-accent); font-weight: 600; }
+.marketplace-tab i { margin-right: 0.4rem; font-size: 0.85rem; }
+
+/* ── Email logs ───────────────────────────────────────────────────────────── */
+.email-subject { font-weight: 500; color: var(--adm-text); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.email-subject:hover { white-space: normal; word-break: break-word; }
+.email-preview { background: var(--adm-bg); border-radius: var(--adm-r); padding: 0.65rem; margin-top: 0.4rem; font-size: 0.72rem; color: var(--adm-text-muted); max-height: 90px; overflow-y: auto; word-break: break-word; white-space: pre-wrap; line-height: 1.5; }
+.send-email-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); padding: 1.1rem; margin-bottom: 1.25rem; }
+.send-email-card h4 { font-size: 0.85rem; margin-bottom: 0.875rem; display: flex; align-items: center; gap: 0.4rem; color: var(--adm-text); }
+
+/* ── Activity list (user detail) ─────────────────────────────────────────── */
+.activity-list { max-height: 280px; overflow-y: auto; }
+.activity-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0; border-bottom: 1px solid var(--adm-border-light); font-size: 0.78rem; }
+.activity-icon { width: 26px; height: 26px; background: var(--adm-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--adm-accent); }
+.activity-title { font-weight: 500; color: var(--adm-text); margin-bottom: 0.1rem; }
+.activity-time  { font-size: 0.62rem; color: var(--adm-text-faint); }
+
+.user-detail-section { margin-bottom: 1.25rem; }
+.user-detail-section h4 { font-size: 0.82rem; margin-bottom: 0.65rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--adm-border-light); display: flex; align-items: center; gap: 0.4rem; color: var(--adm-text); }
+.user-detail-section h4 i { color: var(--adm-accent); font-size: 0.85rem; }
+
+/* ── Quick action link ───────────────────────────────────────────────────── */
+.quick-action-link {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.65rem 0.875rem;
+  background: var(--adm-bg); border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r); color: var(--adm-text); text-decoration: none;
+  transition: all var(--adm-t); font-size: 0.82rem; font-weight: 500;
 }
+.quick-action-link:hover { background: var(--adm-surface); border-color: var(--adm-accent); box-shadow: var(--adm-shadow-sm); transform: translateX(3px); }
+.quick-action-link i:first-child { color: var(--adm-accent); font-size: 0.95rem; }
 
-.route-card-info {
-  flex: 1;
+/* ── Reviews ─────────────────────────────────────────────────────────────── */
+.reviews-list { display: flex; flex-direction: column; gap: 0.875rem; }
+.review-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); padding: 1rem 1.1rem; transition: all var(--adm-t); }
+.review-card:hover { box-shadow: var(--adm-shadow); }
+.review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.4rem; }
+.review-stars  { display: flex; gap: 0.2rem; font-size: 0.85rem; }
+.review-date   { font-size: 0.68rem; color: var(--adm-text-faint); }
+.review-comment{ font-size: 0.82rem; color: var(--adm-text-muted); line-height: 1.6; margin-bottom: 0.65rem; }
+.review-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+.review-author { font-size: 0.72rem; color: var(--adm-text-faint); font-style: italic; }
+
+/* ── Job cards ───────────────────────────────────────────────────────────── */
+.job-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); padding: 0.875rem; margin-bottom: 0.65rem; }
+.job-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; }
+.job-card-title  { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; }
+.job-card-meta   { display: flex; gap: 0.875rem; font-size: 0.68rem; color: var(--adm-text-faint); margin-bottom: 0.65rem; }
+.job-card-actions{ display: flex; gap: 0.4rem; margin-top: 0.65rem; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty-state {
+  background: var(--adm-surface);
+  border: 1.5px dashed var(--adm-border);
+  border-radius: var(--adm-r-xl);
+  padding: 3.5rem 2rem;
+  text-align: center;
 }
+.empty-state i  { font-size: 2.5rem; color: var(--adm-border); display: block; margin-bottom: 0.875rem; }
+.empty-state h3 { margin-bottom: 0.6rem; font-size: 1.1rem; color: var(--adm-text); }
+.empty-state p  { margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--adm-text-faint); }
 
-.route-card-name {
-  font-weight: 600;
-  color: var(--navy);
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
+/* ── Charter accent classes ──────────────────────────────────────────────── */
+.charter-route    { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; }
+.charter-route i  { color: var(--adm-accent); font-size: 0.65rem; }
+.charter-duration { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--adm-accent-light); padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.65rem; font-weight: 600; color: var(--adm-accent-dark); }
+.guest-avatar { width: 30px; height: 30px; background: var(--adm-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--adm-text); font-size: 0.75rem; }
+.guest-info-compact { display: flex; align-items: center; gap: 0.4rem; }
+.date-range { font-family: monospace; font-size: 0.72rem; color: var(--adm-text-muted); background: var(--adm-bg); padding: 0.15rem 0.45rem; border-radius: 4px; display: inline-block; }
+.amenity-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--adm-bg); padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.62rem; color: var(--adm-text-muted); }
+.amenity-badge i { font-size: 0.58rem; color: var(--adm-accent); }
+
+/* ── Member portal ───────────────────────────────────────────────────────── */
+.membership-banner {
+  background: var(--adm-accent-light);
+  border: 1px solid rgba(200,164,90,0.25);
+  border-radius: var(--adm-r-lg);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 0.875rem;
 }
+.membership-banner-content { flex: 1; }
+.membership-tier { font-weight: 700; color: var(--adm-accent-dark); font-size: 0.85rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+.membership-benefits { display: flex; gap: 0.875rem; flex-wrap: wrap; font-size: 0.72rem; color: var(--adm-text-muted); }
+.membership-benefits span { display: flex; align-items: center; gap: 0.2rem; }
 
-.route-card-path {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--gray-500);
-  margin-bottom: 0.25rem;
-}
+.sidebar-membership { padding: 0.6rem; margin: 0.4rem 0.625rem; border-top: 1px solid var(--adm-border-light); border-bottom: 1px solid var(--adm-border-light); }
+.membership-badge-sidebar { display: flex; align-items: center; justify-content: center; gap: 0.4rem; background: var(--adm-accent-light); border: 1px solid rgba(200,164,90,0.3); border-radius: 999px; padding: 0.3rem 0.65rem; font-size: 0.65rem; font-weight: 600; color: var(--adm-accent-dark); }
+.membership-badge-sidebar i { font-size: 0.62rem; color: var(--adm-accent); }
+.sidebar.collapsed .sidebar-membership { display: none; }
 
-.route-card-path i {
-  color: var(--gold);
-  font-size: 0.7rem;
-}
+.fleet-card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-r-lg); overflow: hidden; transition: all var(--adm-t); }
+.fleet-card:hover { transform: translateY(-3px); box-shadow: var(--adm-shadow); }
+.fleet-card-image { height: 140px; background: var(--adm-primary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--adm-accent); }
+.fleet-card-body  { padding: 1rem 1.1rem; }
+.fleet-card-name  { font-weight: 700; color: var(--adm-text); font-size: 0.92rem; margin-bottom: 0.15rem; }
+.fleet-card-model { font-size: 0.72rem; color: var(--adm-text-faint); margin-bottom: 0.65rem; }
+.fleet-card-specs { display: flex; gap: 0.875rem; font-size: 0.72rem; color: var(--adm-text-muted); margin-bottom: 0.65rem; }
+.fleet-card-specs i { color: var(--adm-accent); }
+.fleet-card-price { font-size: 1rem; font-weight: 700; color: var(--adm-text); margin-bottom: 0.4rem; }
+.fleet-card-price span { font-size: 0.65rem; font-weight: 400; color: var(--adm-text-faint); }
+.fleet-card-amenities { display: flex; gap: 0.4rem; margin-bottom: 0.875rem; color: var(--adm-accent); }
 
-.route-card-notes {
-  font-size: 0.7rem;
-  color: var(--gray-400);
-  font-style: italic;
-}
+.aircraft-result-item { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.1rem; border-bottom: 1px solid var(--adm-border-light); transition: var(--adm-t); }
+.aircraft-result-item:hover { background: var(--adm-bg); }
+.aircraft-result-name     { font-weight: 600; color: var(--adm-text); font-size: 0.85rem; margin-bottom: 0.2rem; }
+.aircraft-result-details  { font-size: 0.72rem; color: var(--adm-text-faint); margin-bottom: 0.2rem; }
+.aircraft-result-amenities{ display: flex; gap: 0.4rem; font-size: 0.68rem; color: var(--adm-accent); }
+.aircraft-result-right    { text-align: right; }
+.aircraft-result-price    { font-size: 1rem; font-weight: 700; color: var(--adm-text); margin-bottom: 0.4rem; }
+.aircraft-result-price span { font-size: 0.65rem; font-weight: 400; color: var(--adm-text-faint); }
 
-.route-card-actions {
-  display: flex;
-  gap: 0.5rem;
-}
+/* ── Utility buttons (admin specific) ────────────────────────────────────── */
+.btn-outline-red   { background: transparent; border: 1.5px solid var(--adm-danger);  color: var(--adm-danger); }
+.btn-outline-red:hover   { background: var(--adm-danger);  color: #fff; }
+.btn-outline-amber { background: transparent; border: 1.5px solid var(--adm-warning); color: var(--adm-warning); }
+.btn-outline-amber:hover { background: var(--adm-warning); color: #fff; }
+.btn-amber { background: var(--adm-warning); color: #fff; border: none; }
+.btn-amber:hover { opacity: 0.9; }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .membership-banner {
-    flex-direction: column;
-    text-align: center;
+/* ── Responsive Admin ────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dash-main { margin-left: 0; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--adm-t);
+    z-index: 1000;
   }
-  
-  .membership-benefits {
-    justify-content: center;
-  }
-  
-  .membership-card-body {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .fleet-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .aircraft-result-item {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.75rem;
-  }
-  
-  .aircraft-result-right {
-    text-align: center;
-  }
-  
-  .route-card {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .route-card-path {
-    justify-content: center;
-  }
-}
-
-/* Admin Navbar Styles */
-.admin-navbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 70px;
-  padding: 0 24px;
-  background: linear-gradient(135deg, #0b1d3a 0%, #0f2849 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-/* Toggle Button */
-.navbar-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.navbar-toggle:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 215, 0, 0.5);
-  transform: translateY(-1px);
-}
-
-.navbar-toggle:active {
-  transform: translateY(0);
-}
-
-/* Logo Region - White */
-.xnavbar-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.navbar-logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.logo-main {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0b1d3a;
-  letter-spacing: -0.5px;
-}
-
-.logo-sub {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #d4af37;
-  letter-spacing: -0.3px;
-}
-
-.navbar-role-badge {
-  background: linear-gradient(135deg, #d4af37, #b8960c);
-  color: #0b1d3a;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-left: 8px;
-}
-
-.navbar-right {
-  display: flex;
-  align-items: center;
-}
-
-/* Profile Dropdown */
-.profile-dropdown {
-  position: relative;
-}
-
-.profile-trigger {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 16px 6px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 40px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.profile-trigger:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 215, 0, 0.3);
-  transform: translateY(-1px);
-}
-
-.profile-avatar {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #d4af37, #b8960c);
-  color: #0b1d3a;
-  font-weight: 700;
-  font-size: 0.9rem;
-  border-radius: 50%;
-  text-transform: uppercase;
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.profile-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.profile-role {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.profile-trigger i {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-  transition: transform 0.3s ease;
-}
-
-/* Dropdown Menu */
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  min-width: 280px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  animation: slideDown 0.3s ease;
-  z-index: 1000;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dropdown-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: linear-gradient(135deg, #f8f9fa, #ffffff);
-  border-bottom: 1px solid #e9ecef;
-}
-
-.dropdown-avatar {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #d4af37, #b8960c);
-  color: #0b1d3a;
-  font-weight: 700;
-  font-size: 1.1rem;
-  border-radius: 50%;
-  text-transform: uppercase;
-}
-
-.dropdown-user-info {
-  flex: 1;
-}
-
-.dropdown-user-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #0b1d3a;
-  margin-bottom: 2px;
-}
-
-.dropdown-user-email {
-  font-size: 0.75rem;
-  color: #6c757d;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: #e9ecef;
-  margin: 8px 0;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px 16px;
-  background: none;
-  border: none;
-  color: #495057;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.dropdown-item:hover {
-  background: #f8f9fa;
-  color: #0b1d3a;
-  padding-left: 20px;
-}
-
-.dropdown-item i {
-  width: 20px;
-  font-size: 1rem;
-}
-
-.dropdown-item.logout {
-  color: #dc3545;
-}
-
-.dropdown-item.logout:hover {
-  background: #fff5f5;
-  color: #dc3545;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .admin-navbar {
-    padding: 0 16px;
-  }
-
-  .profile-info {
-    display: none;
-  }
-
-  .profile-trigger {
-    padding: 6px 12px;
-  }
-
-  .navbar-logo-text {
-    display: none;
-  }
-
-  .navbar-role-badge {
-    display: none;
-  }
-
-  .dropdown-menu {
-    min-width: 260px;
-    right: -10px;
-  }
-}
-
-/* Main content adjustment */
-.dash-main {
-  margin-left: 260px;
-  transition: margin-left 0.3s ease;
-  background: #f8f9fa;
-  min-height: 100vh;
-}
-
-.dash-main.sidebar-collapsed {
-  margin-left: 70px;
-}
-
-.dash-content {
-  padding: 24px;
+  .sidebar.mobile-open { transform: translateX(0); }
+  .dash-content { padding: 1.1rem; }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.875rem; }
+  .operator-stats, .payout-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .dash-main,
-  .dash-main.sidebar-collapsed {
-    margin-left: 0;
-  }
+  .admin-navbar { padding: 0 1rem; }
+  .dash-header { flex-direction: column; align-items: flex-start; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .admin-filters, .filter-bar { flex-direction: column; }
+  .admin-filter-group, .filter-group { width: 100%; }
+  .modal-body { max-height: 70vh; }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll table { min-width: 700px; }
+  .detail-row { flex-direction: column; gap: 0.25rem; }
+  .detail-key { min-width: auto; }
+  .detail-val { text-align: left; }
+  .aircraft-card-item, .yacht-card-item { flex-direction: column; align-items: flex-start; }
+  .aircraft-card-left, .yacht-card-left { width: 100%; }
+  .aircraft-card-right, .yacht-card-right { width: 100%; justify-content: space-between; }
+  .block-item, .rfq-item { flex-direction: column; align-items: flex-start; gap: 0.65rem; }
+  .booking-item { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+  .booking-item-right { width: 100%; justify-content: space-between; }
+  .payout-summary { flex-direction: column; text-align: center; }
+  .revenue-summary { flex-direction: column; align-items: stretch; text-align: center; }
+  .inquiry-header { flex-direction: column; }
+  .inquiry-details { grid-template-columns: 1fr; }
+  .inquiry-actions { flex-wrap: wrap; }
+  .inquiry-actions .btn { flex: 1; justify-content: center; }
+  .profile-info { display: none; }
+  .navbar-logo-text { display: none; }
+  .navbar-role-badge { display: none; }
+  .users-stats, .inquiry-stats { grid-template-columns: repeat(2, 1fr); }
+  .operator-stats, .payout-stats { grid-template-columns: 1fr; }
+  .careers-stats { grid-template-columns: repeat(2, 1fr); }
+  .quick-actions { grid-template-columns: 1fr; }
+  .yacht-specs { grid-template-columns: 1fr; }
+  .settings-card-body { padding: 0.875rem; }
+  .rule-item { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 640px) {
+  .users-stats, .inquiry-stats, .careers-stats { grid-template-columns: 1fr; }
+  .welcome-section { padding: 0.875rem; }
 }
