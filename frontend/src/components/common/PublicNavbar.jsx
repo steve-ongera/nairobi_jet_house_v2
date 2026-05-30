@@ -56,6 +56,35 @@ export default function PublicNavbar({ dark = false }) {
   return (
     <>
       <style>{`
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           Google Fonts - Playfair Display + DM Sans + DM Mono
+           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+        /* Override root variables for new fonts */
+        :root {
+          --font-display: 'Playfair Display', Georgia, serif;
+          --font-body: 'DM Sans', system-ui, sans-serif;
+          --font-mono: 'DM Mono', monospace;
+        }
+
+        /* Apply body font */
+        body {
+          font-family: var(--font-body);
+        }
+
+        /* Headings use Playfair Display */
+        h1, h2, h3, h4, h5, h6,
+        .navbar-logo, .navbar-logo-wordmark,
+        .drawer-logo, .sidebar-logo-text {
+          font-family: var(--font-display);
+        }
+
+        /* Monospace elements */
+        code, pre, .mono, .ref-value, .td-ref {
+          font-family: var(--font-mono);
+        }
+
         .navbar-dark-mode {
           background: rgba(11,29,58,0.15) !important;
           border-bottom-color: rgba(255,255,255,0.1) !important;
@@ -99,7 +128,7 @@ export default function PublicNavbar({ dark = false }) {
           display: flex;
           align-items: center;
           gap: 0.35rem;
-          font-size: 0.82rem;
+          font-size: 0.95rem;
           color: var(--navy);
           letter-spacing: 0.01em;
         }
@@ -113,12 +142,51 @@ export default function PublicNavbar({ dark = false }) {
           font-weight: 700;
           white-space: nowrap;
         }
+
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+           Responsive: Hide text on small screens - show only logo
+           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        @media (max-width: 768px) {
+          .navbar-logo-wordmark {
+            display: none !important;
+          }
+          .sign-in-btn {
+            display: none !important;
+          }
+        }
+
+        /* Drawer sign in button styling */
+        .drawer-sign-in-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.65rem;
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: var(--navy);
+          color: var(--white);
+          border: none;
+          border-radius: var(--r);
+          font-family: var(--font-body);
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: var(--t);
+          margin-top: 0.5rem;
+        }
+        .drawer-sign-in-btn:hover {
+          background: var(--navy-mid);
+          transform: translateY(-1px);
+        }
+        .drawer-sign-in-btn i {
+          font-size: 1rem;
+        }
       `}</style>
 
       <nav className={navbarClass}>
         <div className="navbar-inner">
 
-          {/* Logo */}
+          {/* Logo - text hidden on mobile */}
           <Link to="/" className="navbar-logo">
             <img
               src="/logo.png"
@@ -168,13 +236,13 @@ export default function PublicNavbar({ dark = false }) {
               )}
             </li>
 
-            <li><NavLink to="/book-flight">Private Charter</NavLink></li>
+            <li><NavLink to="/book-flight">Request Quote</NavLink></li>
             <li><NavLink to="/lease">Leasing</NavLink></li>
             <li><NavLink to="/air-cargo">Air Cargo</NavLink></li>
             <li><NavLink to="/contact">Contact</NavLink></li>
           </ul>
 
-          {/* Right side */}
+          {/* Right side - Sign In hidden on mobile, appears in drawer */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {user ? (
               <div ref={userRef} className="dropdown">
@@ -210,7 +278,7 @@ export default function PublicNavbar({ dark = false }) {
               <>
                 <Link to="/login" className="sign-in-btn">Sign In</Link>
                 <Link to="/book-flight" className="btn btn-gold btn-sm navbar-cta-btn">
-                  <i className="bi bi-airplane" /> Book Now
+                  <i className="bi bi-airplane" /> Request Quote
                 </Link>
               </>
             )}
@@ -227,7 +295,7 @@ export default function PublicNavbar({ dark = false }) {
         <div className="drawer-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '1.8rem', width: 'auto', display: 'block' }} />
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--navy)' }}>Nairobi Jet House</span>
+            <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--navy)', fontFamily: "var(--font-display)" }}>Nairobi Jet House</span>
           </div>
           <button className="drawer-close" onClick={() => setDrawer(false)}>
             <i className="bi bi-x-lg" />
@@ -238,7 +306,7 @@ export default function PublicNavbar({ dark = false }) {
           <div className="drawer-section-label">Book</div>
           {[
             ['/',            'bi-house',     'Home'],
-            ['/book-flight', 'bi-airplane',  'Book a Flight'],
+            ['/book-flight', 'bi-airplane',  'Request Quote'],
             ['/book-yacht',  'bi-water',     'Charter a Yacht'],
             ['/fleet',       'bi-grid-3x3',  'Browse Fleet'],
             ['/yachts',      'bi-grid-3x3',  'Browse Yachts'],
@@ -254,7 +322,7 @@ export default function PublicNavbar({ dark = false }) {
           {[
             ['/services',    'bi-grid',              'Services'],
             ['/membership',  'bi-star',              'Membership'],
-            ['/book-flight', 'bi-airplane',          'Private Charter'],
+            ['/book-flight', 'bi-airplane',          'Request Quote'],
             ['/lease',       'bi-file-earmark-text', 'Leasing'],
             ['/air-cargo',   'bi-boxes',             'Air Cargo'],
             ['/contact',     'bi-envelope',          'Contact'],
@@ -263,6 +331,20 @@ export default function PublicNavbar({ dark = false }) {
               <i className={`bi ${icon}`} />{label}
             </Link>
           ))}
+
+          {/* Sign In button in drawer for mobile users - only shows when not logged in */}
+          {!user && (
+            <>
+              <div className="drawer-divider" />
+              <div className="drawer-section-label">Account</div>
+              <Link to="/login" className="drawer-sign-in-btn" onClick={() => setDrawer(false)}>
+                <i className="bi bi-box-arrow-in-right" /> Sign In
+              </Link>
+              <Link to="/register" className="drawer-link" onClick={() => setDrawer(false)}>
+                <i className="bi bi-person-plus" /> Create Account
+              </Link>
+            </>
+          )}
 
           {user && (
             <>
@@ -285,7 +367,7 @@ export default function PublicNavbar({ dark = false }) {
             <>
               <p className="drawer-footer-text">New to NairobiJetHouse?</p>
               <Link to="/book-flight" className="btn btn-navy drawer-footer-btn" onClick={() => setDrawer(false)}>
-                <i className="bi bi-airplane" /> Book a Flight
+                <i className="bi bi-airplane" /> Request Quote
               </Link>
             </>
           ) : (
