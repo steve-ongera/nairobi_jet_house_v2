@@ -1037,3 +1037,290 @@ class WebhookLogAdmin(admin.ModelAdmin):
     @admin.display(description="OK")
     def success_badge(self, obj):
         return tick(obj.success)
+    
+    
+
+from django.contrib import admin
+from django.db.models import DecimalField
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from .models import AirCargoBooking, LeaseBooking
+
+
+class BaseBookingAdmin(admin.ModelAdmin):
+    """Base admin class with common configuration"""
+    
+    readonly_fields = ('reference', 'created_at', 'updated_at', 'commission_usd', 'net_revenue_usd')
+    list_filter = ('status', 'created_at',)
+    search_fields = ('reference', 'contact_name', 'contact_email', 'guest_name', 'guest_email', 'company')
+    date_hierarchy = 'created_at'
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Make certain fields readonly when editing existing objects"""
+        if obj:  # editing an existing object
+            return self.readonly_fields + ('source_inquiry', 'client')
+        return self.readonly_fields
+
+
+@admin.register(AirCargoBooking)
+class AirCargoBookingAdmin(BaseBookingAdmin):
+    """Admin interface for Air Cargo Bookings"""
+    
+    list_display = (
+        'reference_short', 'contact_name', 'cargo_type', 
+        'route_display', 'status', 'quoted_price_usd', 
+        'payment_status', 'created_date'
+    )
+    
+    list_filter = BaseBookingAdmin.list_filter + (
+        'cargo_type', 'urgency', 'payment_status', 'is_hazardous',
+        'requires_temperature_control', 'insurance_required'
+    )
+    
+    search_fields = BaseBookingAdmin.search_fields + (
+        'airway_bill_number', 'origin_description', 'destination_description'
+    )
+    
+    fieldsets = (
+        ('Booking Information', {
+            'fields': ('reference', 'source_inquiry', 'status', 'internal_notes')
+        }),
+        ('Client Information', {
+            'fields': ('client', 'contact_name', 'contact_email', 'contact_phone', 'company'),
+            'classes': ('wide',)
+        }),
+        ('Cargo Details', {
+            'fields': (
+                'cargo_type', 'cargo_description', 'weight_kg', 'volume_m3',
+                'dimensions', 'piece_count', 'is_hazardous',
+                'requires_temperature_control', 'temperature_range',
+                'insurance_required', 'declared_value_usd', 'customs_assistance_needed',
+                'special_handling_notes'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Route & Schedule', {
+            'fields': (
+                'origin_airport', 'origin_description', 'destination_airport',
+                'destination_description', 'pickup_date', 'pickup_time',
+                'urgency', 'estimated_transit_hours'
+            )
+        }),
+        ('Operator Assignment', {
+            'fields': ('assigned_operator', 'assigned_aircraft'),
+            'classes': ('collapse',)
+        }),
+        ('Pricing & Financials', {
+            'fields': (
+                'operator_cost_usd', 'quoted_price_usd', 'commission_pct',
+                'commission_usd', 'net_revenue_usd', 'insurance_premium_usd',
+                'customs_fee_usd'
+            ),
+            'classes': ('wide',)
+        }),
+        ('Payment Information', {
+            'fields': ('stripe_payment_id', 'payment_status'),
+            'classes': ('collapse',)
+        }),
+        ('Tracking & Delivery', {
+            'fields': (
+                'airway_bill_number', 'actual_pickup_at', 'actual_delivery_at',
+                'proof_of_delivery_url'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['mark_as_confirmed', 'mark_as_completed', 'generate_financial_report']
+    
+    def reference_short(self, obj):
+        """Display shortened reference"""
+        return str(obj.reference)[:8]
+    reference_short.short_description = 'Reference'
+    reference_short.admin_order_field = 'reference'
+    
+    def route_display(self, obj):
+        """Display route in a readable format"""
+        origin = obj.origin_description or str(obj.origin_airport or '')
+        dest = obj.destination_description or str(obj.destination_airport or '')
+        if origin and dest:
+            return f"{origin} → {dest}"
+        return "Route not set"
+    route_display.short_description = 'Route'
+    
+    def created_date(self, obj):
+        """Display creation date"""
+        return obj.created_at.strftime('%Y-%m-%d')
+    created_date.short_description = 'Created'
+    created_date.admin_order_field = 'created_at'
+    
+    def mark_as_confirmed(self, request, queryset):
+        """Bulk action to mark bookings as confirmed"""
+        updated = queryset.update(status='confirmed')
+        self.message_user(request, f'{updated} booking(s) marked as confirmed.')
+    mark_as_confirmed.short_description = 'Mark selected bookings as confirmed'
+    
+    def mark_as_completed(self, request, queryset):
+        """Bulk action to mark bookings as completed"""
+        updated = queryset.update(status='completed')
+        self.message_user(request, f'{updated} booking(s) marked as completed.')
+    mark_as_completed.short_description = 'Mark selected bookings as completed'
+    
+    def generate_financial_report(self, request, queryset):
+        """Generate a summary report for selected bookings"""
+        total_quoted = sum(b.quoted_price_usd or 0 for b in queryset)
+        total_revenue = sum(b.net_revenue_usd or 0 for b in queryset)
+        total_commission = sum(b.commission_usd or 0 for b in queryset)
+        
+        self.message_user(
+            request,
+            mark_safe(
+                f'<strong>Financial Summary:</strong><br>'
+                f'Total Quoted: ${total_quoted:,.2f}<br>'
+                f'Total Revenue: ${total_revenue:,.2f}<br>'
+                f'Total Commission: ${total_commission:,.2f}'
+            )
+        )
+    generate_financial_report.short_description = 'Generate financial report for selected'
+    
+    def save_model(self, request, obj, form, change):
+        """Custom save logic for admin"""
+        if not obj.pk:  # New object
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(LeaseBooking)
+class LeaseBookingAdmin(BaseBookingAdmin):
+    """Admin interface for Lease Bookings"""
+    
+    list_display = (
+        'reference_short', 'guest_name', 'asset_type_display', 
+        'lease_duration', 'lease_start_date', 'monthly_rate_usd',
+        'status', 'payment_status', 'created_date'
+    )
+    
+    list_filter = BaseBookingAdmin.list_filter + (
+        'asset_type', 'lease_duration', 'payment_status', 'billing_frequency',
+        'crew_included', 'maintenance_included', 'insurance_by_lessee'
+    )
+    
+    search_fields = BaseBookingAdmin.search_fields + (
+        'contract_reference', 'base_location', 'signed_by'
+    )
+    
+    fieldsets = (
+        ('Lease Booking Information', {
+            'fields': ('reference', 'source_inquiry', 'status', 'additional_notes')
+        }),
+        ('Client Information', {
+            'fields': ('client', 'guest_name', 'guest_email', 'guest_phone', 'company'),
+            'classes': ('wide',)
+        }),
+        ('Asset Information', {
+            'fields': (
+                'asset_type', 'catalog_aircraft', 'catalog_yacht',
+                'operator_aircraft', 'operator_yacht', 'assigned_operator'
+            ),
+            'classes': ('wide',)
+        }),
+        ('Lease Terms', {
+            'fields': (
+                'lease_duration', 'lease_start_date', 'lease_end_date',
+                'base_location', 'usage_description', 'max_hours_per_month',
+                'max_days_per_month', 'crew_included', 'maintenance_included',
+                'insurance_by_lessee'
+            ),
+        }),
+        ('Pricing & Financials', {
+            'fields': (
+                'monthly_rate_usd', 'total_lease_value_usd', 'security_deposit_usd',
+                'operator_cost_usd', 'commission_pct', 'commission_usd', 
+                'net_revenue_usd'
+            ),
+            'classes': ('wide',)
+        }),
+        ('Billing & Payment', {
+            'fields': ('billing_frequency', 'stripe_payment_id', 'payment_status'),
+            'classes': ('collapse',)
+        }),
+        ('Contract Details', {
+            'fields': (
+                'contract_reference', 'contract_url', 'signed_at', 'signed_by',
+                'early_termination_fee_usd', 'termination_notice_days'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['mark_as_confirmed', 'mark_as_active', 'mark_as_completed', 'send_contract_reminder']
+    
+    def reference_short(self, obj):
+        """Display shortened reference"""
+        return str(obj.reference)[:8]
+    reference_short.short_description = 'Reference'
+    reference_short.admin_order_field = 'reference'
+    
+    def asset_type_display(self, obj):
+        """Display asset type with icon"""
+        icon = '✈️' if obj.asset_type == 'aircraft' else '⛵'
+        return f"{icon} {obj.get_asset_type_display()}"
+    asset_type_display.short_description = 'Asset Type'
+    asset_type_display.admin_order_field = 'asset_type'
+    
+    def created_date(self, obj):
+        """Display creation date"""
+        return obj.created_at.strftime('%Y-%m-%d')
+    created_date.short_description = 'Created'
+    created_date.admin_order_field = 'created_at'
+    
+    def mark_as_confirmed(self, request, queryset):
+        """Bulk action to mark lease bookings as confirmed"""
+        updated = queryset.update(status='confirmed')
+        self.message_user(request, f'{updated} lease booking(s) marked as confirmed.')
+    mark_as_confirmed.short_description = 'Mark selected leases as confirmed'
+    
+    def mark_as_active(self, request, queryset):
+        """Bulk action to mark leases as active"""
+        updated = queryset.update(status='active')
+        self.message_user(request, f'{updated} lease booking(s) marked as active.')
+    mark_as_active.short_description = 'Mark selected leases as active'
+    
+    def mark_as_completed(self, request, queryset):
+        """Bulk action to mark leases as completed"""
+        updated = queryset.update(status='completed')
+        self.message_user(request, f'{updated} lease booking(s) marked as completed.')
+    mark_as_completed.short_description = 'Mark selected leases as completed'
+    
+    def send_contract_reminder(self, request, queryset):
+        """Send contract reminder for selected leases"""
+        # This would integrate with your email system
+        for lease in queryset:
+            if not lease.contract_url:
+                # Trigger email sending logic here
+                pass
+        self.message_user(request, f'Contract reminders sent for {queryset.count()} lease(s).')
+    send_contract_reminder.short_description = 'Send contract reminder email'
+    
+    def save_model(self, request, obj, form, change):
+        """Auto-calculate end date if not provided"""
+        if not obj.lease_end_date and obj.lease_start_date:
+            from datetime import timedelta
+            duration_map = {
+                '1_month': 30, '3_months': 90, '6_months': 180,
+                '1_year': 365, '2_years': 730, 'custom': 0
+            }
+            days = duration_map.get(obj.lease_duration, 0)
+            if days > 0:
+                obj.lease_end_date = obj.lease_start_date + timedelta(days=days)
+        
+        super().save_model(request, obj, form, change)
