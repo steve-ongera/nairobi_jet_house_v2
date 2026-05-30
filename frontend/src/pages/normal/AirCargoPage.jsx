@@ -1,29 +1,29 @@
-
 // src/pages/normal/AirCargoPage.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PublicNavbar from '../../components/common/PublicNavbar';
 import PublicFooter from '../../components/common/PublicFooter';
 import { cargoAPI } from '../../services/api';
 
+// Values match AirCargoInquiry.CARGO_TYPE_CHOICES exactly
 const CARGO_TYPES = [
   ['general',        'General Cargo'],
-  ['perishable',     'Perishable / Cold Chain'],
-  ['dangerous',      'Dangerous Goods (DG)'],
-  ['valuable',       'Valuables & High-Security'],
-  ['livestock',      'Live Animals / Livestock'],
+  ['perishables',    'Perishable / Cold Chain'],       // was 'perishable'
+  ['dangerous_goods','Dangerous Goods (DG)'],          // was 'dangerous'
+  ['artwork',        'Valuables & High-Security'],     // was 'valuable'
+  ['live_animals',   'Live Animals / Livestock'],      // was 'livestock'
   ['oversized',      'Oversized / Heavy Lift'],
   ['humanitarian',   'Humanitarian / Relief'],
-  ['pharmaceutical', 'Pharmaceutical / Medical'],
+  ['pharma',         'Pharmaceutical / Medical'],      // was 'pharmaceutical'
   ['automotive',     'Automotive Parts'],
   ['other',          'Other'],
 ];
 
 const URGENCY_LEVELS = [
-  ['standard', 'Standard',         '3–5 business days'],
-  ['express',  'Express',          '24–48 hours'],
-  ['critical', 'Critical / AOG',   'Same day / Next flight out'],
+  ['standard', 'Standard',       '3–5 business days'],
+  ['express',  'Express',        '24–48 hours'],
+  ['critical', 'Critical / AOG', 'Same day / Next flight out'],
 ];
 
 const STRUCTURED_DATA = {
@@ -43,13 +43,13 @@ export default function AirCargoPage() {
     weight_kg: '',
     volume_m3: '',
     cargo_description: '',
-    special_handling: '',
+    special_handling: '',           // encoded into additional_notes on submit
     is_hazardous: false,
-    requires_refrigeration: false,
+    requires_refrigeration: false,  // mapped to requires_temperature_control on submit
     insurance_required: false,
     contact_name: '',
-    contact_email: '',
-    contact_phone: '',
+    contact_email: '',              // mapped to email on submit
+    contact_phone: '',              // mapped to phone on submit
     company: '',
     additional_notes: '',
   });
@@ -64,14 +64,38 @@ export default function AirCargoPage() {
     setLoading(true);
     setError('');
     try {
+      // Merge special_handling into additional_notes since it's not a model field
+      const notesWithHandling = [
+        form.additional_notes,
+        form.special_handling ? `Special handling: ${form.special_handling}` : '',
+      ].filter(Boolean).join('\n');
+
       const payload = {
-        ...form,
-        weight_kg: parseFloat(form.weight_kg) || null,
-        volume_m3: form.volume_m3 ? parseFloat(form.volume_m3) : null,
+        // Route
+        origin_description:      form.origin_description,
+        destination_description: form.destination_description,
+        pickup_date:             form.pickup_date,
+        urgency:                 form.urgency,
+        // Cargo
+        cargo_type:                    form.cargo_type,
+        cargo_description:             form.cargo_description || '-',  // required field
+        weight_kg:                     parseFloat(form.weight_kg) || null,
+        volume_m3:                     form.volume_m3 ? parseFloat(form.volume_m3) : null,
+        is_hazardous:                  form.is_hazardous,
+        requires_temperature_control:  form.requires_refrigeration,  // correct model field name
+        insurance_required:            form.insurance_required,
+        // Contact — model uses email/phone not contact_email/contact_phone
+        contact_name:  form.contact_name,
+        email:         form.contact_email,
+        phone:         form.contact_phone,
+        company:       form.company,
+        additional_notes: notesWithHandling,
       };
+
       const { data } = await cargoAPI.create(payload);
       setSuccess(data.reference || data.id || 'CGO-' + Date.now());
     } catch (err) {
+      console.log('CARGO ERROR:', JSON.stringify(err.response?.data));
       const msg = err.response?.data;
       if (typeof msg === 'object') {
         const first = Object.values(msg)[0];
@@ -277,7 +301,10 @@ export default function AirCargoPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Volume (m³) <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>optional</span></label>
+                    <label className="form-label">
+                      Volume (m³){' '}
+                      <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>optional</span>
+                    </label>
                     <input
                       type="number"
                       className="form-control"
@@ -314,8 +341,8 @@ export default function AirCargoPage() {
                 <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                   {[
                     ['is_hazardous',          'bi-exclamation-triangle', 'Contains hazardous / dangerous goods (DG)'],
-                    ['requires_refrigeration','bi-thermometer-snow',     'Requires refrigeration / temperature control'],
-                    ['insurance_required',    'bi-shield-check',         'Cargo insurance required'],
+                    ['requires_refrigeration', 'bi-thermometer-snow',    'Requires refrigeration / temperature control'],
+                    ['insurance_required',     'bi-shield-check',        'Cargo insurance required'],
                   ].map(([k, icon, label]) => (
                     <label key={k} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                       <input
