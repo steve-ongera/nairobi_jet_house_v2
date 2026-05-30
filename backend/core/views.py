@@ -1780,3 +1780,686 @@ def _send_and_log(sent_by, to_email, to_name, subject, body,
 
             return Response(FlightBookingAdminSerializer(booking).data)
         return Response(ser.errors, status=400)
+    
+    
+# ═══════════════════════════════════════════════════════════════════════════════
+# NairobiJetHouse V2 — views_v2_cargo_lease.py
+# Air Cargo Booking & Lease Booking views
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from decimal import Decimal
+from django.utils import timezone
+from django.core.mail import send_mail
+from django.conf import settings
+
+from rest_framework import generics, status, permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import (
+    AirCargoBooking,
+    AirCargoInquiry,
+    LeaseBooking,
+    LeaseInquiry,
+    EmailLog,
+    CommissionSetting,
+)
+from .serializers import (
+    # Air Cargo
+    AirCargoBookingListSerializer,
+    AirCargoBookingDetailSerializer,
+    AirCargoBookingCreateSerializer,
+    AirCargoBookingPriceSerializer,
+    AirCargoBookingTrackingSerializer,
+    # Lease
+    LeaseBookingListSerializer,
+    LeaseBookingDetailSerializer,
+    LeaseBookingCreateSerializer,
+    LeaseBookingPriceSerializer,
+    LeaseBookingContractSerializer,
+)
+
+
+# ─── Permission helpers (mirrors rest of codebase) ───────────────────────────
+class IsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ('admin', 'staff')
+
+
+class IsAdminOrOperator(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ('admin', 'staff', 'operator')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AIR CARGO BOOKING — LIST / CREATE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoBookingListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/v2/cargo-bookings/          — paginated list (admin/staff)
+    POST /api/v2/cargo-bookings/          — create new cargo booking (admin/staff)
+
+    Supports query filters:
+      ?status=confirmed
+      ?operator=<id>
+      ?urgency=express
+      ?cargo_type=pharma
+      ?search=<contact_name|company|airway_bill>
+    """
+    permission_classes = [IsAdmin]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AirCargoBookingCreateSerializer
+        return AirCargoBookingListSerializer
+
+    def get_queryset(self):
+        qs = AirCargoBooking.objects.select_related(
+            'assigned_operator', 'assigned_aircraft', 'source_inquiry', 'client'
+        ).order_by('-created_at')
+
+        status_filter    = self.request.query_params.get('status')
+        operator_filter  = self.request.query_params.get('operator')
+        urgency_filter   = self.request.query_params.get('urgency')
+        cargo_type_filter = self.request.query_params.get('cargo_type')
+        search           = self.request.query_params.get('search')
+
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if operator_filter:
+            qs = qs.filter(assigned_operator_id=operator_filter)
+        if urgency_filter:
+            qs = qs.filter(urgency=urgency_filter)
+        if cargo_type_filter:
+            qs = qs.filter(cargo_type=cargo_type_filter)
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(contact_name__icontains=search) |
+                Q(company__icontains=search) |
+                Q(contact_email__icontains=search) |
+                Q(airway_bill_number__icontains=search)
+            )
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = AirCargoBookingCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        booking = serializer.save()
+
+        # If converted from an inquiry, mark the inquiry as converted
+        if booking.source_inquiry:
+            booking.source_inquiry.status = 'converted'
+            booking.source_inquiry.save(update_fields=['status'])
+
+        return Response(
+            AirCargoBookingDetailSerializer(booking).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AIR CARGO BOOKING — RETRIEVE / UPDATE / DELETE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoBookingDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/v2/cargo-bookings/<pk>/   — full detail
+    PATCH  /api/v2/cargo-bookings/<pk>/   — update fields
+    DELETE /api/v2/cargo-bookings/<pk>/   — soft-cancel or hard delete
+    """
+    permission_classes = [IsAdmin]
+    queryset = AirCargoBooking.objects.select_related(
+        'assigned_operator', 'assigned_aircraft',
+        'origin_airport', 'destination_airport',
+        'source_inquiry', 'client',
+    )
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return AirCargoBookingCreateSerializer
+        return AirCargoBookingDetailSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        booking = self.get_object()
+        # Soft cancel — only hard-delete if still at inquiry stage
+        if booking.status == 'inquiry':
+            booking.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status', 'updated_at'])
+        return Response({'detail': 'Booking cancelled.'}, status=status.HTTP_200_OK)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AIR CARGO BOOKING — PRICE / QUOTE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoBookingPriceView(APIView):
+    """
+    PATCH /api/v2/cargo-bookings/<pk>/price/
+    NJH staff quotes or re-prices a cargo booking and optionally sends a
+    notification email to the client.
+    """
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, pk):
+        try:
+            booking = AirCargoBooking.objects.get(pk=pk)
+        except AirCargoBooking.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AirCargoBookingPriceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Apply pricing fields
+        booking.quoted_price_usd  = data['quoted_price_usd']
+        if data.get('operator_cost_usd') is not None:
+            booking.operator_cost_usd = data['operator_cost_usd']
+        if data.get('commission_pct') is not None:
+            booking.commission_pct = data['commission_pct']
+        if data.get('insurance_premium_usd') is not None:
+            booking.insurance_premium_usd = data['insurance_premium_usd']
+        if data.get('customs_fee_usd') is not None:
+            booking.customs_fee_usd = data['customs_fee_usd']
+        if data.get('status'):
+            booking.status = data['status']
+
+        booking.save()  # model.save() recalculates commission_usd and net_revenue_usd
+
+        # Optionally email the client
+        if data.get('send_email') and booking.contact_email:
+            subject = f"Your Cargo Booking Quote — NairobiJetHouse (Ref: {str(booking.reference)[:8].upper()})"
+            body    = data.get('email_message') or (
+                f"Dear {booking.contact_name},\n\n"
+                f"We are pleased to provide a quote of USD {booking.quoted_price_usd:,.2f} "
+                f"for your cargo shipment from {booking.origin_description} to {booking.destination_description}.\n\n"
+                f"Booking Reference: {str(booking.reference)[:8].upper()}\n\n"
+                f"Please contact us to confirm.\n\nNairobiJetHouse Team"
+            )
+            _send_and_log(
+                request.user, booking.contact_email, booking.contact_name,
+                subject, body, 'air_cargo', booking.pk,
+            )
+
+        return Response(AirCargoBookingDetailSerializer(booking).data)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AIR CARGO BOOKING — TRACKING UPDATE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoBookingTrackingView(APIView):
+    """
+    PATCH /api/v2/cargo-bookings/<pk>/tracking/
+    Updates AWB number, pickup/delivery timestamps and proof-of-delivery URL.
+    Accessible to admin/staff and assigned operator staff.
+    """
+    permission_classes = [IsAdminOrOperator]
+
+    def patch(self, request, pk):
+        try:
+            booking = AirCargoBooking.objects.get(pk=pk)
+        except AirCargoBooking.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Operators may only update their own assigned bookings
+        if request.user.role == 'operator':
+            operator_ids = request.user.charter_operators.values_list('id', flat=True)
+            if booking.assigned_operator_id not in operator_ids:
+                return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = AirCargoBookingTrackingSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        fields_updated = []
+        for field in ('airway_bill_number', 'actual_pickup_at', 'actual_delivery_at',
+                      'proof_of_delivery_url', 'status'):
+            if field in data and data[field] is not None:
+                setattr(booking, field, data[field])
+                fields_updated.append(field)
+
+        fields_updated.append('updated_at')
+        booking.save(update_fields=fields_updated)
+
+        return Response(AirCargoBookingDetailSerializer(booking).data)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AIR CARGO BOOKING — CONVERT INQUIRY → BOOKING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoInquiryConvertView(APIView):
+    """
+    POST /api/v2/cargo-inquiries/<inquiry_pk>/convert/
+    Converts an existing AirCargoInquiry into a confirmed AirCargoBooking,
+    pre-populating all matching fields.
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request, inquiry_pk):
+        try:
+            inquiry = AirCargoInquiry.objects.get(pk=inquiry_pk)
+        except AirCargoInquiry.DoesNotExist:
+            return Response({'detail': 'Inquiry not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Pre-populate from inquiry — staff can override via request body
+        prefill = {
+            'source_inquiry':               inquiry.pk,
+            'contact_name':                 inquiry.contact_name,
+            'contact_email':                inquiry.email,
+            'contact_phone':                inquiry.phone,
+            'company':                      inquiry.company,
+            'cargo_type':                   inquiry.cargo_type,
+            'cargo_description':            inquiry.cargo_description,
+            'weight_kg':                    inquiry.weight_kg,
+            'volume_m3':                    inquiry.volume_m3,
+            'dimensions':                   inquiry.dimensions,
+            'is_hazardous':                 inquiry.is_hazardous,
+            'requires_temperature_control': inquiry.requires_temperature_control,
+            'insurance_required':           inquiry.insurance_required,
+            'customs_assistance_needed':    inquiry.customs_assistance_needed,
+            'origin_description':           inquiry.origin_description,
+            'destination_description':      inquiry.destination_description,
+            'pickup_date':                  inquiry.pickup_date,
+            'urgency':                      inquiry.urgency,
+        }
+        # request.data overrides prefill so staff can tweak on conversion
+        payload = {**prefill, **request.data}
+
+        serializer = AirCargoBookingCreateSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        booking = serializer.save()
+
+        inquiry.status = 'converted'
+        inquiry.save(update_fields=['status'])
+
+        return Response(
+            AirCargoBookingDetailSerializer(booking).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AIR CARGO BOOKING — STATS (admin dashboard)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoBookingStatsView(APIView):
+    """
+    GET /api/v2/cargo-bookings/stats/
+    Returns aggregate numbers for the admin dashboard cargo widget.
+    """
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        from django.db.models import Sum, Count
+
+        qs = AirCargoBooking.objects.all()
+        totals = qs.aggregate(
+            total_count       = Count('id'),
+            total_revenue_usd = Sum('quoted_price_usd'),
+            total_commission  = Sum('commission_usd'),
+            total_cost        = Sum('operator_cost_usd'),
+        )
+
+        by_status = (
+            qs.values('status')
+              .annotate(count=Count('id'))
+              .order_by('status')
+        )
+        by_urgency = (
+            qs.values('urgency')
+              .annotate(count=Count('id'), revenue=Sum('quoted_price_usd'))
+              .order_by('urgency')
+        )
+        by_cargo_type = (
+            qs.values('cargo_type')
+              .annotate(count=Count('id'))
+              .order_by('-count')[:10]
+        )
+
+        return Response({
+            'totals':       totals,
+            'by_status':    list(by_status),
+            'by_urgency':   list(by_urgency),
+            'by_cargo_type': list(by_cargo_type),
+        })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEASE BOOKING — LIST / CREATE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseBookingListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/v2/lease-bookings/          — paginated list (admin/staff)
+    POST /api/v2/lease-bookings/          — create new lease booking (admin/staff)
+
+    Supports query filters:
+      ?status=active
+      ?asset_type=aircraft
+      ?operator=<id>
+      ?search=<guest_name|company|contract_reference>
+    """
+    permission_classes = [IsAdmin]
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return LeaseBookingCreateSerializer
+        return LeaseBookingListSerializer
+
+    def get_queryset(self):
+        qs = LeaseBooking.objects.select_related(
+            'assigned_operator',
+            'operator_aircraft', 'operator_yacht',
+            'catalog_aircraft', 'catalog_yacht',
+            'source_inquiry', 'client',
+        ).order_by('-created_at')
+
+        status_filter    = self.request.query_params.get('status')
+        asset_type_filter = self.request.query_params.get('asset_type')
+        operator_filter  = self.request.query_params.get('operator')
+        duration_filter  = self.request.query_params.get('lease_duration')
+        search           = self.request.query_params.get('search')
+
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if asset_type_filter:
+            qs = qs.filter(asset_type=asset_type_filter)
+        if operator_filter:
+            qs = qs.filter(assigned_operator_id=operator_filter)
+        if duration_filter:
+            qs = qs.filter(lease_duration=duration_filter)
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(guest_name__icontains=search) |
+                Q(company__icontains=search) |
+                Q(guest_email__icontains=search) |
+                Q(contract_reference__icontains=search)
+            )
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = LeaseBookingCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        booking = serializer.save()
+
+        # If converted from an inquiry, mark the inquiry as converted
+        if booking.source_inquiry:
+            booking.source_inquiry.status = 'converted'
+            booking.source_inquiry.save(update_fields=['status'])
+
+        return Response(
+            LeaseBookingDetailSerializer(booking).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEASE BOOKING — RETRIEVE / UPDATE / DELETE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseBookingDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/v2/lease-bookings/<pk>/   — full detail
+    PATCH  /api/v2/lease-bookings/<pk>/   — update fields
+    DELETE /api/v2/lease-bookings/<pk>/   — soft-cancel or hard delete
+    """
+    permission_classes = [IsAdmin]
+    queryset = LeaseBooking.objects.select_related(
+        'assigned_operator',
+        'operator_aircraft', 'operator_yacht',
+        'catalog_aircraft', 'catalog_yacht',
+        'source_inquiry', 'client',
+    )
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return LeaseBookingCreateSerializer
+        return LeaseBookingDetailSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        booking = self.get_object()
+        if booking.status == 'inquiry':
+            booking.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status', 'updated_at'])
+        return Response({'detail': 'Lease booking cancelled.'}, status=status.HTTP_200_OK)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEASE BOOKING — PRICE / FINANCIALS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseBookingPriceView(APIView):
+    """
+    PATCH /api/v2/lease-bookings/<pk>/price/
+    NJH staff updates financials / status and optionally sends a quote email.
+    """
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, pk):
+        try:
+            booking = LeaseBooking.objects.get(pk=pk)
+        except LeaseBooking.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = LeaseBookingPriceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if data.get('monthly_rate_usd') is not None:
+            booking.monthly_rate_usd = data['monthly_rate_usd']
+        if data.get('total_lease_value_usd') is not None:
+            booking.total_lease_value_usd = data['total_lease_value_usd']
+        if data.get('security_deposit_usd') is not None:
+            booking.security_deposit_usd = data['security_deposit_usd']
+        if data.get('operator_cost_usd') is not None:
+            booking.operator_cost_usd = data['operator_cost_usd']
+        if data.get('commission_pct') is not None:
+            booking.commission_pct = data['commission_pct']
+        if data.get('status'):
+            booking.status = data['status']
+
+        booking.save()  # model.save() recalculates commission_usd and net_revenue_usd
+
+        if data.get('send_email') and booking.guest_email:
+            subject = f"Your Lease Booking Quote — NairobiJetHouse (Ref: {str(booking.reference)[:8].upper()})"
+            body    = data.get('email_message') or (
+                f"Dear {booking.guest_name},\n\n"
+                f"We are pleased to present a lease proposal for your {booking.get_asset_type_display()}.\n\n"
+                f"Monthly Rate:    USD {booking.monthly_rate_usd:,.2f}\n"
+                f"Total Lease Value: USD {booking.total_lease_value_usd:,.2f}\n"
+                f"Lease Start:     {booking.lease_start_date}\n\n"
+                f"Booking Reference: {str(booking.reference)[:8].upper()}\n\n"
+                f"Please contact us to proceed.\n\nNairobiJetHouse Team"
+            )
+            _send_and_log(
+                request.user, booking.guest_email, booking.guest_name,
+                subject, body, 'general', booking.pk,
+            )
+
+        return Response(LeaseBookingDetailSerializer(booking).data)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEASE BOOKING — CONTRACT SIGNING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseBookingContractView(APIView):
+    """
+    PATCH /api/v2/lease-bookings/<pk>/contract/
+    Records contract execution details (URL, signatory, timestamp).
+    Automatically advances status to 'confirmed' if not already set.
+    """
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, pk):
+        try:
+            booking = LeaseBooking.objects.get(pk=pk)
+        except LeaseBooking.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = LeaseBookingContractSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        update_fields = ['updated_at']
+        for field in ('contract_reference', 'contract_url', 'signed_at', 'signed_by'):
+            if field in data:
+                setattr(booking, field, data[field])
+                update_fields.append(field)
+
+        if data.get('status'):
+            booking.status = data['status']
+        elif booking.status not in ('confirmed', 'active', 'completed', 'terminated', 'cancelled'):
+            booking.status = 'confirmed'
+        update_fields.append('status')
+
+        if not booking.signed_at and data.get('signed_at'):
+            booking.signed_at = data['signed_at']
+            update_fields.append('signed_at')
+        elif not booking.signed_at:
+            booking.signed_at = timezone.now()
+            update_fields.append('signed_at')
+
+        booking.save(update_fields=list(set(update_fields)))
+
+        return Response(LeaseBookingDetailSerializer(booking).data)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEASE BOOKING — CONVERT INQUIRY → BOOKING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseInquiryConvertView(APIView):
+    """
+    POST /api/v2/lease-inquiries/<inquiry_pk>/convert/
+    Converts an existing LeaseInquiry into a confirmed LeaseBooking,
+    pre-populating all matching fields.
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request, inquiry_pk):
+        try:
+            inquiry = LeaseInquiry.objects.get(pk=inquiry_pk)
+        except LeaseInquiry.DoesNotExist:
+            return Response({'detail': 'Inquiry not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        prefill = {
+            'source_inquiry':       inquiry.pk,
+            'guest_name':           inquiry.guest_name,
+            'guest_email':          inquiry.guest_email,
+            'guest_phone':          inquiry.guest_phone,
+            'company':              inquiry.company,
+            'asset_type':           inquiry.asset_type,
+            'lease_duration':       inquiry.lease_duration,
+            'lease_start_date':     inquiry.preferred_start_date,
+            'usage_description':    inquiry.usage_description,
+            'additional_notes':     inquiry.additional_notes,
+        }
+        # Carry over asset links if present on inquiry
+        if inquiry.aircraft_id:
+            prefill['catalog_aircraft'] = inquiry.aircraft_id
+        if inquiry.yacht_id:
+            prefill['catalog_yacht'] = inquiry.yacht_id
+        if inquiry.operator_aircraft_id:
+            prefill['operator_aircraft'] = inquiry.operator_aircraft_id
+
+        payload = {**prefill, **request.data}
+
+        serializer = LeaseBookingCreateSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        booking = serializer.save()
+
+        inquiry.status = 'converted'
+        inquiry.save(update_fields=['status'])
+
+        return Response(
+            LeaseBookingDetailSerializer(booking).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEASE BOOKING — STATS (admin dashboard)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseBookingStatsView(APIView):
+    """
+    GET /api/v2/lease-bookings/stats/
+    Returns aggregate numbers for the admin dashboard lease widget.
+    """
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        from django.db.models import Sum, Count
+
+        qs = LeaseBooking.objects.all()
+        totals = qs.aggregate(
+            total_count              = Count('id'),
+            total_lease_value_usd    = Sum('total_lease_value_usd'),
+            total_commission_usd     = Sum('commission_usd'),
+            total_operator_cost_usd  = Sum('operator_cost_usd'),
+        )
+        by_status = (
+            qs.values('status')
+              .annotate(count=Count('id'), value=Sum('total_lease_value_usd'))
+              .order_by('status')
+        )
+        by_asset_type = (
+            qs.values('asset_type')
+              .annotate(count=Count('id'), value=Sum('total_lease_value_usd'))
+              .order_by('asset_type')
+        )
+        by_duration = (
+            qs.values('lease_duration')
+              .annotate(count=Count('id'))
+              .order_by('lease_duration')
+        )
+
+        return Response({
+            'totals':        totals,
+            'by_status':     list(by_status),
+            'by_asset_type': list(by_asset_type),
+            'by_duration':   list(by_duration),
+        })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SHARED HELPER
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _send_and_log(user, to_email, to_name, subject, body, inquiry_type, related_id):
+    """Send an email and write an EmailLog entry."""
+    success = True
+    error   = ''
+    try:
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [to_email],
+            fail_silently=False,
+        )
+    except Exception as exc:
+        success = False
+        error   = str(exc)
+
+    EmailLog.objects.create(
+        sent_by      = user if user.is_authenticated else None,
+        to_email     = to_email,
+        to_name      = to_name,
+        subject      = subject,
+        body         = body,
+        inquiry_type = inquiry_type,
+        related_id   = related_id,
+        success      = success,
+        error_msg    = error,
+    )
