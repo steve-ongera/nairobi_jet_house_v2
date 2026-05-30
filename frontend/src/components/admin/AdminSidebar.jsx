@@ -10,6 +10,8 @@ const NAV = [
   { to: '/admin/bookings',  icon: 'bi-airplane',       label: 'Flight Bookings' },
   { to: '/admin/charters',  icon: 'bi-water',          label: 'Yacht Charters' },
   { to: '/admin/marketplace',icon:'bi-shop',            label: 'Marketplace' },
+  { to: '/admin/cargo-bookings', icon: 'bi-box-seam',  label: 'Cargo Bookings',  badge: 'V2' },
+  { to: '/admin/lease-bookings', icon: 'bi-file-earmark-text', label: 'Lease Bookings', badge: 'V2' },
 
   { section: 'Inquiries' },
   { to: '/admin/inquiries', icon: 'bi-envelope-open',  label: 'All Inquiries' },
@@ -35,7 +37,7 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
 
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}${mobileOpen ? ' mobile-open' : ''}`}>
-      {/* Logo Area - White background */}
+      {/* Logo Area */}
       <div className="sidebar-logo">
         {collapsed ? (
           <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
@@ -54,16 +56,18 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
       <nav className="sidebar-nav">
         {NAV.map((item, i) => {
           if (item.section) {
-            return collapsed ? <div key={i} style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0.5rem 0' }} /> : (
-              <div key={i} className="sidebar-section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {item.section}
-                {item.badge && (
-                  <span style={{ fontSize: '0.5rem', fontWeight: 700, background: 'var(--gold)', color: 'var(--navy)', padding: '1px 5px', borderRadius: 4 }}>
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-            )
+            return collapsed
+              ? <div key={i} style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0.5rem 0' }} />
+              : (
+                <div key={i} className="sidebar-section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {item.section}
+                  {item.badge && (
+                    <span style={{ fontSize: '0.5rem', fontWeight: 700, background: 'var(--gold)', color: 'var(--navy)', padding: '1px 5px', borderRadius: 4 }}>
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              )
           }
           return (
             <NavLink
@@ -74,7 +78,16 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
               title={collapsed ? item.label : undefined}
             >
               <i className={`bi ${item.icon}`} />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1 }}>
+                  {item.label}
+                  {item.badge && (
+                    <span style={{ fontSize: '0.5rem', fontWeight: 700, background: 'var(--gold)', color: 'var(--navy)', padding: '1px 5px', borderRadius: 4, marginLeft: 'auto' }}>
+                      {item.badge}
+                    </span>
+                  )}
+                </span>
+              )}
             </NavLink>
           )
         })}
