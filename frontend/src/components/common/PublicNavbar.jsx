@@ -5,9 +5,9 @@ import { useAuth } from '../../hooks/useAuth'
 const SERVICES = [
   { icon: 'bi-airplane',          label: 'Private Jet Charter',  desc: 'Airport to airport, worldwide',        href: '/book-flight' },
   { icon: 'bi-water',             label: 'Superyacht Charter',   desc: 'Mediterranean, Caribbean & beyond',    href: '/book-yacht' },
-  { icon: 'bi-file-earmark-text', label: 'Long-Term Leasing',    desc: 'Dedicated aircraft & yacht programs',  href: '/book-flight' },
+  { icon: 'bi-file-earmark-text', label: 'Long-Term Leasing',    desc: 'Dedicated aircraft & yacht programs',  href: '/lease' },
   { icon: 'bi-send',              label: 'Flight Inquiry',       desc: 'Explore options, no commitment',       href: '/book-flight' },
-  { icon: 'bi-boxes',             label: 'Air Cargo',            desc: 'Gold, minerals, pharma & freight',     href: '/contact' },
+  { icon: 'bi-boxes',             label: 'Air Cargo',            desc: 'Gold, minerals, pharma & freight',     href: '/air-cargo' },
   { icon: 'bi-people',            label: 'Group Charter',        desc: 'Corporate, sports & incentives',       href: '/contact' },
 ]
 
@@ -168,7 +168,8 @@ export default function PublicNavbar({ dark = false }) {
               )}
             </li>
 
-            <li><NavLink to="/private-charter">Private Charter</NavLink></li>
+            <li><NavLink to="/book-flight">Private Charter</NavLink></li>
+            <li><NavLink to="/lease">Leasing</NavLink></li>
             <li><NavLink to="/air-cargo">Air Cargo</NavLink></li>
             <li><NavLink to="/contact">Contact</NavLink></li>
           </ul>
@@ -251,13 +252,14 @@ export default function PublicNavbar({ dark = false }) {
           <div className="drawer-divider" />
           <div className="drawer-section-label">Explore</div>
           {[
-            ['/services',        'bi-grid',     'Services'],
-            ['/membership',      'bi-star',      'Membership'],
-            ['/private-charter', 'bi-airplane',  'Private Charter'],
-            ['/air-cargo',       'bi-boxes',     'Air Cargo'],
-            ['/contact',         'bi-envelope',  'Contact'],
+            ['/services',    'bi-grid',              'Services'],
+            ['/membership',  'bi-star',              'Membership'],
+            ['/book-flight', 'bi-airplane',          'Private Charter'],
+            ['/lease',       'bi-file-earmark-text', 'Leasing'],
+            ['/air-cargo',   'bi-boxes',             'Air Cargo'],
+            ['/contact',     'bi-envelope',          'Contact'],
           ].map(([to, icon, label]) => (
-            <Link key={to} to={to} className="drawer-link" onClick={() => setDrawer(false)}>
+            <Link key={to + label} to={to} className="drawer-link" onClick={() => setDrawer(false)}>
               <i className={`bi ${icon}`} />{label}
             </Link>
           ))}

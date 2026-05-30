@@ -202,7 +202,9 @@ frontend/                               # React + Vite application
         │   ├── CareersApplyPage.jsx
         │   ├── LoginPage.jsx
         │   ├── RegisterPage.jsx
-        │   └── NotFoundPage.jsx
+        │   └── NotFoundPage.
+        |   ├── Leasing.jsx
+        │   └── Aircargo.jsx
         │
         ├── admin/
         │   ├── AdminDashboardPage.jsx       # Overview stats + revenue chart

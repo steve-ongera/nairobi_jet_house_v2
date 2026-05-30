@@ -1,3 +1,4 @@
+// src/services/api.js
 import axios from 'axios';
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
@@ -67,26 +68,22 @@ export const catalogAPI = {
   aircraft:  params => api.get('/aircraft/', { params }),
   yachts:    params => api.get('/yachts/', { params }),
   // V2 public operator listings
-  opAircraft: params => api.get('/operator-aircraft/', { params }),
-  opYachts:   params => api.get('/operator-yachts/', { params }),
-  opAircraftDetail: id => api.get(`/operator-aircraft/${id}/`),
-  opYachtDetail:    id => api.get(`/operator-yachts/${id}/`),
+  opAircraft:       params => api.get('/operator-aircraft/', { params }),
+  opYachts:         params => api.get('/operator-yachts/', { params }),
+  opAircraftDetail: id     => api.get(`/operator-aircraft/${id}/`),
+  opYachtDetail:    id     => api.get(`/operator-yachts/${id}/`),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BOOKINGS & INQUIRIES
 // ══════════════════════════════════════════════════════════════════════════════
 export const bookingAPI = {
-  create:    d  => api.post('/bookings/', d),
-  track:     ref => api.get(`/bookings/track/${ref}/`),
+  create:    d     => api.post('/bookings/', d),
+  track:     ref   => api.get(`/bookings/track/${ref}/`),
   byEmail:   email => api.get('/bookings/by-email/', { params: { email } }),
 };
 
-export const charterAPI = {
-  create: d  => api.post('/charters/', d),
-  track:  ref => api.get(`/charters/track/${ref}/`),
-};
-
+export const charterAPI      = { create: d => api.post('/charters/', d), track: ref => api.get(`/charters/track/${ref}/`) };
 export const leaseAPI        = { create: d => api.post('/leases/', d) };
 export const flightInqAPI    = { create: d => api.post('/flight-inquiries/', d) };
 export const contactAPI      = { create: d => api.post('/contacts/', d) };
@@ -98,28 +95,28 @@ export const salesAPI        = { create: d => api.post('/aircraft-sales/', d) };
 // JOBS
 // ══════════════════════════════════════════════════════════════════════════════
 export const jobsAPI = {
-  list:   params => api.get('/jobs/', { params }),
-  get:    id => api.get(`/jobs/${id}/`),
-  apply:  d  => api.post('/job-applications/', d),
+  list:  params => api.get('/jobs/', { params }),
+  get:   id     => api.get(`/jobs/${id}/`),
+  apply: d      => api.post('/job-applications/', d),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MEMBERSHIP
 // ══════════════════════════════════════════════════════════════════════════════
 export const membershipAPI = {
-  tiers:   () => api.get('/membership-tiers/'),
-  my:      () => api.get('/memberships/my/'),
-  create:  d  => api.post('/memberships/create_membership/', d),
-  list:    () => api.get('/memberships/'),
+  tiers:   ()  => api.get('/membership-tiers/'),
+  my:      ()  => api.get('/memberships/my/'),
+  create:  d   => api.post('/memberships/create_membership/', d),
+  list:    ()  => api.get('/memberships/'),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MARKETPLACE
 // ══════════════════════════════════════════════════════════════════════════════
 export const marketplaceAPI = {
-  aircraft: params => api.get('/marketplace-aircraft/', { params }),
-  book:     d      => api.post('/marketplace-bookings/', d),
-  myBookings: ()   => api.get('/marketplace-bookings/'),
+  aircraft:   params => api.get('/marketplace-aircraft/', { params }),
+  book:       d      => api.post('/marketplace-bookings/', d),
+  myBookings: ()     => api.get('/marketplace-bookings/'),
 };
 
 export const savedRoutesAPI = {
@@ -132,10 +129,10 @@ export const savedRoutesAPI = {
 // NOTIFICATIONS
 // ══════════════════════════════════════════════════════════════════════════════
 export const notifAPI = {
-  list:       ()  => api.get('/notifications/'),
-  unread:     ()  => api.get('/notifications/unread_count/'),
-  markRead:   id  => api.post(`/notifications/${id}/mark_read/`),
-  markAllRead: () => api.post('/notifications/mark_all_read/'),
+  list:        ()  => api.get('/notifications/'),
+  unread:      ()  => api.get('/notifications/unread_count/'),
+  markRead:    id  => api.post(`/notifications/${id}/mark_read/`),
+  markAllRead: ()  => api.post('/notifications/mark_all_read/'),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -160,27 +157,27 @@ export const dashboardAPI = {
 // ══════════════════════════════════════════════════════════════════════════════
 export const operatorAPI = {
   // Aircraft
-  myAircraft:       params => api.get('/my-aircraft/', { params }),
-  createAircraft:   d      => api.post('/my-aircraft/', d),
-  updateAircraft:   (id,d) => api.patch(`/my-aircraft/${id}/`, d),
-  deleteAircraft:   id     => api.delete(`/my-aircraft/${id}/`),
+  myAircraft:     params  => api.get('/my-aircraft/', { params }),
+  createAircraft: d       => api.post('/my-aircraft/', d),
+  updateAircraft: (id, d) => api.patch(`/my-aircraft/${id}/`, d),
+  deleteAircraft: id      => api.delete(`/my-aircraft/${id}/`),
   // Yachts
-  myYachts:         params => api.get('/my-yachts/', { params }),
-  createYacht:      d      => api.post('/my-yachts/', d),
-  updateYacht:      (id,d) => api.patch(`/my-yachts/${id}/`, d),
+  myYachts:       params  => api.get('/my-yachts/', { params }),
+  createYacht:    d       => api.post('/my-yachts/', d),
+  updateYacht:    (id, d) => api.patch(`/my-yachts/${id}/`, d),
   // Availability
-  blocks:           params => api.get('/availability-blocks/', { params }),
-  createBlock:      d      => api.post('/availability-blocks/', d),
-  deleteBlock:      id     => api.delete(`/availability-blocks/${id}/`),
+  blocks:         params  => api.get('/availability-blocks/', { params }),
+  createBlock:    d       => api.post('/availability-blocks/', d),
+  deleteBlock:    id      => api.delete(`/availability-blocks/${id}/`),
   // RFQ
-  rfqBids:          params => api.get('/rfq-bids/', { params }),
-  submitBid:        d      => api.post('/rfq-bids/', d),
+  rfqBids:        params  => api.get('/rfq-bids/', { params }),
+  submitBid:      d       => api.post('/rfq-bids/', d),
   // Bookings
-  opBookings:       params => api.get('/operator-bookings/', { params }),
-  acceptBooking:    (id,d) => api.post(`/operator-bookings/${id}/accept/`, d),
-  rejectBooking:    (id,d) => api.post(`/operator-bookings/${id}/reject/`, d),
+  opBookings:     params  => api.get('/operator-bookings/', { params }),
+  acceptBooking:  (id, d) => api.post(`/operator-bookings/${id}/accept/`, d),
+  rejectBooking:  (id, d) => api.post(`/operator-bookings/${id}/reject/`, d),
   // Reviews
-  reviews:          params => api.get('/operator-reviews/', { params }),
+  reviews:        params  => api.get('/operator-reviews/', { params }),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -190,110 +187,132 @@ export const adminAPI = {
   overview: () => api.get('/admin/overview/'),
 
   // Flight bookings
-  bookings:        params  => api.get('/admin/flight-bookings/', { params }),
-  getBooking:      id      => api.get(`/admin/flight-bookings/${id}/`),
-  createBooking:   d       => api.post('/admin/flight-bookings/', d),
-  updateBooking:   (id,d)  => api.patch(`/admin/flight-bookings/${id}/`, d),
-  setPrice:        (id,d)  => api.post(`/admin/flight-bookings/${id}/set_price/`, d),
-  assignOperator:  (id,d)  => api.post(`/admin/flight-bookings/${id}/assign_operator/`, d),
-  sendRFQ:         (id,d)  => api.post(`/admin/flight-bookings/${id}/send_rfq/`, d),
-  revenue:         ()      => api.get('/admin/flight-bookings/revenue/'),
+  bookings:       params  => api.get('/admin/flight-bookings/', { params }),
+  getBooking:     id      => api.get(`/admin/flight-bookings/${id}/`),
+  createBooking:  d       => api.post('/admin/flight-bookings/', d),
+  updateBooking:  (id, d) => api.patch(`/admin/flight-bookings/${id}/`, d),
+  setPrice:       (id, d) => api.post(`/admin/flight-bookings/${id}/set_price/`, d),
+  assignOperator: (id, d) => api.post(`/admin/flight-bookings/${id}/assign_operator/`, d),
+  sendRFQ:        (id, d) => api.post(`/admin/flight-bookings/${id}/send_rfq/`, d),
+  revenue:        ()      => api.get('/admin/flight-bookings/revenue/'),
 
   // Yacht charters
   charters:        params  => api.get('/admin/yacht-charters/', { params }),
-  setCharterPrice: (id,d)  => api.post(`/admin/yacht-charters/${id}/set_price/`, d),
+  setCharterPrice: (id, d) => api.post(`/admin/yacht-charters/${id}/set_price/`, d),
 
   // Inquiries
-  inquiries:       ()      => api.get('/admin/inquiries/'),
-  leases:          params  => api.get('/admin/leases/', { params }),
-  replyLease:      (id,d)  => api.post(`/admin/leases/${id}/reply/`, d),
-  contacts:        params  => api.get('/admin/contacts/', { params }),
-  groups:          params  => api.get('/admin/group-charters/', { params }),
-  cargo:           params  => api.get('/admin/cargo/', { params }),
-  aircraftSales:   params  => api.get('/admin/aircraft-sales/', { params }),
+  inquiries:     ()      => api.get('/admin/inquiries/'),
+  leases:        params  => api.get('/admin/leases/', { params }),
+  replyLease:    (id, d) => api.post(`/admin/leases/${id}/reply/`, d),
+  contacts:      params  => api.get('/admin/contacts/', { params }),
+  groups:        params  => api.get('/admin/group-charters/', { params }),
+  cargo:         params  => api.get('/admin/cargo/', { params }),
+  aircraftSales: params  => api.get('/admin/aircraft-sales/', { params }),
 
   // Users
-  users:           params  => api.get('/admin/users/', { params }),
-  toggleUser:      id      => api.post(`/admin/users/${id}/toggle_active/`),
-  changeRole:      (id,d)  => api.post(`/admin/users/${id}/change_role/`, d),
+  users:      params  => api.get('/admin/users/', { params }),
+  toggleUser: id      => api.post(`/admin/users/${id}/toggle_active/`),
+  changeRole: (id, d) => api.post(`/admin/users/${id}/change_role/`, d),
 
   // Marketplace
   marketplace:     params  => api.get('/admin/marketplace/', { params }),
-  updateMktStatus: (id,d)  => api.post(`/admin/marketplace/${id}/update_status/`, d),
+  updateMktStatus: (id, d) => api.post(`/admin/marketplace/${id}/update_status/`, d),
 
   // Email
-  emailLogs:       params  => api.get('/admin/email-logs/', { params }),
-  sendEmail:       d       => api.post('/admin/send-email/', d),
-  priceCalc:       d       => api.post('/admin/price-calculator/', d),
+  emailLogs: params => api.get('/admin/email-logs/', { params }),
+  sendEmail: d      => api.post('/admin/send-email/', d),
+  priceCalc: d      => api.post('/admin/price-calculator/', d),
 
   // Commission
-  commission:      ()      => api.get('/admin/commission/'),
-  createCommission: d      => api.post('/admin/commission/', d),
+  commission:       ()      => api.get('/admin/commission/'),
+  createCommission: d       => api.post('/admin/commission/', d),
 
   // Jobs
   jobs:            params  => api.get('/admin/jobs/', { params }),
   createJob:       d       => api.post('/admin/jobs/', d),
-  updateJob:       (id,d)  => api.patch(`/admin/jobs/${id}/`, d),
+  updateJob:       (id, d) => api.patch(`/admin/jobs/${id}/`, d),
   toggleJob:       id      => api.post(`/admin/jobs/${id}/toggle_active/`),
   jobApplications: params  => api.get('/admin/job-applications/', { params }),
-  updateAppStatus: (id,d)  => api.post(`/admin/job-applications/${id}/update_status/`, d),
+  updateAppStatus: (id, d) => api.post(`/admin/job-applications/${id}/update_status/`, d),
 
   // V2 Operators
-  operators:       params  => api.get('/admin/operators/', { params }),
-  getOperator:     id      => api.get(`/admin/operators/${id}/`),
-  createOperator:  d       => api.post('/admin/operators/', d),
-  updateOperator:  (id,d)  => api.patch(`/admin/operators/${id}/`, d),
-  activateOp:      id      => api.post(`/admin/operators/${id}/activate/`),
-  suspendOp:       id      => api.post(`/admin/operators/${id}/suspend/`),
-  changeTier:      (id,d)  => api.post(`/admin/operators/${id}/change_tier/`, d),
-  opAircraft:      id      => api.get(`/admin/operators/${id}/aircraft/`),
-  opYachts:        id      => api.get(`/admin/operators/${id}/yachts/`),
-  opBookings:      id      => api.get(`/admin/operators/${id}/bookings/`),
-  opPayouts:       id      => api.get(`/admin/operators/${id}/payouts/`),
-  opReviews:       id      => api.get(`/admin/operators/${id}/reviews/`),
-  opWebhooks:      id      => api.get(`/admin/operators/${id}/webhooks/`),
+  operators:      params  => api.get('/admin/operators/', { params }),
+  getOperator:    id      => api.get(`/admin/operators/${id}/`),
+  createOperator: d       => api.post('/admin/operators/', d),
+  updateOperator: (id, d) => api.patch(`/admin/operators/${id}/`, d),
+  activateOp:     id      => api.post(`/admin/operators/${id}/activate/`),
+  suspendOp:      id      => api.post(`/admin/operators/${id}/suspend/`),
+  changeTier:     (id, d) => api.post(`/admin/operators/${id}/change_tier/`, d),
+  opAircraft:     id      => api.get(`/admin/operators/${id}/aircraft/`),
+  opYachts:       id      => api.get(`/admin/operators/${id}/yachts/`),
+  opBookings:     id      => api.get(`/admin/operators/${id}/bookings/`),
+  opPayouts:      id      => api.get(`/admin/operators/${id}/payouts/`),
+  opReviews:      id      => api.get(`/admin/operators/${id}/reviews/`),
+  opWebhooks:     id      => api.get(`/admin/operators/${id}/webhooks/`),
 
-  // Approve/reject aircraft
-  approveAircraft: id      => api.post(`/my-aircraft/${id}/approve/`),
-  rejectAircraft:  id      => api.post(`/my-aircraft/${id}/reject/`),
-  approveYacht:    id      => api.post(`/my-yachts/${id}/approve/`),
+  // Approve/reject aircraft & yachts
+  approveAircraft: id => api.post(`/my-aircraft/${id}/approve/`),
+  rejectAircraft:  id => api.post(`/my-aircraft/${id}/reject/`),
+  approveYacht:    id => api.post(`/my-yachts/${id}/approve/`),
 
   // RFQ bids
-  rfqBids:         params  => api.get('/rfq-bids/', { params }),
-  acceptBid:       id      => api.post(`/rfq-bids/${id}/accept/`),
-  shortlistBid:    id      => api.post(`/rfq-bids/${id}/shortlist/`),
+  rfqBids:      params => api.get('/rfq-bids/', { params }),
+  acceptBid:    id     => api.post(`/rfq-bids/${id}/accept/`),
+  shortlistBid: id     => api.post(`/rfq-bids/${id}/shortlist/`),
 
   // Commission rules
   commissionRules: ()      => api.get('/admin/commission-rules/'),
   createRule:      d       => api.post('/admin/commission-rules/', d),
-  updateRule:      (id,d)  => api.patch(`/admin/commission-rules/${id}/`, d),
+  updateRule:      (id, d) => api.patch(`/admin/commission-rules/${id}/`, d),
   toggleRule:      id      => api.post(`/admin/commission-rules/${id}/toggle_active/`),
 
   // Payouts
-  payouts:         params  => api.get('/admin/payouts/', { params }),
-  markPaid:        (id,d)  => api.post(`/admin/payouts/${id}/mark_paid/`, d),
-  markProcessing:  id      => api.post(`/admin/payouts/${id}/mark_processing/`),
+  payouts:        params  => api.get('/admin/payouts/', { params }),
+  markPaid:       (id, d) => api.post(`/admin/payouts/${id}/mark_paid/`, d),
+  markProcessing: id      => api.post(`/admin/payouts/${id}/mark_processing/`),
 
   // Webhooks
-  webhooks:        params  => api.get('/admin/webhooks/', { params }),
-  retryWebhook:    id      => api.post(`/admin/webhooks/${id}/retry/`),
+  webhooks:     params => api.get('/admin/webhooks/', { params }),
+  retryWebhook: id     => api.post(`/admin/webhooks/${id}/retry/`),
 
   // Documents
-  documents:       params  => api.get('/admin/documents/', { params }),
+  documents: params => api.get('/admin/documents/', { params }),
 
   // Marketplace aircraft
-  mktAircraft:     params  => api.get('/marketplace-aircraft/', { params }),
-  approveMkt:      id      => api.post(`/marketplace-aircraft/${id}/approve/`),
+  mktAircraft: params => api.get('/marketplace-aircraft/', { params }),
+  approveMkt:  id     => api.post(`/marketplace-aircraft/${id}/approve/`),
+
+  // ── V2 Air Cargo Bookings ─────────────────────────────────────────────────
+  cargoBookings:       params  => api.get('/admin/cargo-bookings/', { params }),
+  cargoBookingStats:   ()      => api.get('/admin/cargo-bookings/stats/'),
+  getCargoBooking:     id      => api.get(`/admin/cargo-bookings/${id}/`),
+  createCargoBooking:  d       => api.post('/admin/cargo-bookings/', d),
+  updateCargoBooking:  (id, d) => api.patch(`/admin/cargo-bookings/${id}/`, d),
+  deleteCargoBooking:  id      => api.delete(`/admin/cargo-bookings/${id}/`),
+  setCargoPrice:       (id, d) => api.patch(`/admin/cargo-bookings/${id}/price/`, d),
+  updateCargoTracking: (id, d) => api.patch(`/admin/cargo-bookings/${id}/tracking/`, d),
+  convertCargoInquiry: (inquiryId, d) => api.post(`/admin/cargo/${inquiryId}/convert/`, d),
+
+  // ── V2 Lease Bookings ─────────────────────────────────────────────────────
+  leaseBookings:       params  => api.get('/admin/lease-bookings/', { params }),
+  leaseBookingStats:   ()      => api.get('/admin/lease-bookings/stats/'),
+  getLeaseBooking:     id      => api.get(`/admin/lease-bookings/${id}/`),
+  createLeaseBooking:  d       => api.post('/admin/lease-bookings/', d),
+  updateLeaseBooking:  (id, d) => api.patch(`/admin/lease-bookings/${id}/`, d),
+  deleteLeaseBooking:  id      => api.delete(`/admin/lease-bookings/${id}/`),
+  setLeasePrice:       (id, d) => api.patch(`/admin/lease-bookings/${id}/price/`, d),
+  signLeaseContract:   (id, d) => api.patch(`/admin/lease-bookings/${id}/contract/`, d),
+  convertLeaseInquiry: (inquiryId, d) => api.post(`/admin/leases/${inquiryId}/convert/`, d),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAINTENANCE
 // ══════════════════════════════════════════════════════════════════════════════
 export const maintenanceAPI = {
-  getAll:   params => api.get('/maintenance/', { params }),
-  create:   d      => api.post('/maintenance/', d),
-  update:   (id,d) => api.patch(`/maintenance/${id}/`, d),
-  delete:   id     => api.delete(`/maintenance/${id}/`),
+  getAll: params  => api.get('/maintenance/', { params }),
+  create: d       => api.post('/maintenance/', d),
+  update: (id, d) => api.patch(`/maintenance/${id}/`, d),
+  delete: id      => api.delete(`/maintenance/${id}/`),
 };
 
 export default api;
