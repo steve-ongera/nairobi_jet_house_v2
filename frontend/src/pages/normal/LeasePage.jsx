@@ -20,12 +20,10 @@ const ASSET_TYPES = [
 ];
 
 const LEASE_DURATIONS = [
-  { value: 'short_term',  label: 'Short-Term',           sub: '1 – 6 months' },
-  { value: 'medium_term', label: 'Medium-Term',          sub: '6 – 24 months' },
-  { value: 'long_term',   label: 'Long-Term',            sub: '2 + years' },
-  { value: 'wet_lease',   label: 'Wet Lease',            sub: 'Crew & ops included' },
-  { value: 'dry_lease',   label: 'Dry Lease',            sub: 'Asset only' },
-  { value: 'acmi',        label: 'ACMI',                 sub: 'Aircraft, crew, maintenance, insurance' },
+  { value: 'monthly',    label: 'Monthly',    sub: 'Rolling monthly lease' },
+  { value: 'quarterly',  label: 'Quarterly',  sub: '3-month term' },
+  { value: 'annual',     label: 'Annual',     sub: '12-month lease' },
+  { value: 'multi_year', label: 'Multi-Year', sub: '2+ year agreement' },
 ];
 
 const BILLING_FREQUENCIES = [
@@ -75,25 +73,29 @@ export default function LeasePage() {
     setSubmitting(true);
     setError('');
     try {
+      // Encode billing preference and budget into notes since LeaseInquiry model doesn't have those fields
+      const billingNote = [
+        form.billing_frequency && `Billing preference: ${form.billing_frequency}`,
+        form.budget_monthly_usd && `Monthly budget: ~$${Number(form.budget_monthly_usd).toLocaleString()}`,
+      ].filter(Boolean).join(' | ');
+
       const payload = {
-        asset_type: form.asset_type,
-        lease_duration: form.lease_duration,
-        lease_start_date: form.lease_start_date,
-        lease_end_date: form.lease_end_date || null,
-        billing_frequency: form.billing_frequency,
-        budget_monthly_usd: form.budget_monthly_usd ? parseFloat(form.budget_monthly_usd) : null,
-        guest_name: form.guest_name,
-        guest_email: form.guest_email,
-        contact_phone: form.guest_phone,
-        company: form.company,
-        intended_use: form.intended_use,
-        additional_notes: form.additional_notes,
+        asset_type:           form.asset_type,
+        lease_duration:       form.lease_duration,
+        preferred_start_date: form.lease_start_date,
+        guest_name:           form.guest_name,
+        guest_email:          form.guest_email,
+        guest_phone:          form.guest_phone,
+        company:              form.company,
+        usage_description:    form.intended_use,
+        budget_range:         form.budget_monthly_usd ? `~$${Number(form.budget_monthly_usd).toLocaleString()}/mo` : '',
+        additional_notes:     [form.additional_notes, billingNote].filter(Boolean).join('\n'),
         preferred_asset_description: [
           form.preferred_asset_name,
           form.preferred_category,
           form.preferred_location,
         ].filter(Boolean).join(' — ') || undefined,
-      };
+      }
       const { data } = await leaseAPI.create(payload);
       setReference(data.reference || data.id || 'LSE-' + Date.now());
       setSubmitted(true);
