@@ -189,7 +189,7 @@ export default function PublicNavbar({ dark = false }) {
           {/* Logo - text hidden on mobile */}
           <Link to="/" className="navbar-logo">
             <img
-              src="/logo.png"
+              src="/nairobijethouse.png"
               alt="Nairobi Jet House"
               style={{ height: '2.24em', width: 'auto', display: 'block' }}
             />
@@ -294,7 +294,7 @@ export default function PublicNavbar({ dark = false }) {
       <div className={`drawer${drawerOpen ? ' open' : ''}`}>
         <div className="drawer-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '1.8rem', width: 'auto', display: 'block' }} />
+            <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '1.8rem', width: 'auto', display: 'block' }} />
             <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--navy)', fontFamily: "var(--font-display)" }}>Nairobi Jet House</span>
           </div>
           <button className="drawer-close" onClick={() => setDrawer(false)}>

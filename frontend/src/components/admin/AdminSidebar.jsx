@@ -40,10 +40,10 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
       {/* Logo Area */}
       <div className="sidebar-logo">
         {collapsed ? (
-          <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
+          <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <img src="/logo.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
+            <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
             <div>
               <div className="sidebar-logo-text">Nairobi<span>JetHouse</span></div>
               <div className="sidebar-role-badge">Admin</div>

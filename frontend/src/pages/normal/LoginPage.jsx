@@ -70,7 +70,7 @@ export default function LoginPage() {
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <img
-              src="/logo.png"
+              src="/nairobijethouse.png"
               alt="Nairobi Jet House"
               style={{ height: '3.5rem', width: 'auto', margin: '0 auto 1rem', display: 'block' }}
             />
