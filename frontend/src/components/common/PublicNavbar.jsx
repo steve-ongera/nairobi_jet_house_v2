@@ -236,7 +236,7 @@ export default function PublicNavbar({ dark = false }) {
               )}
             </li>
 
-            <li><NavLink to="/book-flight">Request Quote</NavLink></li>
+            <li><NavLink to="/book-flight">Private Charter</NavLink></li>
             <li><NavLink to="/lease">Leasing</NavLink></li>
             <li><NavLink to="/air-cargo">Air Cargo</NavLink></li>
             <li><NavLink to="/contact">Contact</NavLink></li>

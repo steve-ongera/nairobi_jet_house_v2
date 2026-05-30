@@ -605,7 +605,7 @@ export default function HomePage() {
             color: '#C9A84C',
             marginBottom: '1.25rem',
           }}>
-            <i className="bi bi-airplane" style={{ fontSize: '0.9rem' }} />
+            <i className="bi bi-patch-check" style={{ fontSize: '0.9rem' }} />
             Travel across hidden lands
           </div>
           <h1 style={{
@@ -617,7 +617,7 @@ export default function HomePage() {
             marginBottom: '1.5rem',
             maxWidth: 680,
           }}>
-            Private Jet Charters &amp;<br />
+            Private Jet Charters <br />
             <em style={{ color: '#C9A84C', fontStyle: 'italic' }}>Yacht Charter</em>
           </h1>
           <p style={{
@@ -634,8 +634,8 @@ export default function HomePage() {
             <Link to="/book-flight" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none', borderRadius: 6, border: '2px solid #C9A84C', letterSpacing: '0.02em', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.88'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
               <i className="bi bi-airplane" style={{ fontSize: '1rem' }} /> Book a Flight
             </Link>
-            <Link to="/flight-inquiry" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: '2px solid rgba(255,255,255,0.55)', letterSpacing: '0.02em', backdropFilter: 'blur(6px)', transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}>
-              <i className="bi bi-send" style={{ fontSize: '0.9rem' }} /> General Inquiry
+            <Link to="/lease" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: '2px solid rgba(255,255,255,0.55)', letterSpacing: '0.02em', backdropFilter: 'blur(6px)', transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}>
+              <i className="bi bi-send" style={{ fontSize: '0.9rem' }} /> Leasing Inquiry
             </Link>
           </div>
         </div>
