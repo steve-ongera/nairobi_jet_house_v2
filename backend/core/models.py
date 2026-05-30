@@ -14,6 +14,8 @@ Scale-up: Partner Charter Operator Network
   • ClientNotification  — in-app + email notifications log
   • DocumentUpload      — any file attached to a booking / inquiry
   • WebhookLog          — tracks outbound webhook deliveries to operator systems
+  • AirCargoBooking     — confirmed cargo booking (V2 NEW)
+  • LeaseBooking        — confirmed lease agreement (V2 NEW)
 All legacy models from V1 are preserved. New models are clearly marked V2.
 """
 
@@ -1391,3 +1393,289 @@ class JobApplication(models.Model):
 
     def __str__(self):
         return f"{self.full_name} → {self.job.title} [{self.status}]"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2  AIR CARGO BOOKING — confirmed booking raised from AirCargoInquiry
+# ═══════════════════════════════════════════════════════════════════════════════
+class AirCargoBooking(models.Model):
+    """
+    Confirmed cargo booking raised from (or independently of) an AirCargoInquiry.
+    Tracks operator assignment, pricing, payout and status lifecycle end-to-end.
+    """
+    STATUS_CHOICES = [
+        ('inquiry',    'Inquiry'),
+        ('rfq_sent',   'RFQ Sent to Operators'),
+        ('quoted',     'Quoted'),
+        ('confirmed',  'Confirmed'),
+        ('in_transit', 'In Transit'),
+        ('delivered',  'Delivered'),
+        ('completed',  'Completed'),
+        ('cancelled',  'Cancelled'),
+        ('disputed',   'Disputed'),
+    ]
+    CARGO_TYPE_CHOICES = AirCargoInquiry.CARGO_TYPE_CHOICES   # reuse same vocabulary
+    URGENCY_CHOICES    = AirCargoInquiry.URGENCY_CHOICES
+
+    reference        = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+    # ── Source inquiry (optional — can be raised standalone) ──────────────────
+    source_inquiry   = models.ForeignKey(
+        AirCargoInquiry, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='cargo_bookings',
+        help_text='Originating inquiry if converted from one',
+    )
+
+    # ── Client / contact ──────────────────────────────────────────────────────
+    client           = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='cargo_bookings',
+        help_text='Linked if client is a registered member',
+    )
+    contact_name     = models.CharField(max_length=200)
+    contact_email    = models.EmailField()
+    contact_phone    = models.CharField(max_length=30, blank=True)
+    company          = models.CharField(max_length=200, blank=True)
+
+    # ── Cargo details ─────────────────────────────────────────────────────────
+    cargo_type                   = models.CharField(max_length=30, choices=CARGO_TYPE_CHOICES)
+    cargo_description            = models.TextField()
+    weight_kg                    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    volume_m3                    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    dimensions                   = models.CharField(max_length=200, blank=True)
+    piece_count                  = models.PositiveIntegerField(null=True, blank=True)
+    is_hazardous                 = models.BooleanField(default=False)
+    requires_temperature_control = models.BooleanField(default=False)
+    temperature_range            = models.CharField(max_length=100, blank=True,
+                                                    help_text='e.g. "2–8 °C" for cold chain')
+    insurance_required           = models.BooleanField(default=False)
+    declared_value_usd           = models.DecimalField(max_digits=14, decimal_places=2,
+                                                       null=True, blank=True,
+                                                       help_text='Declared cargo value for insurance')
+    customs_assistance_needed    = models.BooleanField(default=False)
+    special_handling_notes       = models.TextField(blank=True)
+
+    # ── Route & schedule ──────────────────────────────────────────────────────
+    origin_airport          = models.ForeignKey(Airport, on_delete=models.PROTECT,
+                                                related_name='cargo_departures',
+                                                null=True, blank=True)
+    origin_description      = models.CharField(max_length=300,
+                                               help_text='Free-text fallback if airport not in system')
+    destination_airport     = models.ForeignKey(Airport, on_delete=models.PROTECT,
+                                                related_name='cargo_arrivals',
+                                                null=True, blank=True)
+    destination_description = models.CharField(max_length=300, blank=True)
+    pickup_date             = models.DateField(null=True, blank=True)
+    pickup_time             = models.TimeField(null=True, blank=True)
+    urgency                 = models.CharField(max_length=20, choices=URGENCY_CHOICES, default='standard')
+    estimated_transit_hours = models.DecimalField(max_digits=6, decimal_places=1,
+                                                  null=True, blank=True)
+
+    # ── Operator assignment ───────────────────────────────────────────────────
+    assigned_operator    = models.ForeignKey(
+        CharterOperator, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='cargo_bookings',
+    )
+    assigned_aircraft    = models.ForeignKey(
+        OperatorAircraft, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='cargo_bookings',
+    )
+
+    # ── Pricing & financials ──────────────────────────────────────────────────
+    operator_cost_usd    = models.DecimalField(max_digits=14, decimal_places=2,
+                                               null=True, blank=True,
+                                               help_text="What NJH pays the operator")
+    quoted_price_usd     = models.DecimalField(max_digits=14, decimal_places=2,
+                                               null=True, blank=True,
+                                               help_text="Total quoted to client (includes NJH margin)")
+    commission_pct       = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('15'))
+    commission_usd       = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    net_revenue_usd      = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True,
+                                               help_text="NJH net after paying operator")
+    insurance_premium_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    customs_fee_usd      = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    # ── Payment ───────────────────────────────────────────────────────────────
+    stripe_payment_id    = models.CharField(max_length=200, blank=True)
+    payment_status       = models.CharField(max_length=20, default='unpaid')
+
+    # ── Tracking ─────────────────────────────────────────────────────────────
+    airway_bill_number    = models.CharField(max_length=100, blank=True,
+                                             help_text='AWB / tracking reference')
+    actual_pickup_at      = models.DateTimeField(null=True, blank=True)
+    actual_delivery_at    = models.DateTimeField(null=True, blank=True)
+    proof_of_delivery_url = models.URLField(blank=True)
+
+    status               = models.CharField(max_length=15, choices=STATUS_CHOICES, default='inquiry')
+    internal_notes       = models.TextField(blank=True)
+    created_at           = models.DateTimeField(auto_now_add=True)
+    updated_at           = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if self.quoted_price_usd is not None and self.operator_cost_usd is not None:
+            pct   = Decimal(str(self.commission_pct or 15))
+            price = Decimal(str(self.quoted_price_usd))
+            cost  = Decimal(str(self.operator_cost_usd))
+            self.commission_usd  = (price * pct / 100).quantize(Decimal('0.01'), ROUND_HALF_UP)
+            self.net_revenue_usd = (price - cost).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        elif self.quoted_price_usd is not None:
+            pct   = Decimal(str(self.commission_pct or 15))
+            price = Decimal(str(self.quoted_price_usd))
+            self.commission_usd  = (price * pct / 100).quantize(Decimal('0.01'), ROUND_HALF_UP)
+            self.net_revenue_usd = (price - self.commission_usd).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"Cargo {str(self.reference)[:8]} | "
+            f"{self.cargo_type} | "
+            f"{self.origin_description}→{self.destination_description} | "
+            f"{self.contact_name}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2  LEASE BOOKING — confirmed lease agreement raised from LeaseInquiry
+# ═══════════════════════════════════════════════════════════════════════════════
+class LeaseBooking(models.Model):
+    """
+    Confirmed lease agreement raised from (or independently of) a LeaseInquiry.
+    Supports aircraft and yacht leasing with full financial and operator tracking.
+    """
+    STATUS_CHOICES = [
+        ('inquiry',       'Inquiry'),
+        ('rfq_sent',      'RFQ Sent to Operators'),
+        ('negotiating',   'Negotiating'),
+        ('quoted',        'Quoted'),
+        ('contract_sent', 'Contract Sent'),
+        ('confirmed',     'Confirmed / Signed'),
+        ('active',        'Active Lease'),
+        ('completed',     'Completed'),
+        ('terminated',    'Early Terminated'),
+        ('cancelled',     'Cancelled'),
+    ]
+    ASSET_TYPE_CHOICES = [
+        ('aircraft', 'Aircraft'),
+        ('yacht',    'Yacht'),
+    ]
+    LEASE_DURATION_CHOICES = LeaseInquiry.LEASE_DURATION_CHOICES  # reuse vocabulary
+
+    reference        = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+    # ── Source inquiry (optional) ─────────────────────────────────────────────
+    source_inquiry   = models.ForeignKey(
+        LeaseInquiry, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='lease_bookings',
+        help_text='Originating inquiry if converted from one',
+    )
+
+    # ── Client / contact ──────────────────────────────────────────────────────
+    client           = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='lease_bookings',
+    )
+    guest_name       = models.CharField(max_length=200)
+    guest_email      = models.EmailField()
+    guest_phone      = models.CharField(max_length=30, blank=True)
+    company          = models.CharField(max_length=200, blank=True)
+
+    # ── Asset ─────────────────────────────────────────────────────────────────
+    asset_type        = models.CharField(max_length=10, choices=ASSET_TYPE_CHOICES)
+    catalog_aircraft  = models.ForeignKey(
+        Aircraft, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lease_bookings',
+    )
+    catalog_yacht     = models.ForeignKey(
+        Yacht, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lease_bookings',
+    )
+    operator_aircraft = models.ForeignKey(
+        OperatorAircraft, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lease_bookings',
+    )
+    operator_yacht    = models.ForeignKey(
+        OperatorYacht, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lease_bookings',
+    )
+    assigned_operator = models.ForeignKey(
+        CharterOperator, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='lease_bookings',
+    )
+
+    # ── Lease terms ───────────────────────────────────────────────────────────
+    lease_duration            = models.CharField(max_length=20, choices=LEASE_DURATION_CHOICES)
+    lease_start_date          = models.DateField()
+    lease_end_date            = models.DateField(null=True, blank=True,
+                                                 help_text='Calculated from duration; override if needed')
+    base_location             = models.CharField(max_length=300, blank=True,
+                                                 help_text='Where the asset will primarily operate from')
+    usage_description         = models.TextField(blank=True)
+    max_hours_per_month       = models.DecimalField(max_digits=8, decimal_places=1,
+                                                    null=True, blank=True,
+                                                    help_text='Aircraft only — contracted monthly hours cap')
+    max_days_per_month        = models.PositiveIntegerField(null=True, blank=True,
+                                                            help_text='Yacht only — contracted charter days cap')
+    crew_included             = models.BooleanField(default=True,
+                                                    help_text='Whether crew/pilots are part of the lease')
+    maintenance_included      = models.BooleanField(default=False,
+                                                    help_text='Full maintenance responsibility under this lease')
+    insurance_by_lessee       = models.BooleanField(default=False,
+                                                     help_text='Lessee arranges own hull/liability insurance')
+
+    # ── Pricing & financials ──────────────────────────────────────────────────
+    monthly_rate_usd          = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    total_lease_value_usd     = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True,
+                                                    help_text='Full contract value over lease period')
+    security_deposit_usd      = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    operator_cost_usd         = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True,
+                                                    help_text="Operator's base lease cost to NJH")
+    commission_pct            = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('10'))
+    commission_usd            = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    net_revenue_usd           = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    # ── Payment ───────────────────────────────────────────────────────────────
+    billing_frequency         = models.CharField(
+        max_length=20,
+        choices=[('monthly', 'Monthly'), ('quarterly', 'Quarterly'), ('upfront', 'Full Upfront')],
+        default='monthly',
+    )
+    stripe_payment_id         = models.CharField(max_length=200, blank=True)
+    payment_status            = models.CharField(max_length=20, default='unpaid')
+
+    # ── Contract ─────────────────────────────────────────────────────────────
+    contract_reference        = models.CharField(max_length=200, blank=True)
+    contract_url              = models.URLField(blank=True,
+                                                help_text='Signed lease agreement document URL')
+    signed_at                 = models.DateTimeField(null=True, blank=True)
+    signed_by                 = models.CharField(max_length=200, blank=True)
+    early_termination_fee_usd = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    termination_notice_days   = models.PositiveIntegerField(default=30,
+                                                             help_text='Required notice period in days')
+
+    status           = models.CharField(max_length=15, choices=STATUS_CHOICES, default='inquiry')
+    additional_notes = models.TextField(blank=True)
+    created_at       = models.DateTimeField(auto_now_add=True)
+    updated_at       = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if self.total_lease_value_usd is not None and self.operator_cost_usd is not None:
+            pct   = Decimal(str(self.commission_pct or 10))
+            price = Decimal(str(self.total_lease_value_usd))
+            cost  = Decimal(str(self.operator_cost_usd))
+            self.commission_usd  = (price * pct / 100).quantize(Decimal('0.01'), ROUND_HALF_UP)
+            self.net_revenue_usd = (price - cost).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"Lease {str(self.reference)[:8]} | "
+            f"{self.asset_type.upper()} | "
+            f"{self.guest_name} | "
+            f"{self.lease_start_date} [{self.status}]"
+        )
