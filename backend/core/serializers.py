@@ -22,7 +22,7 @@ from .models import (
     CharterOperator, OperatorAircraft, OperatorYacht,
     AvailabilityBlock, NJHCommissionRule,
     RFQBid, OperatorBooking, OperatorPayoutLog,
-    OperatorReview, DocumentUpload, ClientNotification, WebhookLog,
+    OperatorReview, DocumentUpload, ClientNotification, WebhookLog, LeaseBooking , AirCargoBooking
 )
 
 
@@ -1012,3 +1012,347 @@ class AdminDashboardSerializer(serializers.Serializer):
 
 class BookingStatusSerializer(serializers.Serializer):
     reference = serializers.UUIDField()
+    
+    
+    
+    
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2 — AIR CARGO BOOKING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AirCargoBookingListSerializer(serializers.ModelSerializer):
+    """Lightweight — used in lists, dashboards and operator dropdowns."""
+    cargo_type_display = serializers.CharField(source='get_cargo_type_display', read_only=True)
+    urgency_display    = serializers.CharField(source='get_urgency_display', read_only=True)
+    status_display     = serializers.CharField(source='get_status_display', read_only=True)
+    operator_name      = serializers.CharField(source='assigned_operator.name', read_only=True)
+    aircraft_name      = serializers.CharField(source='assigned_aircraft.name', read_only=True)
+    aircraft_reg       = serializers.CharField(
+        source='assigned_aircraft.registration_number', read_only=True
+    )
+
+    class Meta:
+        model  = AirCargoBooking
+        fields = [
+            'id', 'reference',
+            'contact_name', 'contact_email', 'company',
+            'cargo_type', 'cargo_type_display',
+            'origin_description', 'destination_description',
+            'pickup_date', 'urgency', 'urgency_display',
+            'weight_kg', 'volume_m3',
+            'quoted_price_usd', 'operator_cost_usd', 'net_revenue_usd',
+            'payment_status',
+            'operator_name', 'aircraft_name', 'aircraft_reg',
+            'airway_bill_number',
+            'status', 'status_display',
+            'created_at',
+        ]
+
+
+class AirCargoBookingDetailSerializer(serializers.ModelSerializer):
+    """Full detail — used in admin and operator booking view."""
+    cargo_type_display   = serializers.CharField(source='get_cargo_type_display', read_only=True)
+    urgency_display      = serializers.CharField(source='get_urgency_display', read_only=True)
+    status_display       = serializers.CharField(source='get_status_display', read_only=True)
+    operator_name        = serializers.CharField(source='assigned_operator.name', read_only=True)
+    aircraft_name        = serializers.CharField(source='assigned_aircraft.name', read_only=True)
+    aircraft_reg         = serializers.CharField(
+        source='assigned_aircraft.registration_number', read_only=True
+    )
+    origin_airport_detail      = AirportSerializer(source='origin_airport', read_only=True)
+    destination_airport_detail = AirportSerializer(source='destination_airport', read_only=True)
+    source_inquiry_reference   = serializers.UUIDField(
+        source='source_inquiry.reference', read_only=True
+    )
+    client_name  = serializers.CharField(source='client.get_full_name', read_only=True)
+    client_email = serializers.EmailField(source='client.email', read_only=True)
+
+    class Meta:
+        model  = AirCargoBooking
+        fields = '__all__'
+        read_only_fields = [
+            'reference',
+            'commission_usd', 'net_revenue_usd',
+            'created_at', 'updated_at',
+        ]
+
+
+class AirCargoBookingCreateSerializer(serializers.ModelSerializer):
+    """
+    Used by NJH staff to open a new confirmed cargo booking,
+    optionally converting from an existing AirCargoInquiry.
+    commission_usd and net_revenue_usd are calculated in model.save().
+    """
+    class Meta:
+        model   = AirCargoBooking
+        exclude = [
+            'reference',
+            'commission_usd', 'net_revenue_usd',
+            'created_at', 'updated_at',
+        ]
+
+    def validate(self, data):
+        # Ensure the right airport FK is set for the chosen asset type
+        if data.get('assigned_aircraft') and data.get('assigned_operator'):
+            aircraft = data['assigned_aircraft']
+            operator = data['assigned_operator']
+            if aircraft.operator_id != operator.pk:
+                raise serializers.ValidationError(
+                    {'assigned_aircraft': 'Aircraft does not belong to the assigned operator.'}
+                )
+        return data
+
+
+class AirCargoBookingPriceSerializer(serializers.Serializer):
+    """
+    Patch serializer — NJH staff quotes or re-prices a cargo booking.
+    Mirrors FlightBookingPriceSerializer for API consistency.
+    """
+    quoted_price_usd   = serializers.DecimalField(max_digits=14, decimal_places=2)
+    operator_cost_usd  = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    commission_pct     = serializers.DecimalField(
+        max_digits=5, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    insurance_premium_usd = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    customs_fee_usd    = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    status             = serializers.ChoiceField(
+        choices=[
+            'inquiry', 'rfq_sent', 'quoted', 'confirmed',
+            'in_transit', 'delivered', 'completed', 'cancelled', 'disputed',
+        ],
+        required=False, allow_null=True, default=None
+    )
+    send_email         = serializers.BooleanField(default=True)
+    email_message      = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def to_internal_value(self, data):
+        mutable = data.copy() if hasattr(data, 'copy') else dict(data)
+        for field in ('operator_cost_usd', 'commission_pct', 'insurance_premium_usd', 'customs_fee_usd'):
+            if mutable.get(field) == '':
+                mutable[field] = None
+        return super().to_internal_value(mutable)
+
+    def validate(self, data):
+        if not data.get('commission_pct'):
+            setting = CommissionSetting.objects.order_by('-effective_from').first()
+            data['commission_pct'] = setting.rate_pct if setting else Decimal('15')
+        return data
+
+
+class AirCargoBookingTrackingSerializer(serializers.Serializer):
+    """
+    Patch serializer — update shipment tracking fields only.
+    Keeps pricing and client data untouched.
+    """
+    airway_bill_number    = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    actual_pickup_at      = serializers.DateTimeField(required=False, allow_null=True)
+    actual_delivery_at    = serializers.DateTimeField(required=False, allow_null=True)
+    proof_of_delivery_url = serializers.URLField(required=False, allow_blank=True)
+    status                = serializers.ChoiceField(
+        choices=[
+            'inquiry', 'rfq_sent', 'quoted', 'confirmed',
+            'in_transit', 'delivered', 'completed', 'cancelled', 'disputed',
+        ],
+        required=False
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2 — LEASE BOOKING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class LeaseBookingListSerializer(serializers.ModelSerializer):
+    """Lightweight — used in lists and dashboards."""
+    asset_type_display     = serializers.CharField(source='get_asset_type_display', read_only=True)
+    lease_duration_display = serializers.CharField(source='get_lease_duration_display', read_only=True)
+    status_display         = serializers.CharField(source='get_status_display', read_only=True)
+    operator_name          = serializers.CharField(source='assigned_operator.name', read_only=True)
+    asset_label            = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = LeaseBooking
+        fields = [
+            'id', 'reference',
+            'guest_name', 'guest_email', 'company',
+            'asset_type', 'asset_type_display', 'asset_label',
+            'lease_duration', 'lease_duration_display',
+            'lease_start_date', 'lease_end_date',
+            'monthly_rate_usd', 'total_lease_value_usd',
+            'payment_status', 'billing_frequency',
+            'operator_name',
+            'contract_reference', 'signed_at',
+            'status', 'status_display',
+            'created_at',
+        ]
+
+    def get_asset_label(self, obj):
+        """Returns a human-readable asset name regardless of which FK is set."""
+        if obj.asset_type == 'aircraft':
+            ac = obj.operator_aircraft or obj.catalog_aircraft
+            return str(ac) if ac else None
+        else:
+            yt = obj.operator_yacht or obj.catalog_yacht
+            return str(yt) if yt else None
+
+
+class LeaseBookingDetailSerializer(serializers.ModelSerializer):
+    """Full detail — used in admin lease profile."""
+    asset_type_display     = serializers.CharField(source='get_asset_type_display', read_only=True)
+    lease_duration_display = serializers.CharField(source='get_lease_duration_display', read_only=True)
+    status_display         = serializers.CharField(source='get_status_display', read_only=True)
+    billing_frequency_display = serializers.SerializerMethodField()
+
+    operator_name          = serializers.CharField(source='assigned_operator.name', read_only=True)
+    asset_label            = serializers.SerializerMethodField()
+
+    # Nested asset detail — only the active link is populated
+    catalog_aircraft_detail  = AircraftSerializer(source='catalog_aircraft', read_only=True)
+    catalog_yacht_detail     = YachtSerializer(source='catalog_yacht', read_only=True)
+    operator_aircraft_detail = OperatorAircraftListSerializer(source='operator_aircraft', read_only=True)
+    operator_yacht_detail    = OperatorYachtListSerializer(source='operator_yacht', read_only=True)
+
+    source_inquiry_reference = serializers.UUIDField(
+        source='source_inquiry.reference', read_only=True
+    )
+    client_name  = serializers.CharField(source='client.get_full_name', read_only=True)
+    client_email = serializers.EmailField(source='client.email', read_only=True)
+
+    class Meta:
+        model  = LeaseBooking
+        fields = '__all__'
+        read_only_fields = [
+            'reference',
+            'commission_usd', 'net_revenue_usd',
+            'created_at', 'updated_at',
+        ]
+
+    def get_asset_label(self, obj):
+        if obj.asset_type == 'aircraft':
+            ac = obj.operator_aircraft or obj.catalog_aircraft
+            return str(ac) if ac else None
+        else:
+            yt = obj.operator_yacht or obj.catalog_yacht
+            return str(yt) if yt else None
+
+    def get_billing_frequency_display(self, obj):
+        mapping = {'monthly': 'Monthly', 'quarterly': 'Quarterly', 'upfront': 'Full Upfront'}
+        return mapping.get(obj.billing_frequency, obj.billing_frequency)
+
+
+class LeaseBookingCreateSerializer(serializers.ModelSerializer):
+    """
+    Used by NJH staff to open a new confirmed lease booking,
+    optionally converting from an existing LeaseInquiry.
+    commission_usd and net_revenue_usd are calculated in model.save().
+    """
+    class Meta:
+        model   = LeaseBooking
+        exclude = [
+            'reference',
+            'commission_usd', 'net_revenue_usd',
+            'created_at', 'updated_at',
+        ]
+
+    def validate(self, data):
+        asset_type = data.get('asset_type')
+
+        # Ensure at least one asset FK is provided for the chosen type
+        if asset_type == 'aircraft':
+            if not data.get('operator_aircraft') and not data.get('catalog_aircraft'):
+                raise serializers.ValidationError(
+                    {'operator_aircraft': 'Provide operator_aircraft or catalog_aircraft for aircraft leases.'}
+                )
+        elif asset_type == 'yacht':
+            if not data.get('operator_yacht') and not data.get('catalog_yacht'):
+                raise serializers.ValidationError(
+                    {'operator_yacht': 'Provide operator_yacht or catalog_yacht for yacht leases.'}
+                )
+
+        # If an operator asset is set, verify it belongs to the assigned operator
+        if data.get('assigned_operator'):
+            op = data['assigned_operator']
+            if data.get('operator_aircraft') and data['operator_aircraft'].operator_id != op.pk:
+                raise serializers.ValidationError(
+                    {'operator_aircraft': 'Aircraft does not belong to the assigned operator.'}
+                )
+            if data.get('operator_yacht') and data['operator_yacht'].operator_id != op.pk:
+                raise serializers.ValidationError(
+                    {'operator_yacht': 'Yacht does not belong to the assigned operator.'}
+                )
+
+        # Date sanity check
+        if data.get('lease_start_date') and data.get('lease_end_date'):
+            if data['lease_end_date'] <= data['lease_start_date']:
+                raise serializers.ValidationError(
+                    {'lease_end_date': 'Lease end date must be after start date.'}
+                )
+
+        return data
+
+
+class LeaseBookingPriceSerializer(serializers.Serializer):
+    """
+    Patch serializer — NJH staff updates financials or status on a lease booking.
+    Mirrors the pattern of FlightBookingPriceSerializer / YachtCharterPriceSerializer.
+    """
+    monthly_rate_usd      = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    total_lease_value_usd = serializers.DecimalField(
+        max_digits=16, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    security_deposit_usd  = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    operator_cost_usd     = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    commission_pct        = serializers.DecimalField(
+        max_digits=5, decimal_places=2, required=False, allow_null=True, default=None
+    )
+    status                = serializers.ChoiceField(
+        choices=[
+            'inquiry', 'rfq_sent', 'negotiating', 'quoted', 'contract_sent',
+            'confirmed', 'active', 'completed', 'terminated', 'cancelled',
+        ],
+        required=False, allow_null=True, default=None
+    )
+    send_email            = serializers.BooleanField(default=True)
+    email_message         = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def to_internal_value(self, data):
+        mutable = data.copy() if hasattr(data, 'copy') else dict(data)
+        for field in (
+            'monthly_rate_usd', 'total_lease_value_usd',
+            'security_deposit_usd', 'operator_cost_usd', 'commission_pct',
+        ):
+            if mutable.get(field) == '':
+                mutable[field] = None
+        return super().to_internal_value(mutable)
+
+    def validate(self, data):
+        if not data.get('commission_pct'):
+            setting = CommissionSetting.objects.order_by('-effective_from').first()
+            data['commission_pct'] = setting.rate_pct if setting else Decimal('10')
+        return data
+
+
+class LeaseBookingContractSerializer(serializers.Serializer):
+    """
+    Patch serializer — records contract signing details.
+    Designed to be called once the lease agreement is executed.
+    """
+    contract_reference = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    contract_url       = serializers.URLField(required=False, allow_blank=True)
+    signed_at          = serializers.DateTimeField(required=False, allow_null=True)
+    signed_by          = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    status             = serializers.ChoiceField(
+        choices=['contract_sent', 'confirmed'],
+        required=False
+    )
