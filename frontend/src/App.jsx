@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';  // ← Added useState here
+import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 
 // ── Public pages
@@ -77,6 +77,151 @@ import OperatorBookingsPage     from './pages/operator/OperatorBookingsPage';
 import OperatorPayoutsPage      from './pages/operator/OperatorPayoutsPage';
 import OperatorProfilePage      from './pages/operator/OperatorProfilePage';
 
+// ── Floating WhatsApp Button Component ────────────────────────────────────
+function WhatsAppButton() {
+  const phoneNumber = '254112284093';
+  
+  // Auto-generate inquiry message based on current page
+  const getInquiryMessage = () => {
+    const currentPath = window.location.pathname;
+    const pageName = currentPath === '/' ? 'Homepage' 
+      : currentPath === '/book-flight' ? 'Flight Booking Page'
+      : currentPath === '/book-yacht' ? 'Yacht Charter Page'
+      : currentPath === '/fleet' ? 'Fleet Page'
+      : currentPath === '/yachts' ? 'Yachts Page'
+      : currentPath === '/services' ? 'Services Page'
+      : currentPath === '/about' ? 'About Page'
+      : currentPath === '/contact' ? 'Contact Page'
+      : currentPath === '/air-cargo' ? 'Air Cargo Page'
+      : currentPath === '/lease' ? 'Leasing Page'
+      : currentPath === '/membership' ? 'Membership Page'
+      : 'NairobiJetHouse Website';
+    
+    const timestamp = new Date().toLocaleString();
+    const userAgent = navigator.userAgent;
+    const screenSize = `${window.screen.width}x${window.screen.height}`;
+    
+    return encodeURIComponent(
+      `Hello NairobiJetHouse team! 👋\n\n` +
+      `I'm reaching out from your ${pageName}.\n\n` +
+      `I would like to inquire about:\n` +
+      `─────────────────────\n` +
+      `• Your private jet charter services\n` +
+      `• Available aircraft and pricing\n` +
+      `• Membership options\n` +
+      `• Or any special offers\n\n` +
+      `Could you please provide me with more information?\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📱 Device: ${userAgent.split(' ')[0]}\n` +
+      `🖥️ Screen: ${screenSize}\n` +
+      `🕐 Time: ${timestamp}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Thank you and I look forward to your response! ✈️`
+    );
+  };
+
+  const handleClick = () => {
+    const message = getInquiryMessage();
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  return (
+    <>
+      <style>{`
+        .whatsapp-float {
+          position: fixed;
+          bottom: 6rem;
+          right: 2rem;
+          width: 56px;
+          height: 56px;
+          background: #25D366;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.6rem;
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          z-index: 999;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          animation: pulse 2s infinite;
+        }
+        
+        .whatsapp-float:hover {
+          transform: scale(1.1);
+          background: #128C7E;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        .whatsapp-float:active {
+          transform: scale(0.95);
+        }
+        
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+          }
+        }
+        
+        /* Tooltip */
+        .whatsapp-float::before {
+          content: 'Chat with us on WhatsApp';
+          position: absolute;
+          right: 70px;
+          background: #1f2937;
+          color: white;
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          white-space: nowrap;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s ease;
+          pointer-events: none;
+          font-family: system-ui, -apple-system, sans-serif;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .whatsapp-float:hover::before {
+          opacity: 1;
+          visibility: visible;
+          transform: translateX(-8px);
+        }
+        
+        @media (max-width: 768px) {
+          .whatsapp-float {
+            bottom: 5rem;
+            right: 1rem;
+            width: 48px;
+            height: 48px;
+            font-size: 1.4rem;
+          }
+          .whatsapp-float::before {
+            display: none;
+          }
+        }
+      `}</style>
+      <button 
+        className="whatsapp-float"
+        onClick={handleClick}
+        aria-label="Chat with us on WhatsApp"
+      >
+        <i className="bi bi-whatsapp"></i>
+      </button>
+    </>
+  );
+}
+
 // ── Floating Back to Top Button Component ─────────────────────────────────
 function BackToTopButton() {
   const [isVisible, setIsVisible] = useState(false);
@@ -110,8 +255,8 @@ function BackToTopButton() {
           right: 2rem;
           width: 48px;
           height: 48px;
-          background: var(--navy, #0B1C36);
-          color: var(--gold, #C8A45A);
+          background: var(--color-navy, #0B1C36);
+          color: var(--color-gold, #C8A45A);
           border: none;
           border-radius: 50%;
           cursor: pointer;
@@ -133,8 +278,8 @@ function BackToTopButton() {
         }
         
         .back-to-top:hover {
-          background: var(--gold, #C8A45A);
-          color: var(--navy, #0B1C36);
+          background: var(--color-gold, #C8A45A);
+          color: var(--color-navy, #0B1C36);
           transform: translateY(-3px);
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
@@ -215,6 +360,7 @@ export default function App() {
       <BrowserRouter>
         <ScrollToTop />
         <BackToTopButton />
+        <WhatsAppButton />
         <Routes>
           {/* ── Public ─────────────────────────────────────────── */}
           <Route path="/"                  element={<HomePage />} />
