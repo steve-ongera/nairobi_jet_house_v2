@@ -1,54 +1,106 @@
 // src/pages/public/About.jsx
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PublicNavbar from '../../components/common/PublicNavbar';
 import PublicFooter from '../../components/common/PublicFooter';
 
 const LEADERSHIP = [
-  { name: 'Alexander Mercer', title: 'Chief Executive Officer', bio: 'Former VP at NetJets with 22 years in private aviation. Has overseen 40,000+ flights across 6 continents.', initials: 'AM', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80' },
-  { name: 'Sophie Laurent', title: 'Chief Operations Officer', bio: 'Ex-Air France operations director. Built and manages our 24/7 global dispatch and concierge infrastructure.', initials: 'SL', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80' },
-  { name: 'James Okonkwo', title: 'Head of Fleet Acquisitions', bio: 'Type-rated on 14 aircraft types. Oversees safety audits and operator vetting for all 2,400+ aircraft in our network.', initials: 'JO', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80' },
-  { name: 'Priya Mehta', title: 'Director of Client Experience', bio: 'Pioneered our white-glove concierge program. Former luxury hospitality lead at Four Seasons Hotels globally.', initials: 'PM', image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80' },
+  { name: 'Captain Michael Ochieng', title: 'Chief Executive Officer', bio: 'Former pilot with 25+ years in private aviation across Africa. Built Nairobi Jet House from the ground up.', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80' },
+  { name: 'Grace Wanjiku', title: 'Head of Operations', bio: 'Ex-Kenya Airways operations director. Manages our 24/7 dispatch and concierge team.', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80' },
+  { name: 'David Kimathi', title: 'Chief Pilot', bio: 'Type-rated on 8 aircraft types. Oversees all flight operations and safety protocols.', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80' },
+  { name: 'Sarah Muthoni', title: 'Client Experience Director', bio: 'Luxury hospitality expert ensuring every journey exceeds expectations.', image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80' },
 ]
 
-const MILESTONES = [
-  { year: '2004', event: 'NairobiJetHouse founded in Geneva with a fleet of 12 aircraft and a vision for frictionless private travel.' },
-  { year: '2008', event: 'Expanded to Middle East and Asia Pacific, establishing regional hubs in Dubai and Singapore.' },
-  { year: '2012', event: 'Launched our 24/7 concierge program and became the first private aviation company to offer guaranteed availability.' },
-  { year: '2016', event: 'Added superyacht charter to our portfolio, creating the first integrated air & sea luxury travel platform.' },
-  { year: '2019', event: 'Surpassed 100,000 flights completed. Opened our dedicated aircraft leasing and sales division.' },
-  { year: '2023', event: 'Network grows to 2,400+ aircraft across 187 countries. Launched air cargo and group charter divisions.' },
-]
-
-const VALUES = [
-  { icon: 'bi-shield-check', title: 'Safety First, Always', desc: 'Every operator in our network is ARGUS Platinum or Wyvern Wingman certified. Our own safety team conducts independent audits — no exceptions, no compromises.' },
-  { icon: 'bi-gem', title: 'Relentless Excellence', desc: 'We obsess over every detail of your journey, from the cabin temperature on boarding to the brand of still water at your seat. Excellence is our baseline.' },
-  { icon: 'bi-eye', title: 'Complete Transparency', desc: 'No hidden fees. No last-minute surcharges. The price we quote is the price you pay. We publish our pricing model and welcome scrutiny.' },
-  { icon: 'bi-globe2', title: 'Truly Global Reach', desc: 'We access destinations others cannot. High-altitude strips, remote island runways, frozen northern airfields. The world is your runway — all of it.' },
+// Trusted Partners with local images from /logo folder
+const TRUSTED_PARTNERS = [
+  { name: 'Safaricom', logo: '/logo/safaricom_logo.png', width: '120px' },
+  { name: 'Coca-Cola', logo: '/logo/cocacola_logo.png', width: '100px' },
+  { name: 'KCB Bank', logo: '/logo/kcb_logo.png', width: '100px' },
+  { name: 'Equity Bank', logo: '/logo/equity_logo.png', width: '120px' },
+  { name: 'Kenya Airways', logo: '/logo/kq_logo.png', width: '120px' },
+  { name: 'Visa', logo: '/logo/visa_logo.png', width: '80px' },
+  { name: 'Microsoft', logo: '/logo/microsoft_logo.png', width: '120px' },
+  { name: 'Samsung', logo: '/logo/samsung.png', width: '100px' },
 ]
 
 const STATS = [
-  { number: '2,400+', label: 'Aircraft in Network' },
-  { number: '187', label: 'Countries Served' },
-  { number: '100K+', label: 'Flights Completed' },
-  { number: '20', label: 'Years of Excellence' },
+  { number: '12,000+', label: 'Successful Flights' },
+  { number: '15', label: 'African Destinations' },
+  { number: '24/7', label: 'Operations & Support' },
+  { number: '100%', label: 'Safety Record' },
 ]
 
-const CERTIFICATIONS = [
-  { icon: 'bi-patch-check', label: 'ARGUS Platinum', sub: 'Highest charter operator rating', image: '/assets/certifications/argus.svg' },
-  { icon: 'bi-award', label: 'IS-BAO Stage 3', sub: 'International safety standards', image: '/assets/certifications/is-bao.svg' },
-  { icon: 'bi-shield-fill-check', label: 'Wyvern Wingman', sub: 'Independent safety audits', image: '/assets/certifications/wyvern.svg' },
-  { icon: 'bi-file-earmark-check', label: 'EASA & FAA', sub: 'Dual regulatory compliance', image: '/assets/certifications/easa-faa.svg' },
+const WHY_CHOOSE_US = [
+  { icon: 'bi-airplane', title: 'Diverse Fleet', desc: 'Modern aircraft ranging from light jets for quick trips to spacious cabins for transcontinental comfort.' },
+  { icon: 'bi-shield-check', title: 'Safety First', desc: 'Rigorous safety standards and highly trained crew ensure your peace of mind at every altitude.' },
+  { icon: 'bi-gem', title: 'Luxury Service', desc: 'Bespoke catering, premium amenities, and personalized service tailored to your preferences.' },
+  { icon: 'bi-globe2', title: 'Global Reach', desc: 'Connect to destinations across Africa and beyond with our extensive network.' },
+]
+
+const OBJECTIVES = [
+  { icon: 'bi-shield-check', text: 'Maintain 100% safety record' },
+  { icon: 'bi-geo-alt', text: 'Expand to 15 African destinations' },
+  { icon: 'bi-star', text: 'Delight every client with bespoke services' },
+  { icon: 'bi-leaf', text: 'Invest in sustainable aviation technology' },
 ]
 
 /* ─── SEO Structured Data ─────────────────────────────────────────────────── */
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@type': 'AboutPage',
-  name: 'About NairobiJetHouse',
-  description: 'Two decades of defining private aviation. Learn about our mission, values, leadership team, and commitment to safety and excellence.',
+  name: 'About Nairobi Jet House',
+  description: 'Since 2010, Nairobi Jet House has been redefining luxury air travel across Africa and beyond. Kenyan-based aircraft charter specialist providing premium charter flights.',
   url: 'https://www.nairobijethouse.com/about',
+}
+
+/* ─── Moving Partners Carousel ────────────────────────────────────────────── */
+function MovingPartners() {
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    let scrollAmount = 0;
+    const speed = 1;
+    
+    const animate = () => {
+      if (scrollContainer) {
+        scrollAmount += speed;
+        if (scrollAmount >= scrollContainer.scrollWidth / 2) {
+          scrollAmount = 0;
+        }
+        scrollContainer.scrollLeft = scrollAmount;
+      }
+      requestAnimationFrame(animate);
+    };
+    
+    const animation = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animation);
+  }, []);
+
+  // Duplicate partners for seamless looping
+  const allPartners = [...TRUSTED_PARTNERS, ...TRUSTED_PARTNERS, ...TRUSTED_PARTNERS];
+
+  return (
+    <div className="partners-marquee">
+      <div className="partners-marquee__content" ref={scrollRef}>
+        {allPartners.map((partner, idx) => (
+          <div key={idx} className="partner-item">
+            <div className="partner-logo">
+              <img 
+                src={partner.logo} 
+                alt={partner.name} 
+                style={{ maxWidth: partner.width, maxHeight: '50px', objectFit: 'contain' }}
+                loading="lazy"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -58,14 +110,14 @@ export default function AboutPage() {
   return (
     <>
       <Helmet>
-        <title>About Us | NairobiJetHouse - Two Decades of Private Aviation Excellence</title>
-        <meta name="description" content="Learn about NairobiJetHouse's 20-year journey in private aviation. Our mission, values, leadership team, safety certifications, and commitment to excellence." />
-        <meta name="keywords" content="private aviation company, private jet charter about, luxury travel company, aircraft charter history" />
+        <title>About Us | Nairobi Jet House - Luxury Private Aviation Since 2010</title>
+        <meta name="description" content="Since 2010, Nairobi Jet House has been redefining luxury air travel across Africa and beyond. KCAA certified, 12,000+ successful flights, 24/7 operations." />
+        <meta name="keywords" content="Nairobi Jet House, private aviation Kenya, luxury air travel, aircraft charter, private jet Kenya" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.nairobijethouse.com/about" />
-        <meta property="og:title" content="About NairobiJetHouse | Private Aviation Excellence" />
-        <meta property="og:description" content="Two decades of defining private aviation. Learn about our mission, values, and leadership team." />
-        <meta property="og:image" content="https://www.nairobijethouse.com/images/about-og.jpg" />
+        <meta property="og:title" content="About Nairobi Jet House | Private Aviation Excellence Since 2010" />
+        <meta property="og:description" content="Kenyan-based aircraft charter specialist providing premium charter flights across Africa and beyond." />
+        <meta property="og:image" content="https://www.nairobijethouse.com/images/about-hero.jpg" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
@@ -73,11 +125,11 @@ export default function AboutPage() {
 
       <PublicNavbar />
 
-      {/* Hero Section */}
+      {/* Hero Section with SEO Image */}
       <div className="page-header" style={{ 
-        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%), url(https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=80)',
+        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%), url(https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=1600&q=80)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center 40%',
+        backgroundPosition: 'center 30%',
         backgroundBlend: 'overlay',
       }}>
         <div className="page-header__glow"></div>
@@ -85,106 +137,137 @@ export default function AboutPage() {
           <span className="section-label">
             <i className="bi bi-building"></i> Our Story
           </span>
-          <h1>Two Decades of <em style={{ color: 'var(--color-gold-light)' }}>Defining</em> Private Aviation</h1>
-          <p>Founded in Geneva in 2004, NairobiJetHouse was born from a simple conviction: private aviation should feel effortless, transparent, and truly global. Twenty years later, that conviction drives everything we do.</p>
+          <h1>Elevating Your <em style={{ color: 'var(--color-gold-light)' }}>Travel Experience</em></h1>
+          <p>Since 2010, Nairobi Jet House has been redefining luxury air travel across Africa and beyond. We combine African hospitality with global aviation standards to deliver unparalleled private jet experiences.</p>
+          <div className="hero-contact">
+            <a href="tel:+254780729617" className="btn-outline-white">
+              <i className="bi bi-telephone-fill"></i> +254 780 729 617
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* Mission & Stats Section */}
+      {/* Why Choose Us Section */}
       <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
-          <div className="about-mission-grid">
-            <div>
-              <div className="section-label">Our Mission</div>
-              <h2 className="section-title">Private Travel Without the <em style={{ color: 'var(--color-gold)' }}>Friction</em></h2>
-              <div className="gold-divider"></div>
-              <p className="about-mission-text">
-                We believe that the moment you decide to fly privately, every decision afterward should feel natural and inevitable — not complicated, not anxious, not expensive in unexpected ways.
-              </p>
-              <p className="about-mission-text">
-                Our mission is to eliminate the opacity that has long defined this industry. We build technology and processes that give you clear pricing, instant access to aircraft, and human support that never sleeps.
-              </p>
-              <p className="about-mission-text">
-                Whether you're a first-time charter customer or a Fortune 500 flight department, you deserve the same standard of care, the same quality of aircraft, and the same level of honest communication.
-              </p>
-            </div>
-            <div className="about-stats-grid">
-              {STATS.map(({ number, label }) => (
-                <div key={label} className="about-stat-card">
-                  <div className="about-stat-number">{number}</div>
-                  <div className="about-stat-label">{label}</div>
+          <div className="section-header centered">
+            <div className="section-label">Why Choose Nairobi Jet House</div>
+            <h2 className="section-title">African Hospitality Meets <em style={{ color: 'var(--color-gold)' }}>Global Standards</em></h2>
+            <div className="gold-divider center"></div>
+            <p className="section-subtitle">We combine African hospitality with global aviation standards to deliver unparalleled private jet experiences.</p>
+          </div>
+          <div className="about-why-grid">
+            {WHY_CHOOSE_US.map(({ icon, title, desc }) => (
+              <div key={title} className="about-why-card">
+                <div className="about-why-icon">
+                  <i className={`bi ${icon}`}></i>
                 </div>
-              ))}
+                <h4 className="about-why-title">{title}</h4>
+                <p className="about-why-desc">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="section-padding">
+        <div className="container">
+          <div className="about-stats-grid-full">
+            {STATS.map(({ number, label }) => (
+              <div key={label} className="about-stat-card">
+                <div className="about-stat-number">{number}</div>
+                <div className="about-stat-label">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Vision & Mission Section */}
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
+        <div className="container">
+          <div className="about-vm-grid">
+            <div className="about-vision">
+              <div className="section-label">Our Vision</div>
+              <h3 className="about-vm-title">To revolutionize private aviation</h3>
+              <p>Making high-end, on-demand chartered flights easily accessible, offering unparalleled comfort, flexibility, and exceptional service.</p>
+            </div>
+            <div className="about-mission">
+              <div className="section-label">Our Mission</div>
+              <h3 className="about-vm-title">Personalized, efficient, reliable</h3>
+              <p>Providing private air travel solutions, connecting our clients to the world in the fastest, most comfortable way possible while delivering exceptional customer service.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Values Section */}
+      {/* Objectives Section */}
       <section className="section-padding">
         <div className="container">
           <div className="section-header centered">
-            <div className="section-label">What We Stand For</div>
-            <h2 className="section-title">Our Core <em style={{ color: 'var(--color-gold)' }}>Values</em></h2>
+            <div className="section-label">Our Objectives</div>
+            <h2 className="section-title">Commitment to <em style={{ color: 'var(--color-gold)' }}>Excellence</em></h2>
             <div className="gold-divider center"></div>
           </div>
-          <div className="about-values-grid">
-            {VALUES.map(({ icon, title, desc }) => (
-              <div key={title} className="about-value-card">
-                <div className="about-value-icon">
-                  <i className={`bi ${icon}`}></i>
-                </div>
-                <h4 className="about-value-title">{title}</h4>
-                <p className="about-value-desc">{desc}</p>
+          <div className="about-objectives-grid">
+            {OBJECTIVES.map(({ icon, text }) => (
+              <div key={text} className="about-objective-card">
+                <i className={`bi ${icon}`}></i>
+                <span>{text}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Timeline Section */}
-      <section className="about-timeline-section">
+      {/* Our Story Detailed Section with SEO Image */}
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
-          <div className="section-header centered">
-            <div className="section-label" style={{ color: 'var(--color-gold-light)' }}>Our Journey</div>
-            <h2 className="section-title" style={{ color: 'var(--color-white)' }}>Twenty Years of <em style={{ color: 'var(--color-gold-light)' }}>Milestones</em></h2>
-            <div className="gold-divider center"></div>
-          </div>
-          <div className="about-timeline">
-            {MILESTONES.map(({ year, event }, i) => (
-              <div key={year} className={`about-timeline-item ${i % 2 === 0 ? 'left' : 'right'}`}>
-                <div className="about-timeline-dot"></div>
-                {i % 2 === 0 ? (
-                  <>
-                    <div className="about-timeline-content">
-                      <div className="about-timeline-year">{year}</div>
-                      <p className="about-timeline-event">{event}</p>
-                    </div>
-                    <div className="about-timeline-spacer"></div>
-                  </>
-                ) : (
-                  <>
-                    <div className="about-timeline-spacer"></div>
-                    <div className="about-timeline-content">
-                      <div className="about-timeline-year">{year}</div>
-                      <p className="about-timeline-event">{event}</p>
-                    </div>
-                  </>
-                )}
+          <div className="about-story-grid">
+            <div className="about-story-content">
+              <div className="section-label">Our Story</div>
+              <h2 className="section-title">Kenyan-Based <em style={{ color: 'var(--color-gold)' }}>Aircraft Charter</em> Specialist</h2>
+              <div className="gold-divider"></div>
+              <p>Nairobi Jet House is a Kenyan-based aircraft charter specialist located in Nairobi, Kenya, providing premium charter flights for the aviation industry. As a dynamic company, we're establishing a presence in major commercial and aviation hubs through strategic partnerships and venture capital.</p>
+              <p className="about-story-highlight">What sets us apart is our commitment to African hospitality combined with global aviation standards. Our team understands the unique travel needs within the region while maintaining international best practices.</p>
+              <div className="about-story-badges">
+                <span className="badge-gold"><i className="bi bi-check-circle-fill"></i> Certified by Kenya Civil Aviation Authority</span>
+                <span className="badge-gold"><i className="bi bi-clock-history"></i> 24/7 operations and support</span>
               </div>
-            ))}
+            </div>
+            <div className="about-story-image">
+              <img 
+                src="https://images.unsplash.com/photo-1542296332-2e4473faf563?w=600&q=80" 
+                alt="Nairobi Jet House private jet on tarmac" 
+                loading="lazy"
+              />
+              <div className="about-story-image-caption">Our fleet ready for your next journey</div>
+            </div>
           </div>
         </div>
+      </section>
+
+      {/* Trusted Partners - Moving Marquee with Local Brand Images */}
+      <section className="partners-section">
+        <div className="container">
+          <div className="section-header centered">
+            <div className="section-label">Trusted By Industry Leaders</div>
+            <h2 className="section-title">Our <em style={{ color: 'var(--color-gold)' }}>Partners</em></h2>
+            <div className="gold-divider center"></div>
+            <p className="section-subtitle">We collaborate with the best in aviation and business to ensure exceptional service quality</p>
+          </div>
+        </div>
+        <MovingPartners />
       </section>
 
       {/* Leadership Section */}
       <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
           <div className="section-header centered">
-            <div className="section-label">The Team</div>
-            <h2 className="section-title">Leadership You Can <em style={{ color: 'var(--color-gold)' }}>Trust</em></h2>
+            <div className="section-label">Meet Our Aviation Experts</div>
+            <h2 className="section-title">The Dedicated Professionals Who <em style={{ color: 'var(--color-gold)' }}>Make Your Journey</em> Exceptional</h2>
             <div className="gold-divider center"></div>
-            <p className="section-subtitle">Our leadership team brings over 150 combined years of aviation, hospitality, and technology experience to every decision we make.</p>
           </div>
           <div className="about-leadership-grid">
             {LEADERSHIP.map(({ name, title, bio, image }) => (
@@ -203,36 +286,14 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Certifications Section */}
-      <section className="section-padding">
-        <div className="container">
-          <div className="section-header centered">
-            <div className="section-label">Safety & Compliance</div>
-            <h2 className="section-title">Certified to the <em style={{ color: 'var(--color-gold)' }}>Highest Standard</em></h2>
-            <div className="gold-divider center"></div>
-          </div>
-          <div className="about-cert-grid">
-            {CERTIFICATIONS.map(({ label, sub }) => (
-              <div key={label} className="about-cert-card">
-                <div className="about-cert-icon">
-                  <i className="bi bi-patch-check"></i>
-                </div>
-                <div className="about-cert-label">{label}</div>
-                <div className="about-cert-sub">{sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="cta-banner">
         <div className="container">
           <div className="cta-content">
             <div>
               <div className="section-label" style={{ color: 'var(--color-gold-light)' }}>Ready to Fly?</div>
-              <h2>Experience the <em>NairobiJetHouse</em> Difference</h2>
-              <p>Whether you're booking your first private flight or managing a fleet of corporate aircraft, we're here to make every journey seamless, safe, and exceptional.</p>
+              <h2>Experience the <em>Nairobi Jet House</em> Difference</h2>
+              <p>Whether you're flying for business or leisure, we're here to make every journey seamless, safe, and exceptional.</p>
             </div>
             <div className="cta-actions">
               <Link to="/book-flight" className="btn-gold btn-lg">
@@ -240,9 +301,6 @@ export default function AboutPage() {
               </Link>
               <Link to="/contact" className="btn-outline-white btn-lg">
                 <i className="bi bi-envelope"></i> Get in Touch
-              </Link>
-              <Link to="/membership" className="btn-outline-white btn-lg">
-                <i className="bi bi-star"></i> View Membership
               </Link>
             </div>
           </div>
@@ -252,23 +310,196 @@ export default function AboutPage() {
       <PublicFooter />
 
       <style>{`
-        /* About Mission Grid */
-        .about-mission-grid {
+        /* Hero Contact */
+        .hero-contact {
+          margin-top: 1.5rem;
+        }
+
+        /* Why Choose Us Grid */
+        .about-why-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2rem;
+          margin-top: 2rem;
+        }
+        .about-why-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          padding: 2rem;
+          text-align: center;
+        }
+        .about-why-icon {
+          width: 60px;
+          height: 60px;
+          background: var(--color-off-white);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 1rem;
+        }
+        .about-why-icon i {
+          font-size: 1.6rem;
+          color: var(--color-gold);
+        }
+        .about-why-title {
+          font-family: var(--font-heading);
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--color-navy);
+          margin-bottom: 0.5rem;
+        }
+        .about-why-desc {
+          font-size: 0.85rem;
+          line-height: 1.6;
+          color: var(--color-mid-gray);
+          margin: 0;
+        }
+
+        /* Stats Grid Full */
+        .about-stats-grid-full {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2rem;
+        }
+
+        /* Vision & Mission Grid */
+        .about-vm-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 4rem;
+          gap: 3rem;
+        }
+        .about-vision, .about-mission {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          padding: 2rem;
+        }
+        .about-vm-title {
+          font-family: var(--font-heading);
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: var(--color-navy);
+          margin: 0.5rem 0 1rem;
+        }
+        .about-vision p, .about-mission p {
+          color: var(--color-dark-gray);
+          line-height: 1.7;
+          margin: 0;
+        }
+
+        /* Objectives Grid */
+        .about-objectives-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1.5rem;
+          margin-top: 2rem;
+        }
+        .about-objective-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          padding: 1.5rem;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .about-objective-card i {
+          font-size: 1.8rem;
+          color: var(--color-gold);
+        }
+        .about-objective-card span {
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--color-navy);
+          text-align: center;
+        }
+
+        /* Story Grid */
+        .about-story-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 3rem;
           align-items: center;
         }
-        .about-mission-text {
-          color: var(--color-dark-gray);
-          line-height: 1.8;
-          margin-bottom: 1.25rem;
+        .about-story-highlight {
+          font-weight: 500;
+          color: var(--color-navy);
+          border-left: 3px solid var(--color-gold);
+          padding-left: 1rem;
+          margin: 1rem 0;
         }
-        .about-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 1.25rem;
+        .about-story-badges {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+          margin-top: 1rem;
         }
+        .about-story-badges .badge-gold {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.3rem 0.8rem;
+        }
+        .about-story-image {
+          position: relative;
+        }
+        .about-story-image img {
+          width: 100%;
+          height: 350px;
+          object-fit: cover;
+        }
+        .about-story-image-caption {
+          margin-top: 0.75rem;
+          font-size: 0.75rem;
+          color: var(--color-mid-gray);
+          text-align: center;
+        }
+
+        /* Partners Marquee */
+        .partners-section {
+          padding: 4rem 0;
+          background: var(--color-white);
+          overflow: hidden;
+        }
+        .partners-marquee {
+          width: 100%;
+          overflow: hidden;
+          margin-top: 2rem;
+        }
+        .partners-marquee__content {
+          display: flex;
+          gap: 3rem;
+          overflow-x: auto;
+          scrollbar-width: none;
+          white-space: nowrap;
+          padding: 1rem 0;
+        }
+        .partners-marquee__content::-webkit-scrollbar {
+          display: none;
+        }
+        .partner-item {
+          flex-shrink: 0;
+        }
+        .partner-logo {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 60px;
+          padding: 0 1rem;
+          transition: all var(--transition-base);
+        }
+        .partner-logo img {
+          filter: grayscale(100%);
+          opacity: 0.7;
+          transition: all var(--transition-base);
+        }
+        .partner-logo:hover img {
+          filter: grayscale(0%);
+          opacity: 1;
+          transform: scale(1.05);
+        }
+
+        /* Stat Card */
         .about-stat-card {
           background: var(--color-white);
           border: 1px solid var(--color-light-gray);
@@ -292,120 +523,6 @@ export default function AboutPage() {
           letter-spacing: 1px;
         }
 
-        /* Values Grid */
-        .about-values-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 2rem;
-          margin-top: 3rem;
-        }
-        .about-value-card {
-          background: var(--color-white);
-          border: 1px solid var(--color-light-gray);
-          padding: 2rem;
-        }
-        .about-value-icon {
-          width: 52px;
-          height: 52px;
-          background: var(--color-off-white);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 1.25rem;
-        }
-        .about-value-icon i {
-          font-size: 1.4rem;
-          color: var(--color-gold);
-        }
-        .about-value-title {
-          font-family: var(--font-heading);
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: var(--color-navy);
-          margin-bottom: 0.65rem;
-        }
-        .about-value-desc {
-          font-size: 0.875rem;
-          line-height: 1.75;
-          color: var(--color-mid-gray);
-          margin: 0;
-        }
-
-        /* Timeline Section */
-        .about-timeline-section {
-          padding: 5rem 0;
-          background: var(--color-navy);
-          position: relative;
-          overflow: hidden;
-        }
-        .about-timeline-section::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: linear-gradient(rgba(201,153,46,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(201,153,46,0.04) 1px, transparent 1px);
-          background-size: 48px 48px;
-          pointer-events: none;
-        }
-        .about-timeline {
-          max-width: 720px;
-          margin: 3rem auto 0;
-          position: relative;
-        }
-        .about-timeline::before {
-          content: '';
-          position: absolute;
-          left: 50%;
-          top: 0;
-          bottom: 0;
-          width: 2px;
-          background: rgba(255,255,255,0.1);
-          transform: translateX(-50%);
-        }
-        .about-timeline-item {
-          display: flex;
-          gap: 2rem;
-          margin-bottom: 2.5rem;
-          position: relative;
-        }
-        .about-timeline-item.left {
-          flex-direction: row;
-        }
-        .about-timeline-item.right {
-          flex-direction: row-reverse;
-        }
-        .about-timeline-dot {
-          width: 14px;
-          height: 14px;
-          background: var(--color-gold);
-          flex-shrink: 0;
-          margin-top: 0.5rem;
-          box-shadow: 0 0 0 4px rgba(201,153,46,0.25);
-        }
-        .about-timeline-content {
-          flex: 1;
-        }
-        .about-timeline-item.left .about-timeline-content {
-          text-align: right;
-        }
-        .about-timeline-item.right .about-timeline-content {
-          text-align: left;
-        }
-        .about-timeline-spacer {
-          flex: 1;
-        }
-        .about-timeline-year {
-          font-family: var(--font-heading);
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--color-gold);
-          margin-bottom: 0.4rem;
-        }
-        .about-timeline-event {
-          color: rgba(255,255,255,0.7);
-          font-size: 0.875rem;
-          line-height: 1.7;
-        }
-
         /* Leadership Grid */
         .about-leadership-grid {
           display: grid;
@@ -419,7 +536,7 @@ export default function AboutPage() {
           overflow: hidden;
         }
         .about-leadership-image {
-          height: 200px;
+          height: 220px;
           overflow: hidden;
         }
         .about-leadership-image img {
@@ -452,82 +569,40 @@ export default function AboutPage() {
           margin: 0;
         }
 
-        /* Certifications Grid */
-        .about-cert-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 2rem;
-          margin-top: 2.5rem;
-        }
-        .about-cert-card {
-          background: var(--color-white);
-          border: 1px solid var(--color-light-gray);
-          text-align: center;
-          padding: 2rem;
-        }
-        .about-cert-icon {
-          margin-bottom: 1rem;
-        }
-        .about-cert-icon i {
-          font-size: 2rem;
-          color: var(--color-gold);
-        }
-        .about-cert-label {
-          font-weight: 700;
-          color: var(--color-navy);
-          margin-bottom: 0.3rem;
-        }
-        .about-cert-sub {
-          font-size: 0.78rem;
-          color: var(--color-mid-gray);
-        }
-
         /* Responsive */
         @media (max-width: 1024px) {
-          .about-values-grid,
-          .about-leadership-grid,
-          .about-cert-grid {
+          .about-why-grid,
+          .about-stats-grid-full,
+          .about-objectives-grid,
+          .about-leadership-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
         @media (max-width: 900px) {
-          .about-mission-grid {
+          .about-vm-grid,
+          .about-story-grid {
             grid-template-columns: 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
+          }
+          .about-story-image img {
+            height: 250px;
           }
         }
         @media (max-width: 768px) {
-          .about-values-grid,
-          .about-leadership-grid,
-          .about-cert-grid {
+          .about-why-grid,
+          .about-stats-grid-full,
+          .about-objectives-grid,
+          .about-leadership-grid {
             grid-template-columns: 1fr;
           }
-          .about-stats-grid {
-            grid-template-columns: repeat(2, 1fr);
+          .about-story-badges {
+            flex-direction: column;
           }
-          .about-timeline::before {
-            left: 16px;
+          .partner-logo {
+            height: 50px;
           }
-          .about-timeline-item {
-            flex-direction: row !important;
-            padding-left: 2rem;
-          }
-          .about-timeline-dot {
-            position: absolute;
-            left: 0;
-            top: 0.5rem;
-          }
-          .about-timeline-item.left .about-timeline-content,
-          .about-timeline-item.right .about-timeline-content {
-            text-align: left;
-          }
-          .about-timeline-spacer {
-            display: none;
-          }
-        }
-        @media (max-width: 480px) {
-          .about-stats-grid {
-            grid-template-columns: 1fr;
+          .partner-logo img {
+            max-width: 80px !important;
           }
         }
       `}</style>
