@@ -1962,28 +1962,60 @@ hr.divider-gov {
 .form-input-gov {
   width: 100%;
   padding: 0.72rem 1rem;
-  border: 1.5px solid var(--color-light-gray);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
   font-family: var(--font-body);
   font-size: 0.93rem;
   color: var(--color-charcoal);
   background: var(--color-white);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast);
   outline: none;
   appearance: none;
   -webkit-appearance: none;
   line-height: 1.4;
 }
 
-.form-input-gov:hover   { border-color: rgba(15,45,94,0.32); }
-.form-input-gov:focus   { border-color: var(--color-navy); box-shadow: 0 0 0 3px rgba(15,45,94,0.1); }
-.form-input-gov::placeholder { color: rgba(100,116,139,0.65); }
-.form-input-gov:disabled { background: var(--color-off-white); opacity: 0.65; cursor: not-allowed; }
-.form-input-gov.error   { border-color: var(--color-error); box-shadow: 0 0 0 3px rgba(192,57,43,0.1); }
-.form-input-gov.success { border-color: var(--color-success); box-shadow: 0 0 0 3px rgba(26,127,90,0.1); }
+.form-input-gov:hover {
+  border-color: var(--color-mid-gray);
+}
 
-textarea.form-input-gov { resize: vertical; min-height: 140px; }
+.form-input-gov:focus {
+  border-color: var(--color-navy);
+  outline: none;
+}
 
+.form-input-gov::placeholder {
+  color: var(--color-mid-gray);
+  opacity: 0.6;
+}
+
+.form-input-gov:disabled {
+  background: var(--color-off-white);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.form-input-gov.error {
+  border-color: var(--color-error);
+}
+
+.form-input-gov.success {
+  border-color: var(--color-success);
+}
+
+textarea.form-input-gov {
+  resize: vertical;
+  min-height: 140px;
+}
+
+/* Select dropdown styling */
+select.form-input-gov {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%2364748b' d='M7 9L1.5 3.5 2.6 2.4 7 6.8l4.4-4.4 1.1 1.1z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
 select.form-input-gov {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%2364748b' d='M7 9L1.5 3.5 2.6 2.4 7 6.8l4.4-4.4 1.1 1.1z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;

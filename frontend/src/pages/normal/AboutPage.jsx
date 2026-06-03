@@ -141,7 +141,7 @@ export default function AboutPage() {
           <p>Since 2010, Nairobi Jet House has been redefining luxury air travel across Africa and beyond. We combine African hospitality with global aviation standards to deliver unparalleled private jet experiences.</p>
           <div className="hero-contact">
             <a href="tel:+254780729617" className="btn-outline-white">
-              <i className="bi bi-telephone-fill"></i> +254 780 729 617
+              <i className="bi bi-telephone-fill"></i> +254 724 878 136
             </a>
           </div>
         </div>

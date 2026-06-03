@@ -20,6 +20,22 @@ const CATEGORY_NAMES = {
   'helicopter': 'Helicopters'
 };
 
+// Guide Data for Sidebar
+const GUIDE_TIPS = [
+  { icon: 'bi-calendar-check', title: 'Plan Ahead', desc: 'Book 2-4 weeks in advance for best availability.' },
+  { icon: 'bi-people', title: 'Group Size', desc: 'Light jets: 4-6 seats | Heavy jets: 10-18 seats.' },
+  { icon: 'bi-globe2', title: 'Global Reach', desc: '187 countries | 2,400+ aircraft worldwide.' },
+  { icon: 'bi-clock-history', title: 'Quick Response', desc: 'Receive your quote within 2-4 hours.' },
+];
+
+const AIRCRAFT_GUIDE = [
+  { category: 'Light Jets', seats: '4-6', range: '1,500-2,000 km', bestFor: 'Short business trips' },
+  { category: 'Midsize Jets', seats: '6-8', range: '2,500-3,500 km', bestFor: 'Cross-country flights' },
+  { category: 'Heavy Jets', seats: '10-16', range: '5,000-7,000 km', bestFor: 'International travel' },
+  { category: 'Ultra Long Range', seats: '14-19', range: '11,000+ km', bestFor: 'Intercontinental flights' },
+];
+
+/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -326,272 +342,360 @@ export default function BookFlightPage() {
       <PublicNavbar />
 
       {/* Page Header */}
-      <div className="page-header">
-        <div className="container">
-          <span className="section-label">Charter a Private Jet</span>
+      <div className="page-header" style={{
+        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%), url(https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=1600&q=80)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 40%',
+        backgroundBlend: 'overlay',
+      }}>
+        <div className="container page-header__inner">
+          <span className="section-label">
+            <i className="bi bi-airplane"></i> Charter a Private Jet
+          </span>
           <h1>Request Your <em style={{ color: 'var(--color-gold-light)' }}>Personalised Quote</em></h1>
           <p>Complete the form below and our aviation specialists will respond within 2–4 hours with a tailored quote.</p>
         </div>
       </div>
 
-      {/* Form Section */}
+      {/* Form Section with Sidebar */}
       <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
-        <div className="container" style={{ maxWidth: 820 }}>
-
-          {error && (
-            <div className="alert-error" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <i className="bi bi-exclamation-triangle"></i>
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={submit}>
-            {/* Contact Information */}
-            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="booking-card__header">
-                <i className="bi bi-person"></i> Contact Information
-              </div>
-              <div className="booking-card__body">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label-gov">Full Name <span className="required">*</span></label>
-                    <input
-                      className="form-input-gov"
-                      value={form.guest_name}
-                      onChange={e => set('guest_name', e.target.value)}
-                      required
-                      placeholder="John Smith"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label-gov">Email <span className="required">*</span></label>
-                    <input
-                      type="email"
-                      className="form-input-gov"
-                      value={form.guest_email}
-                      onChange={e => set('guest_email', e.target.value)}
-                      required
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label-gov">Phone</label>
-                    <input
-                      className="form-input-gov"
-                      value={form.guest_phone}
-                      onChange={e => set('guest_phone', e.target.value)}
-                      placeholder="+254 724 878 136"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label-gov">Company</label>
-                    <input
-                      className="form-input-gov"
-                      value={form.company}
-                      onChange={e => set('company', e.target.value)}
-                      placeholder="Optional"
-                    />
-                  </div>
+        <div className="container">
+          <div className="booking-layout">
+            
+            {/* Left Column - Form */}
+            <div className="booking-form-col">
+              {error && (
+                <div className="alert-error" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <i className="bi bi-exclamation-triangle"></i>
+                  <span>{error}</span>
                 </div>
-              </div>
-            </div>
+              )}
 
-            {/* Flight Details */}
-            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="booking-card__header">
-                <i className="bi bi-airplane"></i> Flight Details
-              </div>
-              <div className="booking-card__body">
-                {/* Trip Type Selection */}
-                <div className="tabs-gov" style={{ marginBottom: '1.5rem' }}>
-                  {TRIP_TYPES.map(([v, l]) => (
-                    <button
-                      key={v}
-                      type="button"
-                      className={`tab-btn ${form.trip_type === v ? 'active' : ''}`}
-                      onClick={() => set('trip_type', v)}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label-gov">From <span className="required">*</span></label>
-                    {airports.length ? (
-                      <AirportCombobox
-                        airports={airports}
-                        value={form.origin}
-                        onChange={v => set('origin', v)}
-                        placeholder="Type city or airport code…"
-                        required
-                      />
-                    ) : (
-                      <input
-                        className="form-input-gov"
-                        placeholder="Origin airport / city"
-                        value={form.origin}
-                        onChange={e => set('origin', e.target.value)}
-                        required
-                      />
-                    )}
+              <form onSubmit={submit}>
+                {/* Contact Information */}
+                <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+                  <div className="booking-card__header">
+                    <i className="bi bi-person"></i> Contact Information
                   </div>
-                  <div className="form-group">
-                    <label className="form-label-gov">To <span className="required">*</span></label>
-                    {airports.length ? (
-                      <AirportCombobox
-                        airports={airports}
-                        value={form.destination}
-                        onChange={v => set('destination', v)}
-                        placeholder="Type city or airport code…"
-                        required
-                      />
-                    ) : (
-                      <input
-                        className="form-input-gov"
-                        placeholder="Destination airport / city"
-                        value={form.destination}
-                        onChange={e => set('destination', e.target.value)}
-                        required
-                      />
-                    )}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label-gov">Departure Date <span className="required">*</span></label>
-                    <input
-                      type="date"
-                      className="form-input-gov"
-                      value={form.departure_date}
-                      onChange={e => set('departure_date', e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label-gov">Departure Time</label>
-                    <input
-                      type="time"
-                      className="form-input-gov"
-                      value={form.departure_time}
-                      onChange={e => set('departure_time', e.target.value)}
-                    />
-                  </div>
-                  {form.trip_type === 'round_trip' && (
-                    <div className="form-group">
-                      <label className="form-label-gov">Return Date <span className="required">*</span></label>
-                      <input
-                        type="date"
-                        className="form-input-gov"
-                        value={form.return_date}
-                        onChange={e => set('return_date', e.target.value)}
-                        min={form.departure_date || new Date().toISOString().split('T')[0]}
-                        required
-                      />
+                  <div className="booking-card__body">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label-gov">Full Name <span className="required">*</span></label>
+                        <input
+                          className="form-input-gov"
+                          value={form.guest_name}
+                          onChange={e => set('guest_name', e.target.value)}
+                          required
+                          placeholder="John Smith"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label-gov">Email <span className="required">*</span></label>
+                        <input
+                          type="email"
+                          className="form-input-gov"
+                          value={form.guest_email}
+                          onChange={e => set('guest_email', e.target.value)}
+                          required
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label-gov">Phone</label>
+                        <input
+                          className="form-input-gov"
+                          value={form.guest_phone}
+                          onChange={e => set('guest_phone', e.target.value)}
+                          placeholder="+254 724 878 136"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label-gov">Company</label>
+                        <input
+                          className="form-input-gov"
+                          value={form.company}
+                          onChange={e => set('company', e.target.value)}
+                          placeholder="Optional"
+                        />
+                      </div>
                     </div>
-                  )}
-                  <div className="form-group">
-                    <label className="form-label-gov">Passengers <span className="required">*</span></label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={200}
-                      className="form-input-gov"
-                      value={form.passenger_count}
-                      onChange={e => set('passenger_count', parseInt(e.target.value))}
-                      required
-                    />
-                    <div className="form-hint">Maximum 200 passengers per aircraft</div>
                   </div>
                 </div>
 
-                <div className="form-group" style={{ marginTop: '1rem' }}>
-                  <label className="form-label-gov">Preferred Aircraft Category</label>
-                  <select
-                    className="form-input-gov"
-                    value={form.preferred_category}
-                    onChange={e => set('preferred_category', e.target.value)}
-                  >
-                    <option value="">No preference — we'll recommend the best fit</option>
-                    {CATEGORIES.map(c => (
-                      <option key={c} value={c}>{CATEGORY_NAMES[c]}</option>
-                    ))}
-                  </select>
+                {/* Flight Details */}
+                <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+                  <div className="booking-card__header">
+                    <i className="bi bi-airplane"></i> Flight Details
+                  </div>
+                  <div className="booking-card__body">
+                    <div className="tabs-gov" style={{ marginBottom: '1.5rem' }}>
+                      {TRIP_TYPES.map(([v, l]) => (
+                        <button
+                          key={v}
+                          type="button"
+                          className={`tab-btn ${form.trip_type === v ? 'active' : ''}`}
+                          onClick={() => set('trip_type', v)}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label-gov">From <span className="required">*</span></label>
+                        {airports.length ? (
+                          <AirportCombobox
+                            airports={airports}
+                            value={form.origin}
+                            onChange={v => set('origin', v)}
+                            placeholder="Type city or airport code…"
+                            required
+                          />
+                        ) : (
+                          <input
+                            className="form-input-gov"
+                            placeholder="Origin airport / city"
+                            value={form.origin}
+                            onChange={e => set('origin', e.target.value)}
+                            required
+                          />
+                        )}
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label-gov">To <span className="required">*</span></label>
+                        {airports.length ? (
+                          <AirportCombobox
+                            airports={airports}
+                            value={form.destination}
+                            onChange={v => set('destination', v)}
+                            placeholder="Type city or airport code…"
+                            required
+                          />
+                        ) : (
+                          <input
+                            className="form-input-gov"
+                            placeholder="Destination airport / city"
+                            value={form.destination}
+                            onChange={e => set('destination', e.target.value)}
+                            required
+                          />
+                        )}
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label-gov">Departure Date <span className="required">*</span></label>
+                        <input
+                          type="date"
+                          className="form-input-gov"
+                          value={form.departure_date}
+                          onChange={e => set('departure_date', e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label-gov">Departure Time</label>
+                        <input
+                          type="time"
+                          className="form-input-gov"
+                          value={form.departure_time}
+                          onChange={e => set('departure_time', e.target.value)}
+                        />
+                      </div>
+                      {form.trip_type === 'round_trip' && (
+                        <div className="form-group">
+                          <label className="form-label-gov">Return Date <span className="required">*</span></label>
+                          <input
+                            type="date"
+                            className="form-input-gov"
+                            value={form.return_date}
+                            onChange={e => set('return_date', e.target.value)}
+                            min={form.departure_date || new Date().toISOString().split('T')[0]}
+                            required
+                          />
+                        </div>
+                      )}
+                      <div className="form-group">
+                        <label className="form-label-gov">Passengers <span className="required">*</span></label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={200}
+                          className="form-input-gov"
+                          value={form.passenger_count}
+                          onChange={e => set('passenger_count', parseInt(e.target.value))}
+                          required
+                        />
+                        <div className="form-hint">Maximum 200 passengers per aircraft</div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                      <label className="form-label-gov">Preferred Aircraft Category</label>
+                      <select
+                        className="form-input-gov"
+                        value={form.preferred_category}
+                        onChange={e => set('preferred_category', e.target.value)}
+                      >
+                        <option value="">No preference — we'll recommend the best fit</option>
+                        {CATEGORIES.map(c => (
+                          <option key={c} value={c}>{CATEGORY_NAMES[c]}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Add-on Services */}
+                <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+                  <div className="booking-card__header">
+                    <i className="bi bi-stars"></i> Add-on Services
+                  </div>
+                  <div className="booking-card__body">
+                    <div className="checkbox-group">
+                      {[
+                        ['catering_requested', 'bi-cup-hot', 'In-Flight Catering'],
+                        ['ground_transport_requested', 'bi-car-front', 'Ground Transport'],
+                        ['concierge_requested', 'bi-headset', 'Concierge Service'],
+                      ].map(([k, icon, label]) => (
+                        <label key={k} className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={form[k]}
+                            onChange={e => set(k, e.target.checked)}
+                          />
+                          <i className={`bi ${icon}`} style={{ color: 'var(--color-gold)' }}></i>
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Requests */}
+                <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+                  <div className="booking-card__header">
+                    <i className="bi bi-chat-text"></i> Special Requests
+                  </div>
+                  <div className="booking-card__body">
+                    <div className="form-group">
+                      <label className="form-label-gov">Special Requests or Preferences</label>
+                      <textarea
+                        className="form-input-gov"
+                        rows={4}
+                        value={form.special_requests}
+                        onChange={e => set('special_requests', e.target.value)}
+                        placeholder="Dietary requirements, specific aircraft preferences, occasions to celebrate, or any other details we should know..."
+                      />
+                      <div className="form-hint">We'll do our best to accommodate all requests</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div style={{ marginTop: '2rem' }}>
+                  <button type="submit" className="btn-primary-gov btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
+                    {loading ? (
+                      <>
+                        <div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>
+                        &nbsp; Submitting Request...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-send"></i> Submit Charter Request
+                      </>
+                    )}
+                  </button>
+                  <p className="text-center" style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)' }}>
+                    <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 2-4 hours.
+                  </p>
+                </div>
+              </form>
             </div>
 
-            {/* Add-on Services */}
-            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="booking-card__header">
-                <i className="bi bi-stars"></i> Add-on Services
-              </div>
-              <div className="booking-card__body">
-                <div className="checkbox-group">
-                  {[
-                    ['catering_requested', 'bi-cup-hot', 'In-Flight Catering'],
-                    ['ground_transport_requested', 'bi-car-front', 'Ground Transport'],
-                    ['concierge_requested', 'bi-headset', 'Concierge Service'],
-                  ].map(([k, icon, label]) => (
-                    <label key={k} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={form[k]}
-                        onChange={e => set(k, e.target.checked)}
-                      />
-                      <i className={`bi ${icon}`} style={{ color: 'var(--color-gold)' }}></i>
-                      <span>{label}</span>
-                    </label>
+            {/* Right Column - Sidebar with Guide Information */}
+            <div className="booking-sidebar">
+              {/* Quick Tips */}
+              <div className="booking-sidebar-card">
+                <div className="booking-sidebar-card__header">
+                  <i className="bi bi-lightbulb"></i> Quick Tips
+                </div>
+                <div className="booking-sidebar-card__body">
+                  {GUIDE_TIPS.map(({ icon, title, desc }) => (
+                    <div key={title} className="booking-tip-item">
+                      <i className={`bi ${icon}`}></i>
+                      <div>
+                        <strong>{title}</strong>
+                        <p>{desc}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            </div>
 
-            {/* Special Requests */}
-            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="booking-card__header">
-                <i className="bi bi-chat-text"></i> Special Requests
+              {/* Aircraft Guide */}
+              <div className="booking-sidebar-card">
+                <div className="booking-sidebar-card__header">
+                  <i className="bi bi-airplane"></i> Aircraft Guide
+                </div>
+                <div className="booking-sidebar-card__body">
+                  {AIRCRAFT_GUIDE.map((ac, idx) => (
+                    <div key={idx} className="aircraft-sidebar-item">
+                      <div className="aircraft-sidebar-info">
+                        <strong>{ac.category}</strong>
+                        <div className="aircraft-sidebar-specs">
+                          <span><i className="bi bi-people"></i> {ac.seats}</span>
+                          <span><i className="bi bi-arrow-left-right"></i> {ac.range}</span>
+                        </div>
+                        <p>{ac.bestFor}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="booking-card__body">
-                <div className="form-group">
-                  <label className="form-label-gov">Special Requests or Preferences</label>
-                  <textarea
-                    className="form-input-gov"
-                    rows={4}
-                    value={form.special_requests}
-                    onChange={e => set('special_requests', e.target.value)}
-                    placeholder="Dietary requirements, specific aircraft preferences, occasions to celebrate, or any other details we should know..."
-                  />
-                  <div className="form-hint">We'll do our best to accommodate all requests</div>
+
+              {/* Contact Info */}
+              <div className="booking-sidebar-card">
+                <div className="booking-sidebar-card__header">
+                  <i className="bi bi-headset"></i> Need Help?
+                </div>
+                <div className="booking-sidebar-card__body">
+                  <p>Our concierge team is available 24/7 to assist with your booking.</p>
+                  <a href="tel:+254780729617" className="btn-outline-gov btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}>
+                    <i className="bi bi-telephone"></i> +254 724 878 136
+                  </a>
+                  <a href="mailto:info@nairobijethouse.com" className="btn-outline-gov btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}>
+                    <i className="bi bi-envelope"></i> info@nairobijethouse.com
+                  </a>
                 </div>
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div style={{ marginTop: '2rem' }}>
-              <button type="submit" className="btn-primary-gov btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
-                {loading ? (
-                  <>
-                    <div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>
-                    &nbsp; Submitting Request...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-send"></i> Submit Charter Request
-                  </>
-                )}
-              </button>
-              <p className="text-center" style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)' }}>
-                <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 2-4 hours.
-              </p>
-            </div>
-          </form>
+          </div>
         </div>
       </section>
 
       <PublicFooter />
 
       <style>{`
+        /* Booking Layout - Two Columns */
+        .booking-layout {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 2rem;
+          align-items: start;
+        }
+        
+        .booking-form-col {
+          min-width: 0;
+        }
+        
+        .booking-sidebar {
+          position: sticky;
+          top: 100px;
+        }
+        
+        /* Booking Cards */
         .booking-card {
           background: var(--color-white);
           border: 1px solid var(--color-light-gray);
@@ -621,6 +725,118 @@ export default function BookFlightPage() {
           padding: 1.5rem;
         }
         
+        /* Sidebar Cards */
+        .booking-sidebar-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          margin-bottom: 1.5rem;
+        }
+        
+        .booking-sidebar-card__header {
+          background: var(--color-navy);
+          color: var(--color-white);
+          padding: 0.85rem 1.25rem;
+          font-family: var(--font-label);
+          font-size: 0.8rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .booking-sidebar-card__header i {
+          color: var(--color-gold);
+          font-size: 0.9rem;
+        }
+        
+        .booking-sidebar-card__body {
+          padding: 1.25rem;
+        }
+        
+        /* Quick Tip Items */
+        .booking-tip-item {
+          display: flex;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid var(--color-light-gray);
+        }
+        
+        .booking-tip-item:last-child {
+          margin-bottom: 0;
+          padding-bottom: 0;
+          border-bottom: none;
+        }
+        
+        .booking-tip-item i {
+          font-size: 1.2rem;
+          color: var(--color-gold);
+          flex-shrink: 0;
+        }
+        
+        .booking-tip-item strong {
+          display: block;
+          font-size: 0.85rem;
+          color: var(--color-navy);
+          margin-bottom: 0.2rem;
+        }
+        
+        .booking-tip-item p {
+          font-size: 0.75rem;
+          color: var(--color-mid-gray);
+          margin: 0;
+          line-height: 1.4;
+        }
+        
+        /* Aircraft Sidebar Items */
+        .aircraft-sidebar-item {
+          margin-bottom: 1rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid var(--color-light-gray);
+        }
+        
+        .aircraft-sidebar-item:last-child {
+          margin-bottom: 0;
+          padding-bottom: 0;
+          border-bottom: none;
+        }
+        
+        .aircraft-sidebar-info strong {
+          display: block;
+          font-size: 0.85rem;
+          color: var(--color-navy);
+          margin-bottom: 0.25rem;
+        }
+        
+        .aircraft-sidebar-specs {
+          display: flex;
+          gap: 0.75rem;
+          margin-bottom: 0.25rem;
+        }
+        
+        .aircraft-sidebar-specs span {
+          font-size: 0.7rem;
+          color: var(--color-mid-gray);
+          display: flex;
+          align-items: center;
+          gap: 0.2rem;
+        }
+        
+        .aircraft-sidebar-specs i {
+          color: var(--color-gold);
+          font-size: 0.65rem;
+        }
+        
+        .aircraft-sidebar-info p {
+          font-size: 0.7rem;
+          color: var(--color-dark-gray);
+          margin: 0;
+        }
+        
+        /* Checkbox Group */
         .checkbox-group {
           display: flex;
           gap: 1.5rem;
@@ -643,9 +859,31 @@ export default function BookFlightPage() {
           cursor: pointer;
         }
         
+        /* Responsive */
+        @media (max-width: 1024px) {
+          .booking-layout {
+            grid-template-columns: 1fr;
+          }
+          
+          .booking-sidebar {
+            position: static;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+          }
+          
+          .booking-sidebar-card {
+            margin-bottom: 0;
+          }
+        }
+        
         @media (max-width: 768px) {
           .booking-card__body {
             padding: 1rem;
+          }
+          
+          .booking-sidebar {
+            grid-template-columns: 1fr;
           }
           
           .checkbox-group {
