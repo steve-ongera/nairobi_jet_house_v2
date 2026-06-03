@@ -12,7 +12,7 @@ const STRUCTURED_DATA = {
   '@type': 'Organization',
   name: 'NairobiJetHouse',
   url: 'https://www.nairobijethouse.com',
-  telephone: '+254724878136',
+  telephone: '+254 724 878 136',
   email: 'nairobijethouse@gmail.com',
   sameAs: ['https://wa.me/254724878136'],
   address: {
@@ -27,7 +27,7 @@ const OFFICES = [
     city: 'Nairobi', 
     country: 'Kenya', 
     address: 'Wilson Airport, Langata Rd, Nairobi', 
-    phone: '+254724878136', 
+    phone: '+254 724 878 136', 
     email: 'nairobi@nairobijethouse.com', 
     flag: '🇰🇪',
     lat: -1.3217,
@@ -65,7 +65,7 @@ const SUBJECT_OPTIONS = [
 ]
 
 const CONTACT_ITEMS = [
-  { icon: 'bi-telephone-fill', label: 'Phone / WhatsApp', value: '+254 724 878 136', href: 'tel:+254724878136' },
+  { icon: 'bi-telephone-fill', label: 'Phone / WhatsApp', value: '+254 724 878 136', href: 'tel:+254 724 878 136' },
   { icon: 'bi-envelope-fill',  label: 'General Email',    value: 'nairobijethouse@gmail.com', href: 'mailto:nairobijethouse@gmail.com' },
   { icon: 'bi-people-fill',    label: 'Careers',          value: 'careers@nairobijethouse.com', href: 'mailto:careers@nairobijethouse.com' },
   { icon: 'bi-whatsapp',       label: 'WhatsApp',         value: '+254 724 878 136', href: 'https://wa.me/254724878136' },
@@ -165,7 +165,7 @@ export default function ContactPage() {
           <h1>We're Here <em style={{ color: 'var(--color-gold-light)' }}>24 / 7</em></h1>
           <p>Our concierge team operates 24 hours a day, 7 days a week. Whether you have a question, a request, or simply want to learn more — we're ready.</p>
           <div className="contact-hero-actions">
-            <a href="tel:+254724878136" className="btn-outline-white">
+            <a href="tel:+254 724 878 136" className="btn-outline-white">
               <i className="bi bi-telephone-fill"></i> +254 724 878 136
             </a>
             <a href="mailto:nairobijethouse@gmail.com" className="btn-outline-white">
@@ -280,7 +280,7 @@ export default function ContactPage() {
                           className="form-input-gov" 
                           value={form.phone}
                           onChange={e => set('phone', e.target.value)} 
-                          placeholder="+254724878136" 
+                          placeholder="+254 724 878 136" 
                         />
                       </div>
                       <div className="form-group">

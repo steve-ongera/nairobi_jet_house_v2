@@ -17,7 +17,7 @@ const SUBNAV_LINKS = [
   { path: '/emergency', label: '24/7 Emergency Charter', icon: 'bi-exclamation-triangle', priority: 1 },
   { path: '/corporate', label: 'Corporate Accounts',     icon: 'bi-briefcase', priority: 2 },
   { path: '/membership', label: 'Jet House Membership',  icon: 'bi-gem', priority: 3 },
-  { path: '/safety',     label: 'Safety Standards',      icon: 'bi-shield-check', priority: 4 },
+  { path: 'mailto:nairobijethouse@gmail.com', label: 'Email Us', icon: 'bi-envelope-fill', priority: 4 },
 ]
 
 // Main nav links
@@ -130,7 +130,7 @@ export default function PublicNavbar() {
           ))}
           <a href="tel:+254700000000" className="subnavbar-phone">
             <i className="bi bi-telephone-fill"></i>
-            <span className="subnavbar-phone-text">+254724878136</span>
+            <span className="subnavbar-phone-text">+254 724 878 136</span>
           </a>
         </div>
       </div>
@@ -413,7 +413,7 @@ export default function PublicNavbar() {
             </a>
             <a href="tel:+254700000000" onClick={closeDrawer}>
               <i className="bi bi-telephone-fill" aria-hidden="true"></i>
-              +254724878136
+              +254 724 878 136
             </a>
             <a href="https://linkedin.com" target="_blank" rel="noreferrer" onClick={closeDrawer}>
               <i className="bi bi-linkedin" aria-hidden="true"></i>

@@ -380,7 +380,7 @@ export default function BookFlightPage() {
                       className="form-input-gov"
                       value={form.guest_phone}
                       onChange={e => set('guest_phone', e.target.value)}
-                      placeholder="+254724878136"
+                      placeholder="+254 724 878 136"
                     />
                   </div>
                   <div className="form-group">

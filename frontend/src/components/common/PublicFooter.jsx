@@ -99,7 +99,7 @@ export default function PublicFooter() {
               <h4 className="footer-col-title">Contact</h4>
               <div className="footer-contact-item">
                 <i className="bi bi-telephone-fill"></i>
-                <a href="tel:+254700000000">+254724878136</a>
+                <a href="tel:+254700000000">+254 724 878 136</a>
               </div>
               <div className="footer-contact-item">
                 <i className="bi bi-envelope-fill"></i>

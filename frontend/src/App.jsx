@@ -116,7 +116,7 @@ function WhatsAppButton() {
       ` Screen: ${screenSize}\n` +
       ` Time: ${timestamp}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `Thank you and I look forward to your response! ✈️`
+      `Thank you and I look forward to your response! `
     );
   };
 

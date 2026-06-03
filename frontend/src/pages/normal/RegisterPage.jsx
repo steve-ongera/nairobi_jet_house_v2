@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="form-row">
-                  {field('phone', 'Phone', 'tel', '+254724878136')}
+                  {field('phone', 'Phone', 'tel', '+254 724 878 136')}
                   {field('company', 'Company', 'text', 'Acme Corp')}
                 </div>
 

@@ -344,7 +344,7 @@ function BookFlightModal({ open, onClose, aircraft: asset }) {
           <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
             <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} placeholder="John Smith" /></div>
             <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} placeholder="john@company.com" /></div>
-            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} placeholder="+254724878136" /></div>
+            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} placeholder="+254 724 878 136" /></div>
             <div className="form-group">
               <label className="form-label">Passengers <span className="req">*</span></label>
               <input className="form-control" type="number" min={1} max={asset?.passenger_capacity || 400} required value={form.passenger_count} onChange={e => set('passenger_count', parseInt(e.target.value))} />
