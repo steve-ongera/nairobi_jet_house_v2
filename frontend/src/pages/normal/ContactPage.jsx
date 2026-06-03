@@ -27,7 +27,7 @@ const OFFICES = [
     city: 'Nairobi', 
     country: 'Kenya', 
     address: 'Wilson Airport, Langata Rd, Nairobi', 
-    phone: '+254 700 000 000', 
+    phone: '+254724878136', 
     email: 'nairobi@nairobijethouse.com', 
     flag: '🇰🇪',
     lat: -1.3217,
@@ -280,7 +280,7 @@ export default function ContactPage() {
                           className="form-input-gov" 
                           value={form.phone}
                           onChange={e => set('phone', e.target.value)} 
-                          placeholder="+254 700 000 000" 
+                          placeholder="+254724878136" 
                         />
                       </div>
                       <div className="form-group">

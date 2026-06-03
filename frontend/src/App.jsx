@@ -102,7 +102,7 @@ function WhatsAppButton() {
     const screenSize = `${window.screen.width}x${window.screen.height}`;
     
     return encodeURIComponent(
-      `Hello NairobiJetHouse team! 👋\n\n` +
+      `Hello NairobiJetHouse team \n\n` +
       `I'm reaching out from your ${pageName}.\n\n` +
       `I would like to inquire about:\n` +
       `─────────────────────\n` +
@@ -112,9 +112,9 @@ function WhatsAppButton() {
       `• Or any special offers\n\n` +
       `Could you please provide me with more information?\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📱 Device: ${userAgent.split(' ')[0]}\n` +
-      `🖥️ Screen: ${screenSize}\n` +
-      `🕐 Time: ${timestamp}\n` +
+      ` Device: ${userAgent.split(' ')[0]}\n` +
+      ` Screen: ${screenSize}\n` +
+      ` Time: ${timestamp}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
       `Thank you and I look forward to your response! ✈️`
     );

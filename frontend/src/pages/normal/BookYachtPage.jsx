@@ -204,7 +204,7 @@ export default function BookYachtPage() {
                       className="form-input-gov" 
                       value={form.guest_phone} 
                       onChange={e => set('guest_phone', e.target.value)} 
-                      placeholder="+254 700 000 000"
+                      placeholder="+254724878136"
                     />
                   </div>
                   <div className="form-group">

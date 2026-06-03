@@ -354,7 +354,7 @@ NJH_CONFIG = {
     'RFQ_RESPONSE_HOURS':   4,       # hours operators have to respond to RFQ
     'PAYOUT_TERMS_DAYS':    7,       # default days after trip to release payout
     'MAX_BID_VALID_DAYS':   3,       # days an RFQ bid stays valid
-    'SUPPORT_EMAIL':        os.environ.get('SUPPORT_EMAIL', 'ops@nairobijethouse.com'),
+    'SUPPORT_EMAIL':        os.environ.get('SUPPORT_EMAIL', 'nairobijethouse@gmail.com'),
     'WEBHOOK_RETRY_LIMIT':  3,
     'WEBHOOK_RETRY_DELAY':  300,     # seconds between webhook retries
 }

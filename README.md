@@ -357,7 +357,7 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password
 DEFAULT_FROM_EMAIL=NairobiJetHouse <noreply@nairobijethouse.com>
-SUPPORT_EMAIL=ops@nairobijethouse.com
+SUPPORT_EMAIL=nairobijethouse@gmail.com
 ADMIN_EMAIL=admin@nairobijethouse.com
 
 # ── CORS ─────────────────────────────────────────────────────────────────────

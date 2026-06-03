@@ -130,7 +130,7 @@ export default function PublicNavbar() {
           ))}
           <a href="tel:+254700000000" className="subnavbar-phone">
             <i className="bi bi-telephone-fill"></i>
-            <span className="subnavbar-phone-text">+254 700 000 000</span>
+            <span className="subnavbar-phone-text">+254724878136</span>
           </a>
         </div>
       </div>
@@ -413,7 +413,7 @@ export default function PublicNavbar() {
             </a>
             <a href="tel:+254700000000" onClick={closeDrawer}>
               <i className="bi bi-telephone-fill" aria-hidden="true"></i>
-              +254 700 000 000
+              +254724878136
             </a>
             <a href="https://linkedin.com" target="_blank" rel="noreferrer" onClick={closeDrawer}>
               <i className="bi bi-linkedin" aria-hidden="true"></i>

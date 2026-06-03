@@ -238,8 +238,8 @@ export function OperatorPayoutsPage() {
         <div>
           <strong>Payment Terms:</strong> Payouts are processed within your agreed payment terms (typically 7 days after trip completion).
           For payout inquiries, contact{' '}
-          <a href="mailto:ops@nairobijethouse.com" style={{ color: 'var(--gold)' }}>
-            ops@nairobijethouse.com
+          <a href="mailto:nairobijethouse@gmail.com" style={{ color: 'var(--gold)' }}>
+            nairobijethouse@gmail.com
           </a>
         </div>
       </div>

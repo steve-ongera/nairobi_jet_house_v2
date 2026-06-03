@@ -478,7 +478,7 @@ export function OperatorProfilePage() {
             <div style={{ fontSize:'0.83rem', color:'var(--gray-400)' }}>{user?.email}</div>
           </div>
         </div>
-        <div className="alert alert-navy"><i className="bi bi-info-circle" /><span>To update your company profile, safety certifications, or bank details, please contact NairobiJetHouse operations at <strong>ops@nairobijethouse.com</strong>.</span></div>
+        <div className="alert alert-navy"><i className="bi bi-info-circle" /><span>To update your company profile, safety certifications, or bank details, please contact NairobiJetHouse operations at <strong>nairobijethouse@gmail.com</strong>.</span></div>
       </div>
     </div>
   )

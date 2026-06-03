@@ -1,12 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- ── Primary Meta Tags ─────────────────────────────── -->
-    <title>NairobiJetHouse | Private Jet Charter, Helicopter Hire & Yacht Charter Worldwide</title>
+    <title>NairobiJetHouse | Private Jet Charter & Luxury Travel Worldwide</title>
     <meta name="title" content="NairobiJetHouse | Private Jet Charter, Helicopter Hire & Yacht Charter Worldwide" />
     <meta name="description" content="NairobiJetHouse — premier private aviation company offering jets, helicopters, yachts, air cargo and luxury travel worldwide from Nairobi, Kenya." />
     <meta name="author" content="NairobiJetHouse" />
@@ -30,11 +30,14 @@
     <link rel="icon" type="image/png" href="/nairobijethouse.png" />
     <link rel="apple-touch-icon" href="/nairobijethouse.png" />
 
-    <!-- ── ✨ IMPROVED FONTS (LUXURY AVIATION STYLE) ─────────────────────────────── -->
+    <!-- ── Preconnect for Performance ─────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+
+    <!-- ── Fonts (Professional & Clean) ─────────────────────────────── -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
@@ -44,130 +47,234 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
 
-    <!-- ── ✨ MODERN LUXURY STYLING ─────────────────────────────── -->
+    <!-- ── Professional Loader Styles ─────────────────────────────── -->
     <style>
-      :root {
-        --navy: #0b1d3a;
-        --navy-dark: #071428;
-        --gold: #c8a84b;
-        --white: #ffffff;
-        --gray: #8fa3b8;
-      }
-
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
 
-      body {
-        font-family: "Inter", sans-serif;
-        background: var(--white);
-        color: var(--navy-dark);
-        -webkit-font-smoothing: antialiased;
-      }
-
-      /* ── Top Bar ── */
-      #topbar {
-        background: var(--navy-dark);
-        color: var(--gray);
-        font-size: 12px;
-        padding: 8px 0;
-        border-bottom: 2px solid var(--gold);
-      }
-
-      #topbar .wrap {
-        max-width: 1200px;
-        margin: auto;
-        display: flex;
-        justify-content: space-between;
-        padding: 0 20px;
-      }
-
-      /* ── Logo Style (optional if used in loader) ── */
-      .logo {
-        font-family: "Playfair Display", serif;
-        font-size: 22px;
-        color: var(--white);
-        letter-spacing: 1px;
-      }
-
-      .logo span {
-        color: var(--gold);
-      }
-
-      /* ── Loader ── */
+      /* Loader Container */
       #loader {
         position: fixed;
-        inset: 0;
-        background: var(--navy);
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #0B1D3A;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 9999;
+        transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
       }
 
-      #loader h1 {
-        font-family: "Playfair Display", serif;
-        color: var(--white);
-        font-size: 28px;
+      #loader.fade-out {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      /* Loader Content */
+      .loader-content {
+        text-align: center;
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      /* Logo Animation */
+      .loader-logo {
+        margin-bottom: 2rem;
+      }
+
+      .loader-logo svg {
+        width: 64px;
+        height: 64px;
+        animation: scalePulse 1.5s ease-in-out infinite;
+      }
+
+      /* Text Logo */
+      .loader-text {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        font-weight: 600;
+        color: #FFFFFF;
         letter-spacing: 1px;
+        margin-bottom: 1.5rem;
       }
 
-      #loader h1 span {
-        color: var(--gold);
+      .loader-text span {
+        color: #C8A84B;
+      }
+
+      /* Loading Bar */
+      .loader-bar-container {
+        width: 240px;
+        margin: 0 auto;
       }
 
       .loader-bar {
-        width: 220px;
-        height: 3px;
-        background: rgba(255,255,255,0.2);
-        margin-top: 16px;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 2px;
         overflow: hidden;
-        border-radius: 10px;
+        position: relative;
       }
 
       .loader-bar::after {
-        content: "";
-        display: block;
-        height: 100%;
-        width: 100%;
-        background: var(--gold);
-        animation: load 1.2s ease forwards;
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 40%;
+        background: #C8A84B;
+        border-radius: 2px;
+        animation: loadingProgress 1.2s ease-in-out infinite;
       }
 
-      @keyframes load {
-        from { transform: translateX(-100%); }
-        to { transform: translateX(0); }
+      /* Loading Percentage */
+      .loader-percentage {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 0.75rem;
+        letter-spacing: 0.5px;
       }
 
-      /* ── Root ── */
+      /* Tagline */
+      .loader-tagline {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.35);
+        margin-top: 1.5rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      /* Animations */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes scalePulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      @keyframes loadingProgress {
+        0% {
+          left: -40%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      /* Hide loader when React is ready */
       #root {
         min-height: 100vh;
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+      }
+
+      #root.loaded {
+        opacity: 1;
+      }
+
+      /* Prevent scroll during loading */
+      body.loading {
+        overflow: hidden;
       }
     </style>
   </head>
 
-  <body>
-
-   
-
-    <!-- Loader -->
+  <body class="loading">
+    <!-- Professional Loader -->
     <div id="loader">
-      <h1>Nairobi<span>JetHouse</span></h1>
-      <div class="loader-bar"></div>
+      <div class="loader-content">
+        <div class="loader-logo">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="28" stroke="#C8A84B" stroke-width="2" fill="none"/>
+            <path d="M32 16 L32 48 M20 24 L44 40 M20 40 L44 24" stroke="#C8A84B" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="6" fill="#C8A84B"/>
+          </svg>
+        </div>
+        <div class="loader-text">
+          Nairobi<span>JetHouse</span>
+        </div>
+        <div class="loader-bar-container">
+          <div class="loader-bar"></div>
+        </div>
+        <div class="loader-percentage" id="loaderPercentage">Loading experience...</div>
+        <div class="loader-tagline">Luxury Beyond Boundaries</div>
+      </div>
     </div>
 
     <!-- React App -->
     <div id="root"></div>
 
     <script>
-      window.addEventListener("load", () => {
+      // Update loading percentage (simulated)
+      let percentage = 0;
+      const percentageElement = document.getElementById('loaderPercentage');
+      const interval = setInterval(() => {
+        percentage += Math.random() * 15;
+        if (percentage >= 95) {
+          percentage = 95;
+          clearInterval(interval);
+        }
+        if (percentageElement) {
+          percentageElement.textContent = `${Math.floor(percentage)}% — Preparing your experience`;
+        }
+      }, 200);
+
+      // Remove loader when page is fully loaded
+      window.addEventListener('load', () => {
+        clearInterval(interval);
+        if (percentageElement) {
+          percentageElement.textContent = `100% — Ready to fly`;
+        }
+        
         setTimeout(() => {
-          document.getElementById("loader")?.remove();
-        }, 1200);
+          const loader = document.getElementById('loader');
+          if (loader) {
+            loader.classList.add('fade-out');
+            setTimeout(() => {
+              loader.remove();
+              document.body.classList.remove('loading');
+              
+              // Fade in the React app
+              const root = document.getElementById('root');
+              if (root) {
+                root.classList.add('loaded');
+              }
+            }, 400);
+          }
+        }, 800);
       });
+
+      // Fallback: Remove loader after 5 seconds max
+      setTimeout(() => {
+        const loader = document.getElementById('loader');
+        if (loader && loader.parentNode) {
+          loader.remove();
+          document.body.classList.remove('loading');
+          const root = document.getElementById('root');
+          if (root) root.classList.add('loaded');
+        }
+      }, 5000);
     </script>
 
     <script type="module" src="/src/main.jsx"></script>

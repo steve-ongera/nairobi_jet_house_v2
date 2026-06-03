@@ -271,7 +271,7 @@ export default function CareersApplyPage() {
                       name="phone" 
                       value={form.phone} 
                       onChange={handleChange} 
-                      placeholder="+254 700 000 000"
+                      placeholder="+254724878136"
                     />
                   </div>
                   

@@ -410,7 +410,7 @@ class Command(BaseCommand):
 
         staff_data = [
             ("admin",       "admin@nairobijethouse.com",   "admin"),
-            ("ops_manager", "ops@nairobijethouse.com",     "staff"),
+            ("ops_manager", "nairobijethouse@gmail.com",     "staff"),
             ("sales_lead",  "sales@nairobijethouse.com",   "staff"),
             ("finance",     "finance@nairobijethouse.com", "staff"),
         ]

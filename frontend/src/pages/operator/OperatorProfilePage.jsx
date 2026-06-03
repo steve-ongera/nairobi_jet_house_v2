@@ -67,13 +67,13 @@ export function OperatorProfilePage() {
     { 
       title: 'Payout Query', 
       icon: 'bi-cash-stack',
-      email: 'ops@nairobijethouse.com',
+      email: 'nairobijethouse@gmail.com',
       subject: 'Payout Query'
     },
     { 
       title: 'Submit Documents', 
       icon: 'bi-file-earmark-text',
-      email: 'ops@nairobijethouse.com',
+      email: 'nairobijethouse@gmail.com',
       subject: 'Document Submission'
     },
   ]
