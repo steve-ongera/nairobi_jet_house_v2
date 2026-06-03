@@ -1,6 +1,7 @@
-// HomePage.jsx - UPDATED IMPORTS
+// HomePage.jsx - SEO OPTIMIZED VERSION
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Helmet } from 'react-helmet-async'
 import PublicNavbar from '../../components/common/PublicNavbar'
 import PublicFooter from '../../components/common/PublicFooter'
 import { 
@@ -540,7 +541,7 @@ function LeaseModal({ open, onClose, asset, assetType }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   HOME PAGE
+   HOME PAGE - SEO OPTIMIZED
 ═══════════════════════════════════════════════════════════════════════════════ */
 export default function HomePage() {
   const [aircraft, setAircraft] = useState([])
@@ -561,323 +562,416 @@ export default function HomePage() {
   const close = useCallback(() => setModal(null), [])
 
   return (
-    <div>
-      <PublicNavbar dark />
+    <>
+      {/* SEO Helmet - Comprehensive Meta Tags */}
+      <Helmet>
+        <title>Nairobi Jet House | Private Jet Charter & Luxury Yacht Rentals in Kenya</title>
+        <meta name="description" content="Nairobi Jet House offers premium private jet charters, luxury yacht rentals, air cargo services, and aircraft leasing in Kenya and worldwide. 24/7 concierge, 2,400+ aircraft, 800+ yachts." />
+        <meta name="keywords" content="private jet charter Kenya, luxury yacht rental Nairobi, air cargo Kenya, aircraft leasing, private aviation, charter flights Nairobi, executive jet hire" />
+        <meta name="author" content="Nairobi Jet House" />
+        <meta name="robots" content="index, follow" />
+        <meta name="googlebot" content="index, follow" />
+        <meta name="language" content="English" />
+        <meta name="revisit-after" content="7 days" />
+        <meta name="geo.region" content="KE" />
+        <meta name="geo.placename" content="Nairobi" />
+        <meta name="geo.position" content="-1.286389;36.817223" />
+        <meta name="ICBM" content="-1.286389, 36.817223" />
+        
+        {/* Open Graph for Social Media */}
+        <meta property="og:title" content="Nairobi Jet House - Premier Private Aviation in Kenya" />
+        <meta property="og:description" content="Experience luxury travel with Nairobi Jet House. Private jet charters, yacht rentals, and air cargo services across Africa and worldwide." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.nairobijethouse.com" />
+        <meta property="og:image" content="/og-image.jpg" />
+        <meta property="og:image:alt" content="Nairobi Jet House luxury private jet" />
+        <meta property="og:site_name" content="Nairobi Jet House" />
+        <meta property="og:locale" content="en_KE" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Nairobi Jet House - Private Jet Charter & Luxury Travel" />
+        <meta name="twitter:description" content="Premium private aviation services in Kenya and worldwide. Book your luxury flight today." />
+        <meta name="twitter:image" content="/twitter-image.jpg" />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://www.nairobijethouse.com" />
+        
+        {/* Alternate Languages */}
+        <link rel="alternate" href="https://www.nairobijethouse.com" hrefLang="en" />
+        
+        {/* Structured Data / JSON-LD */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "TravelAgency",
+            "name": "Nairobi Jet House",
+            "url": "https://www.nairobijethouse.com",
+            "logo": "https://www.nairobijethouse.com/logo.png",
+            "image": "https://www.nairobijethouse.com/hero-image.jpg",
+            "description": "Premier private jet charter and luxury yacht rental company in Kenya, offering worldwide travel solutions.",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Nairobi",
+              "addressCountry": "KE"
+            },
+            "telephone": "+254780729617",
+            "email": "info@nairobijethouse.com",
+            "priceRange": "$$$",
+            "openingHours": "24/7",
+            "sameAs": [
+              "https://www.instagram.com/nairobijethouse",
+              "https://www.linkedin.com/company/nairobijethouse"
+            ],
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "Aviation Services",
+              "itemListElement": [
+                {
+                  "@type": "Offer",
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "Private Jet Charter"
+                  }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "Yacht Charter"
+                  }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "Air Cargo"
+                  }
+                }
+              ]
+            }
+          })}
+        </script>
+      </Helmet>
 
-      {/* ══ HERO WITH VIDEO BACKGROUND ═══════════════════════════════════════ */}
-      <section style={{
-        position: 'relative',
-        minHeight: '100vh',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <HeroVideoBackground />
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(135deg, rgba(11,29,58,0.80) 0%, rgba(11,29,58,0.50) 100%)',
-          zIndex: 3,
-          pointerEvents: 'none',
-        }} />
-        <div style={{
+      <div>
+        <PublicNavbar dark />
+
+        {/* ══ HERO WITH VIDEO BACKGROUND ═══════════════════════════════════════ */}
+        <section style={{
           position: 'relative',
-          zIndex: 4,
-          width: '100%',
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '0 2rem',
-          paddingTop: '7rem',
-          paddingBottom: '5rem',
+          minHeight: '100vh',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
+          <HeroVideoBackground />
           <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: '#C9A84C',
-            marginBottom: '1.25rem',
-          }}>
-            <i className="bi bi-patch-check" style={{ fontSize: '0.9rem' }} />
-            Travel across hidden lands
-          </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display, Georgia, serif)',
-            fontSize: 'clamp(2.4rem, 5vw, 4rem)',
-            fontWeight: 700,
-            lineHeight: 1.1,
-            color: '#ffffff',
-            marginBottom: '1.5rem',
-            maxWidth: 680,
-          }}>
-            Private Jet Charters <br />
-            <em style={{ color: '#C9A84C', fontStyle: 'italic' }}>Yacht Charter</em>
-          </h1>
-          <p style={{
-            fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
-            color: 'rgba(255,255,255,0.82)',
-            lineHeight: 1.75,
-            maxWidth: 560,
-            marginBottom: '2.5rem',
-          }}>
-            Instant access to 2,400+ private aircraft and 800+ yachts in 187 countries.
-            No membership. No waiting. Just seamless luxury travel tailored to you.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link to="/book-flight" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none', borderRadius: 6, border: '2px solid #C9A84C', letterSpacing: '0.02em', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.88'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              <i className="bi bi-airplane" style={{ fontSize: '1rem' }} /> Plan a Flight
-            </Link>
-            <Link to="/lease" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: '2px solid rgba(255,255,255,0.55)', letterSpacing: '0.02em', backdropFilter: 'blur(6px)', transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}>
-              <i className="bi bi-send" style={{ fontSize: '0.9rem' }} /> Leasing Inquiry
-            </Link>
-          </div>
-        </div>
-        <div style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 4, opacity: 0.5 }}>
-          <i className="bi bi-chevron-double-down" style={{ color: '#ffffff', fontSize: '1.1rem' }} />
-        </div>
-      </section>
-
-      {/* ══ STATS BAR ════════════════════════════════════════════════════════ */}
-      <section className="stats-bar">
-        <div className="container">
-          <div className="grid-4">
-            {STATS.map(({ value, label, icon }) => (
-              <div className="stat-item" key={label}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-                  <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.1rem' }} />
-                  <div className="stat-value">{value}</div>
-                </div>
-                <div className="stat-label">{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ SERVICES SECTION ═════════════════════════════════════════════════ */}
-      <section className="section" style={{ background: 'var(--off-white)' }}>
-        <div className="container">
-          <div className="text-center mb-4">
-            <span className="eyebrow">What We Offer</span>
-            <h2>Luxury Travel, <em>Simplified</em></h2>
-            <div className="gold-rule gold-rule-center" />
-            <p style={{ maxWidth: 540, margin: '0 auto', fontSize: '1rem' }}>
-              From a single flight to a season-long yacht charter or a multi-year aircraft lease, NairobiJetHouse gives you direct access to the world's finest private travel assets — without the complexity.
-            </p>
-          </div>
-
-          {/* Primary services (4-col) */}
-          <div className="grid-4" style={{ marginTop: '3rem' }}>
-            {SERVICES.slice(0, 4).map(({ icon, title, tagline, description, link, cta }) => (
-              <div className="card" key={title} style={{ padding: '2rem' }}>
-                <div style={{ width: 52, height: 52, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                  <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
-                </div>
-                <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
-                <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
-                <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
-                <Link to={link} className="btn btn-outline-navy btn-sm">{cta} <i className="bi bi-arrow-right" /></Link>
-              </div>
-            ))}
-          </div>
-
-          {/* Additional services separator */}
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(135deg, rgba(11,29,58,0.80) 0%, rgba(11,29,58,0.50) 100%)',
+            zIndex: 3,
+            pointerEvents: 'none',
+          }} />
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            margin: '2.5rem 0 2rem',
+            position: 'relative',
+            zIndex: 4,
+            width: '100%',
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '0 2rem',
+            paddingTop: '7rem',
+            paddingBottom: '5rem',
           }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gray-400)', whiteSpace: 'nowrap' }}>More Services</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
-          </div>
-
-          {/* Additional services (4-col) */}
-          <div className="grid-4">
-            {SERVICES.slice(4).map(({ icon, title, tagline, description, link, cta, highlight }) => (
-              <div className="card" key={title} style={{
-                padding: '2rem',
-                ...(highlight ? { borderColor: 'var(--gold)', borderWidth: 2 } : {}),
-              }}>
-                <div style={{ width: 52, height: 52, background: highlight ? 'var(--gold-pale)' : 'var(--gray-50)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: highlight ? '1.5px solid #E6CFA0' : '1.5px solid var(--gray-100)' }}>
-                  <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: highlight ? 'var(--gold)' : 'var(--navy)' }} />
-                </div>
-                <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
-                <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
-                <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
-                <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>{cta} <i className="bi bi-arrow-right" /></Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ FEATURED AIRCRAFT ════════════════════════════════════════════════ */}
-      {aircraft.length > 0 && (
-        <section className="section">
-          <div className="container">
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
-              <div>
-                <span className="eyebrow">Private Jet Fleet</span>
-                <h2>Aircraft for Every <em>Mission</em></h2>
-                <div className="gold-rule" />
-                <p style={{ maxWidth: 500 }}>From nimble light jets perfect for European city hops to ultra-long-range flagships that connect New York to Singapore nonstop — our fleet covers every range, cabin size, and budget.</p>
-              </div>
-              <Link to="/fleet" className="btn btn-outline-navy">View Full Fleet <i className="bi bi-arrow-right" /></Link>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: '#C9A84C',
+              marginBottom: '1.25rem',
+            }}>
+              <i className="bi bi-patch-check" style={{ fontSize: '0.9rem' }} />
+              Travel across hidden lands
             </div>
-            <div className="grid-3">
-              {aircraft.map(ac => (
-                <div className="card" key={ac.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                  {ac.image_url ? <img src={ac.image_url} alt={ac.name} className="card-img" /> : <div className="card-img-placeholder"><i className="bi bi-airplane" /></div>}
-                  <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <span className="card-tag">{ac.category_display}</span>
-                    <div className="card-title">{ac.name}</div>
-                    <div className="card-meta" style={{ marginBottom: '1rem' }}>
-                      <i className="bi bi-people" style={{ marginRight: 5 }} />{ac.passenger_capacity} passengers
-                      <span style={{ margin: '0 8px', color: 'var(--gray-200)' }}>·</span>
-                      <i className="bi bi-arrow-left-right" style={{ marginRight: 5 }} />{ac.range_km?.toLocaleString()} km range
-                    </div>
-                    <div className="card-actions" style={{ marginTop: 'auto' }}>
-                      <button className="btn btn-navy btn-sm" onClick={() => open('book-flight', ac)}><i className="bi bi-airplane" /> Book</button>
-                      <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-aircraft', ac)}><i className="bi bi-file-earmark-text" /> Lease</button>
-                    </div>
+            <h1 style={{
+              fontFamily: 'var(--font-display, Georgia, serif)',
+              fontSize: 'clamp(2.4rem, 5vw, 4rem)',
+              fontWeight: 700,
+              lineHeight: 1.1,
+              color: '#ffffff',
+              marginBottom: '1.5rem',
+              maxWidth: 680,
+            }}>
+              Private Jet Charters <br />
+              <em style={{ color: '#C9A84C', fontStyle: 'italic' }}>Yacht Charter</em>
+            </h1>
+            <p style={{
+              fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
+              color: 'rgba(255,255,255,0.82)',
+              lineHeight: 1.75,
+              maxWidth: 560,
+              marginBottom: '2.5rem',
+            }}>
+              Instant access to 2,400+ private aircraft and 800+ yachts in 187 countries.
+              No membership. No waiting. Just seamless luxury travel tailored to you.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <Link to="/book-flight" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none', borderRadius: 6, border: '2px solid #C9A84C', letterSpacing: '0.02em', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.88'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                <i className="bi bi-airplane" style={{ fontSize: '1rem' }} /> Plan a Flight
+              </Link>
+              <Link to="/lease" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: '2px solid rgba(255,255,255,0.55)', letterSpacing: '0.02em', backdropFilter: 'blur(6px)', transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}>
+                <i className="bi bi-send" style={{ fontSize: '0.9rem' }} /> Leasing Inquiry
+              </Link>
+            </div>
+          </div>
+          <div style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 4, opacity: 0.5 }}>
+            <i className="bi bi-chevron-double-down" style={{ color: '#ffffff', fontSize: '1.1rem' }} />
+          </div>
+        </section>
+
+        {/* ══ STATS BAR ════════════════════════════════════════════════════════ */}
+        <section className="stats-bar">
+          <div className="container">
+            <div className="grid-4">
+              {STATS.map(({ value, label, icon }) => (
+                <div className="stat-item" key={label}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
+                    <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.1rem' }} />
+                    <div className="stat-value">{value}</div>
                   </div>
+                  <div className="stat-label">{label}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
-      )}
 
-      {/* ══ WHY US SECTION ═══════════════════════════════════════════════════ */}
-      <section className="section" style={{ background: 'var(--gray-50)' }}>
-        <div className="container">
-          <div className="text-center mb-4">
-            <span className="eyebrow">Why NairobiJetHouse</span>
-            <h2>The Standard Others <em>Aspire To</em></h2>
-            <div className="gold-rule gold-rule-center" />
-            <p style={{ maxWidth: 520, margin: '0 auto' }}>With over 20 years serving heads of state, Fortune 500 executives, and discerning private travellers, NairobiJetHouse has perfected what private travel should feel like.</p>
-          </div>
-          <div className="grid-3" style={{ marginTop: '3rem' }}>
-            {WHY_US.map(({ icon, title, desc }) => (
-              <div key={title} style={{ display: 'flex', gap: '1.25rem', padding: '1.5rem', background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-100)' }}>
-                <div style={{ flexShrink: 0, width: 44, height: 44, background: 'var(--gold-pale)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.2rem' }} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '0.95rem', marginBottom: '0.4rem' }}>{title}</h4>
-                  <p style={{ fontSize: '0.84rem', lineHeight: 1.65 }}>{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ YACHT CTA SECTION ════════════════════════════════════════════════ */}
-      <section style={{ position: 'relative', padding: '7rem 0', overflow: 'hidden', backgroundImage: `url(https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&q=80)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(11,29,58,0.88) 0%, rgba(11,29,58,0.55) 100%)' }} />
-        <div className="container" style={{ position: 'relative', textAlign: 'center' }}>
-          <span className="eyebrow" style={{ color: 'var(--gold-light)' }}><i className="bi bi-water" /> Superyacht Charter</span>
-          <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Set Sail on the <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>World's Finest</em> Yachts</h2>
-          <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 560, margin: '0 auto 2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>From the turquoise waters of the Maldives to the dramatic fjords of Norway, our superyacht fleet takes you to places only accessible by sea. Fully crewed, provisioned, and ready to sail on your schedule.</p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/yacht-charter" className="btn btn-gold btn-lg"><i className="bi bi-water" /> Charter a Yacht</Link>
-            <Link to="/fleet" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.4)' }}>Browse Yachts</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ HOW IT WORKS SECTION ══════════════════════════════════════════════ */}
-      <section className="section">
-        <div className="container">
-          <div className="text-center mb-4">
-            <span className="eyebrow">The NairobiJetHouse Process</span>
-            <h2>From Request to <em>Takeoff</em> in Three Steps</h2>
-            <div className="gold-rule gold-rule-center" />
-            <p style={{ maxWidth: 500, margin: '0 auto' }}>We've eliminated every unnecessary step. Our booking process is designed for busy people who value their time as much as their comfort.</p>
-          </div>
-          <div className="grid-3" style={{ marginTop: '3.5rem' }}>
-            {PROCESS.map(({ step, icon, title, desc }) => (
-              <div key={step} style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
-                <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1.5rem' }}>
-                  <div style={{ width: 72, height: 72, background: 'var(--navy)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                    <i className={`bi ${icon}`} style={{ fontSize: '1.6rem', color: 'var(--gold)' }} />
-                  </div>
-                  <span style={{ position: 'absolute', top: -6, right: -10, fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-pale)', padding: '1px 6px', borderRadius: 4 }}>{step}</span>
-                </div>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem' }}>{title}</h3>
-                <p style={{ fontSize: '0.875rem', lineHeight: 1.75 }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="text-center" style={{ marginTop: '3rem' }}>
-            <Link to="/book-flight" className="btn btn-navy btn-lg"><i className="bi bi-airplane" /> Begin Your Journey</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ FEATURED YACHTS SECTION ═══════════════════════════════════════════ */}
-      {yachts.length > 0 && (
+        {/* ══ SERVICES SECTION ═════════════════════════════════════════════════ */}
         <section className="section" style={{ background: 'var(--off-white)' }}>
           <div className="container">
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
-              <div>
-                <span className="eyebrow">Superyacht Fleet</span>
-                <h2>Vessels Built for <em>Extraordinary</em> Voyages</h2>
-                <div className="gold-rule" />
-              </div>
-              <Link to="/fleet" className="btn btn-outline-navy">View All Yachts <i className="bi bi-arrow-right" /></Link>
+            <div className="text-center mb-4">
+              <span className="eyebrow">What We Offer</span>
+              <h2>Luxury Travel, <em>Simplified</em></h2>
+              <div className="gold-rule gold-rule-center" />
+              <p style={{ maxWidth: 540, margin: '0 auto', fontSize: '1rem' }}>
+                From a single flight to a season-long yacht charter or a multi-year aircraft lease, NairobiJetHouse gives you direct access to the world's finest private travel assets — without the complexity.
+              </p>
             </div>
-            <div className="grid-3">
-              {yachts.map(y => (
-                <div className="card" key={y.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                  {y.image_url ? <img src={y.image_url} alt={y.name} className="card-img" /> : <div className="card-img-placeholder"><i className="bi bi-water" /></div>}
-                  <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <span className="card-tag">{y.size_display}</span>
-                    <div className="card-title">{y.name}</div>
-                    <div className="card-meta" style={{ marginBottom: '0.5rem' }}>{y.length_meters}m &nbsp;·&nbsp; {y.guest_capacity} guests &nbsp;·&nbsp; {y.crew_count} crew</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '1rem' }}>
-                      From ${parseInt(y.daily_rate_usd).toLocaleString()}
-                      <span style={{ fontWeight: 400, color: 'var(--gray-400)', fontSize: '0.78rem' }}>/day</span>
+
+            {/* Primary services (4-col) */}
+            <div className="grid-4" style={{ marginTop: '3rem' }}>
+              {SERVICES.slice(0, 4).map(({ icon, title, tagline, description, link, cta }) => (
+                <div className="card" key={title} style={{ padding: '2rem' }}>
+                  <div style={{ width: 52, height: 52, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                    <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
+                  </div>
+                  <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
+                  <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
+                  <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
+                  <Link to={link} className="btn btn-outline-navy btn-sm">{cta} <i className="bi bi-arrow-right" /></Link>
+                </div>
+              ))}
+            </div>
+
+            {/* Additional services separator */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              margin: '2.5rem 0 2rem',
+            }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gray-400)', whiteSpace: 'nowrap' }}>More Services</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
+            </div>
+
+            {/* Additional services (4-col) */}
+            <div className="grid-4">
+              {SERVICES.slice(4).map(({ icon, title, tagline, description, link, cta, highlight }) => (
+                <div className="card" key={title} style={{
+                  padding: '2rem',
+                  ...(highlight ? { borderColor: 'var(--gold)', borderWidth: 2 } : {}),
+                }}>
+                  <div style={{ width: 52, height: 52, background: highlight ? 'var(--gold-pale)' : 'var(--gray-50)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: highlight ? '1.5px solid #E6CFA0' : '1.5px solid var(--gray-100)' }}>
+                    <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: highlight ? 'var(--gold)' : 'var(--navy)' }} />
+                  </div>
+                  <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
+                  <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
+                  <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
+                  <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>{cta} <i className="bi bi-arrow-right" /></Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══ FEATURED AIRCRAFT ════════════════════════════════════════════════ */}
+        {aircraft.length > 0 && (
+          <section className="section">
+            <div className="container">
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
+                <div>
+                  <span className="eyebrow">Private Jet Fleet</span>
+                  <h2>Aircraft for Every <em>Mission</em></h2>
+                  <div className="gold-rule" />
+                  <p style={{ maxWidth: 500 }}>From nimble light jets perfect for European city hops to ultra-long-range flagships that connect New York to Singapore nonstop — our fleet covers every range, cabin size, and budget.</p>
+                </div>
+                <Link to="/fleet" className="btn btn-outline-navy">View Full Fleet <i className="bi bi-arrow-right" /></Link>
+              </div>
+              <div className="grid-3">
+                {aircraft.map(ac => (
+                  <div className="card" key={ac.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                    {ac.image_url ? <img src={ac.image_url} alt={`${ac.name} private jet`} className="card-img" loading="lazy" /> : <div className="card-img-placeholder"><i className="bi bi-airplane" /></div>}
+                    <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <span className="card-tag">{ac.category_display}</span>
+                      <div className="card-title">{ac.name}</div>
+                      <div className="card-meta" style={{ marginBottom: '1rem' }}>
+                        <i className="bi bi-people" style={{ marginRight: 5 }} />{ac.passenger_capacity} passengers
+                        <span style={{ margin: '0 8px', color: 'var(--gray-200)' }}>·</span>
+                        <i className="bi bi-arrow-left-right" style={{ marginRight: 5 }} />{ac.range_km?.toLocaleString()} km range
+                      </div>
+                      <div className="card-actions" style={{ marginTop: 'auto' }}>
+                        <button className="btn btn-navy btn-sm" onClick={() => open('book-flight', ac)}><i className="bi bi-airplane" /> Book</button>
+                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-aircraft', ac)}><i className="bi bi-file-earmark-text" /> Lease</button>
+                      </div>
                     </div>
-                    <div className="card-actions" style={{ marginTop: 'auto' }}>
-                      <button className="btn btn-navy btn-sm" onClick={() => open('charter-yacht', y)}><i className="bi bi-water" /> Charter</button>
-                      <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-yacht', y)}><i className="bi bi-file-earmark-text" /> Lease</button>
-                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ══ WHY US SECTION ═══════════════════════════════════════════════════ */}
+        <section className="section" style={{ background: 'var(--gray-50)' }}>
+          <div className="container">
+            <div className="text-center mb-4">
+              <span className="eyebrow">Why NairobiJetHouse</span>
+              <h2>The Standard Others <em>Aspire To</em></h2>
+              <div className="gold-rule gold-rule-center" />
+              <p style={{ maxWidth: 520, margin: '0 auto' }}>With over 20 years serving heads of state, Fortune 500 executives, and discerning private travellers, NairobiJetHouse has perfected what private travel should feel like.</p>
+            </div>
+            <div className="grid-3" style={{ marginTop: '3rem' }}>
+              {WHY_US.map(({ icon, title, desc }) => (
+                <div key={title} style={{ display: 'flex', gap: '1.25rem', padding: '1.5rem', background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-100)' }}>
+                  <div style={{ flexShrink: 0, width: 44, height: 44, background: 'var(--gold-pale)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.2rem' }} />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '0.95rem', marginBottom: '0.4rem' }}>{title}</h4>
+                    <p style={{ fontSize: '0.84rem', lineHeight: 1.65 }}>{desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
-      )}
 
-      {/* ══ FINAL CTA SECTION ════════════════════════════════════════════════ */}
-      <section className="section" style={{ background: 'var(--navy)', textAlign: 'center' }}>
-        <div className="container" style={{ maxWidth: 680 }}>
-          <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Ready to Fly?</span>
-          <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Your Private Jet is <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Waiting</em></h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>Whether you're flying solo or bringing an entire team, NairobiJetHouse has the right aircraft at the right price. Our concierge team is standing by 24 hours a day, seven days a week.</p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/book-flight" className="btn btn-gold btn-lg"><i className="bi bi-airplane" /> Book a Flight</Link>
-            <Link to="/flight-inquiry" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}><i className="bi bi-send" /> Send an Inquiry</Link>
+        {/* ══ YACHT CTA SECTION ════════════════════════════════════════════════ */}
+        <section style={{ position: 'relative', padding: '7rem 0', overflow: 'hidden', backgroundImage: `url(https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&q=80)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(11,29,58,0.88) 0%, rgba(11,29,58,0.55) 100%)' }} />
+          <div className="container" style={{ position: 'relative', textAlign: 'center' }}>
+            <span className="eyebrow" style={{ color: 'var(--gold-light)' }}><i className="bi bi-water" /> Superyacht Charter</span>
+            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Set Sail on the <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>World's Finest</em> Yachts</h2>
+            <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 560, margin: '0 auto 2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>From the turquoise waters of the Maldives to the dramatic fjords of Norway, our superyacht fleet takes you to places only accessible by sea. Fully crewed, provisioned, and ready to sail on your schedule.</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/yacht-charter" className="btn btn-gold btn-lg"><i className="bi bi-water" /> Charter a Yacht</Link>
+              <Link to="/fleet" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.4)' }}>Browse Yachts</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <PublicFooter />
+        {/* ══ HOW IT WORKS SECTION ══════════════════════════════════════════════ */}
+        <section className="section">
+          <div className="container">
+            <div className="text-center mb-4">
+              <span className="eyebrow">The NairobiJetHouse Process</span>
+              <h2>From Request to <em>Takeoff</em> in Three Steps</h2>
+              <div className="gold-rule gold-rule-center" />
+              <p style={{ maxWidth: 500, margin: '0 auto' }}>We've eliminated every unnecessary step. Our booking process is designed for busy people who value their time as much as their comfort.</p>
+            </div>
+            <div className="grid-3" style={{ marginTop: '3.5rem' }}>
+              {PROCESS.map(({ step, icon, title, desc }) => (
+                <div key={step} style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1.5rem' }}>
+                    <div style={{ width: 72, height: 72, background: 'var(--navy)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                      <i className={`bi ${icon}`} style={{ fontSize: '1.6rem', color: 'var(--gold)' }} />
+                    </div>
+                    <span style={{ position: 'absolute', top: -6, right: -10, fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-pale)', padding: '1px 6px', borderRadius: 4 }}>{step}</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem' }}>{title}</h3>
+                  <p style={{ fontSize: '0.875rem', lineHeight: 1.75 }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="text-center" style={{ marginTop: '3rem' }}>
+              <Link to="/book-flight" className="btn btn-navy btn-lg"><i className="bi bi-airplane" /> Begin Your Journey</Link>
+            </div>
+          </div>
+        </section>
 
-      {/* ══ MODALS ════════════════════════════════════════════════════════════ */}
-      <BookFlightModal    open={modal?.type === 'book-flight'}    onClose={close} aircraft={modal?.asset} />
-      <CharterYachtModal  open={modal?.type === 'charter-yacht'}  onClose={close} yacht={modal?.asset} />
-      <LeaseModal         open={modal?.type === 'lease-aircraft'} onClose={close} asset={modal?.asset} assetType="aircraft" />
-      <LeaseModal         open={modal?.type === 'lease-yacht'}    onClose={close} asset={modal?.asset} assetType="yacht" />
-    </div>
+        {/* ══ FEATURED YACHTS SECTION ═══════════════════════════════════════════ */}
+        {yachts.length > 0 && (
+          <section className="section" style={{ background: 'var(--off-white)' }}>
+            <div className="container">
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
+                <div>
+                  <span className="eyebrow">Superyacht Fleet</span>
+                  <h2>Vessels Built for <em>Extraordinary</em> Voyages</h2>
+                  <div className="gold-rule" />
+                </div>
+                <Link to="/fleet" className="btn btn-outline-navy">View All Yachts <i className="bi bi-arrow-right" /></Link>
+              </div>
+              <div className="grid-3">
+                {yachts.map(y => (
+                  <div className="card" key={y.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                    {y.image_url ? <img src={y.image_url} alt={`${y.name} luxury yacht`} className="card-img" loading="lazy" /> : <div className="card-img-placeholder"><i className="bi bi-water" /></div>}
+                    <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <span className="card-tag">{y.size_display}</span>
+                      <div className="card-title">{y.name}</div>
+                      <div className="card-meta" style={{ marginBottom: '0.5rem' }}>{y.length_meters}m &nbsp;·&nbsp; {y.guest_capacity} guests &nbsp;·&nbsp; {y.crew_count} crew</div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '1rem' }}>
+                        From ${parseInt(y.daily_rate_usd).toLocaleString()}
+                        <span style={{ fontWeight: 400, color: 'var(--gray-400)', fontSize: '0.78rem' }}>/day</span>
+                      </div>
+                      <div className="card-actions" style={{ marginTop: 'auto' }}>
+                        <button className="btn btn-navy btn-sm" onClick={() => open('charter-yacht', y)}><i className="bi bi-water" /> Charter</button>
+                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-yacht', y)}><i className="bi bi-file-earmark-text" /> Lease</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ══ FINAL CTA SECTION ════════════════════════════════════════════════ */}
+        <section className="section" style={{ background: 'var(--navy)', textAlign: 'center' }}>
+          <div className="container" style={{ maxWidth: 680 }}>
+            <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Ready to Fly?</span>
+            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Your Private Jet is <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Waiting</em></h2>
+            <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>Whether you're flying solo or bringing an entire team, NairobiJetHouse has the right aircraft at the right price. Our concierge team is standing by 24 hours a day, seven days a week.</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/book-flight" className="btn btn-gold btn-lg"><i className="bi bi-airplane" /> Book a Flight</Link>
+              <Link to="/flight-inquiry" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}><i className="bi bi-send" /> Send an Inquiry</Link>
+            </div>
+          </div>
+        </section>
+
+        <PublicFooter />
+
+        {/* ══ MODALS ════════════════════════════════════════════════════════════ */}
+        <BookFlightModal    open={modal?.type === 'book-flight'}    onClose={close} aircraft={modal?.asset} />
+        <CharterYachtModal  open={modal?.type === 'charter-yacht'}  onClose={close} yacht={modal?.asset} />
+        <LeaseModal         open={modal?.type === 'lease-aircraft'} onClose={close} asset={modal?.asset} assetType="aircraft" />
+        <LeaseModal         open={modal?.type === 'lease-yacht'}    onClose={close} asset={modal?.asset} assetType="yacht" />
+      </div>
+    </>
   )
 }
