@@ -6,33 +6,94 @@ import { adminAPI } from '../../services/api'
 
 const STATUS_OPTIONS = ['new', 'read', 'replied', 'archived']
 const STATUS_COLOR = {
-  new: 'new',
-  read: 'gray',
-  replied: 'replied',
-  archived: 'archived'
+  new: '#f59e0b',
+  read: '#64748b',
+  replied: '#22c55e',
+  archived: '#9ca3af'
+}
+const STATUS_LABEL = {
+  new: 'New',
+  read: 'Read',
+  replied: 'Replied',
+  archived: 'Archived'
 }
 
-function Badge({ s }) {
-  const colorClass = STATUS_COLOR[s] || 'gray'
-  return <span className={`badge badge-${colorClass}`}>{s}</span>
+function Badge({ status }) {
+  const color = STATUS_COLOR[status] || '#64748b'
+  const label = STATUS_LABEL[status] || status
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '0.2rem 0.6rem',
+      background: `${color}15`,
+      color: color,
+      border: `1px solid ${color}30`,
+      borderRadius: '6px',
+      fontSize: '0.7rem',
+      fontWeight: 600,
+      textTransform: 'capitalize'
+    }}>
+      {label}
+    </span>
+  )
 }
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
+  
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal reply-modal">
-        <div className="modal-header">
-          <div className="modal-title">{title}</div>
-          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(5, 20, 43, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--color-white)',
+        borderRadius: '12px',
+        width: '100%',
+        maxWidth: '560px',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid var(--color-light-gray)'
+        }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            color: 'var(--color-mid-gray)',
+            padding: '0.25rem'
+          }}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+          {children}
+        </div>
       </div>
     </div>
   )
 }
 
-export function AdminInquiriesPage() {
+export default function AdminInquiriesPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('contacts')
@@ -50,7 +111,6 @@ export function AdminInquiriesPage() {
       const inquiriesData = response?.data || response
       setData(inquiriesData)
       
-      // Calculate stats
       const calculateStats = (items) => {
         if (!items) return { total: 0, new: 0, replied: 0 }
         return {
@@ -112,7 +172,7 @@ export function AdminInquiriesPage() {
         inquiry_id: selectedInquiry.id,
         inquiry_type: selectedInquiry.type
       })
-      await loadData() // Refresh to update status
+      await loadData()
       setReplyModal(false)
     } catch (err) {
       const data = err?.response?.data
@@ -187,65 +247,101 @@ export function AdminInquiriesPage() {
     const details = getInquiryDetails(item, type)
 
     return (
-      <div key={item.id} className={`inquiry-card ${isNew ? 'new' : ''} ${item.status === 'read' ? 'read' : ''}`}>
-        <div className="inquiry-header">
-          <div className="inquiry-avatar">
-            <i className="bi bi-person" />
-          </div>
-          <div className="inquiry-info">
-            <div className="inquiry-name">
-              {name}
-              <span className="inquiry-type-badge">
-                <i className={`bi ${TABS.find(t => t.key === type)?.icon}`} />
-                {type.replace(/_/g, ' ')}
-              </span>
+      <div key={item.id} style={{
+        background: isNew ? 'rgba(245,158,11,0.03)' : 'var(--color-white)',
+        border: `1px solid ${isNew ? 'rgba(245,158,11,0.3)' : 'var(--color-light-gray)'}`,
+        borderRadius: '10px',
+        marginBottom: '1rem',
+        padding: '1.25rem',
+        transition: 'all 0.2s ease'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flex: 1 }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              background: 'var(--color-off-white)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <i className="bi bi-person" style={{ color: 'var(--color-gold)', fontSize: '1.1rem' }}></i>
             </div>
-            <div className="inquiry-meta">
-              <span className="inquiry-meta-item">
-                <i className="bi bi-envelope" /> {email}
-              </span>
-              <span className="inquiry-meta-item">
-                <i className="bi bi-clock" /> {formatDate(item.created_at)}
-              </span>
-              {item.phone && (
-                <span className="inquiry-meta-item">
-                  <i className="bi bi-telephone" /> {item.phone}
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{name}</span>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.15rem 0.4rem',
+                  background: 'var(--color-off-white)',
+                  borderRadius: '4px',
+                  fontSize: '0.65rem',
+                  color: 'var(--color-mid-gray)'
+                }}>
+                  <i className={`bi ${TABS.find(t => t.key === type)?.icon}`} style={{ fontSize: '0.6rem' }}></i>
+                  {type.replace(/_/g, ' ')}
                 </span>
-              )}
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <i className="bi bi-envelope"></i> {email}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <i className="bi bi-clock"></i> {formatDate(item.created_at)}
+                </span>
+                {item.phone && (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <i className="bi bi-telephone"></i> {item.phone}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-          <Badge s={item.status || 'new'} />
+          <Badge status={item.status || 'new'} />
         </div>
         
-        <div className="inquiry-body">
-          <div className="inquiry-message">
+        {/* Message Body */}
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{
+            background: 'var(--color-off-white)',
+            padding: '1rem',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            lineHeight: 1.6,
+            color: 'var(--color-dark-gray)'
+          }}>
             {message}
           </div>
           
           {details.length > 0 && (
-            <div className="inquiry-details">
+            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               {details.map(detail => (
-                <div key={detail.label} className="inquiry-detail-item">
-                  <span className="inquiry-detail-label">{detail.label}</span>
-                  <span className="inquiry-detail-value">{detail.value}</span>
+                <div key={detail.label} style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{detail.label}:</span> {detail.value}
                 </div>
               ))}
             </div>
           )}
         </div>
         
-        <div className="inquiry-actions">
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
           <button 
-            className="btn btn-navy btn-sm" 
+            style={{ padding: '0.4rem 0.8rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
             onClick={() => openReplyModal(item, type)}
           >
-            <i className="bi bi-reply" /> Reply
+            <i className="bi bi-reply"></i> Reply
           </button>
           <button 
-            className="btn btn-outline-navy btn-sm" 
+            style={{ padding: '0.4rem 0.8rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
             onClick={() => window.open(`mailto:${email}`)}
           >
-            <i className="bi bi-envelope" /> External Email
+            <i className="bi bi-envelope"></i> External Email
           </button>
         </div>
       </div>
@@ -257,53 +353,91 @@ export function AdminInquiriesPage() {
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Inquiries</h2>
-          <p>Manage all incoming customer inquiries across all channels</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Inquiries</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Manage all incoming customer inquiries across all channels</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={loadData}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
-          </button>
-        </div>
+        <button onClick={loadData} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.4rem 1rem',
+          background: 'transparent',
+          color: 'var(--color-navy)',
+          border: '1.5px solid var(--color-navy)',
+          borderRadius: '6px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+          <i className="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="inquiry-stats">
-        <div className="inquiry-stat-card">
-          <div className="inquiry-stat-number">{stats.contacts?.total || 0}</div>
-          <div className="inquiry-stat-label">Total Inquiries</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.contacts?.total || 0}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total Inquiries</div>
         </div>
-        <div className="inquiry-stat-card">
-          <div className="inquiry-stat-number" style={{ color: 'var(--gold)' }}>
-            {stats.contacts?.new || 0}
-          </div>
-          <div className="inquiry-stat-label">Unread / New</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-gold)' }}>{stats.contacts?.new || 0}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Unread / New</div>
         </div>
-        <div className="inquiry-stat-card">
-          <div className="inquiry-stat-number">{stats.contacts?.replied || 0}</div>
-          <div className="inquiry-stat-label">Replied</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.contacts?.replied || 0}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Replied</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="tab-nav">
+      <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', flexWrap: 'wrap', borderBottom: '1px solid var(--color-light-gray)', paddingBottom: '0.5rem' }}>
         {TABS.map(t => (
           <button 
             key={t.key} 
-            className={`tab-btn${tab === t.key ? ' active' : ''}`} 
             onClick={() => setTab(t.key)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.5rem 1rem',
+              background: tab === t.key ? 'var(--color-navy)' : 'transparent',
+              color: tab === t.key ? 'var(--color-white)' : 'var(--color-mid-gray)',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
           >
-            <i className={`bi ${t.icon}`} /> 
+            <i className={`bi ${t.icon}`}></i> 
             {t.label}
             {t.count > 0 && (
-              <span className="badge badge-gray" style={{ marginLeft: 4 }}>
+              <span style={{
+                marginLeft: '0.25rem',
+                padding: '0.1rem 0.3rem',
+                background: tab === t.key ? 'rgba(255,255,255,0.2)' : 'var(--color-off-white)',
+                borderRadius: '4px',
+                fontSize: '0.65rem'
+              }}>
                 {t.count}
               </span>
             )}
             {t.newCount > 0 && (
-              <span className="badge badge-new" style={{ marginLeft: 4, fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>
+              <span style={{
+                marginLeft: '0.25rem',
+                padding: '0.1rem 0.3rem',
+                background: '#f59e0b',
+                color: 'white',
+                borderRadius: '4px',
+                fontSize: '0.6rem'
+              }}>
                 +{t.newCount}
               </span>
             )}
@@ -313,27 +447,30 @@ export function AdminInquiriesPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="table-empty">
-          <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-          <p>Loading inquiries...</p>
+        <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ color: 'var(--color-mid-gray)' }}>Loading inquiries...</p>
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       ) : currentItems.length === 0 ? (
-        <div className="table-empty">
-          <i className="bi bi-inbox" />
-          <p>No {tab.replace(/_/g, ' ')} found.</p>
+        <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+          <i className="bi bi-inbox" style={{ fontSize: '3rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '1rem' }}></i>
+          <p style={{ color: 'var(--color-mid-gray)' }}>No {tab.replace(/_/g, ' ')} found.</p>
         </div>
       ) : (
         <div>
           {currentItems.map(item => renderItem(item, tab))}
           
-          {/* Footer stats */}
           <div style={{ 
             marginTop: '1.5rem', 
-            padding: '0.75rem 1rem', 
+            padding: '0.75rem', 
             fontSize: '0.8rem', 
-            color: 'var(--gray-400)',
-            textAlign: 'center',
-            borderTop: '1px solid var(--gray-100)'
+            color: 'var(--color-mid-gray)',
+            textAlign: 'center'
           }}>
             Showing {currentItems.length} {tab.replace(/_/g, ' ')} 
             {currentItems.filter(i => i.status === 'new').length > 0 && 
@@ -343,78 +480,93 @@ export function AdminInquiriesPage() {
       )}
 
       {/* Reply Modal */}
-      <Modal open={replyModal} onClose={() => setReplyModal(false)} title={<><i className="bi bi-reply" /> Reply to Inquiry</>}>
+      <Modal open={replyModal} onClose={() => setReplyModal(false)} title={<><i className="bi bi-reply"></i> Reply to Inquiry</>}>
         {selectedInquiry && (
           <form onSubmit={sendReply}>
             {replyErr && (
-              <div className="alert alert-error">
-                <i className="bi bi-exclamation-triangle" />
+              <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', borderRadius: '6px', color: 'var(--color-error)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="bi bi-exclamation-triangle"></i>
                 <span>{replyErr}</span>
               </div>
             )}
             
-            <div className="reply-preview">
-              <div className="reply-preview-header">Replying to:</div>
-              <div><strong>{selectedInquiry.full_name || selectedInquiry.guest_name || selectedInquiry.name}</strong></div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                {selectedInquiry.email || selectedInquiry.guest_email}
-              </div>
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--color-off-white)', borderRadius: '8px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Replying to:</div>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{selectedInquiry.full_name || selectedInquiry.guest_name || selectedInquiry.name}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>{selectedInquiry.email || selectedInquiry.guest_email}</div>
             </div>
 
-            <div className="quick-replies">
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               {quickReplies.map((qr, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  className="quick-reply-btn"
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    background: 'var(--color-off-white)',
+                    border: '1px solid var(--color-light-gray)',
+                    borderRadius: '4px',
+                    fontSize: '0.7rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => setReplyForm(f => ({ ...f, message: qr.message }))}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-off-white)'; e.currentTarget.style.color = 'inherit' }}
                 >
                   {qr.label}
                 </button>
               ))}
             </div>
 
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label className="form-label">Subject</label>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Subject</label>
               <input 
-                className="form-control" 
                 value={replyForm.subject} 
                 onChange={e => setReplyForm(f => ({ ...f, subject: e.target.value }))} 
                 required 
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label className="form-label">Message</label>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Message</label>
               <textarea 
-                className="form-control" 
                 rows={6}
                 value={replyForm.message} 
                 onChange={e => setReplyForm(f => ({ ...f, message: e.target.value }))} 
                 placeholder="Type your reply here..."
                 required 
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0 1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <input 
                 type="checkbox" 
                 id="send_email_reply" 
                 checked={replyForm.send_email} 
                 onChange={e => setReplyForm(f => ({ ...f, send_email: e.target.checked }))} 
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
               />
-              <label htmlFor="send_email_reply" style={{ fontSize: '0.84rem', color: 'var(--gray-600)', cursor: 'pointer' }}>
+              <label htmlFor="send_email_reply" style={{ fontSize: '0.84rem', color: 'var(--color-dark-gray)', cursor: 'pointer' }}>
                 Send email notification to customer
               </label>
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => setReplyModal(false)}>Cancel</button>
-              <button type="submit" className="btn btn-navy" disabled={sending}>
+              <button type="button" onClick={() => setReplyModal(false)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={sending} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                 {sending ? (
-                  <><span className="spinner" style={{ borderTopColor: 'white' }} /> Sending…</>
+                  <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Sending…</>
                 ) : (
-                  <><i className="bi bi-send" /> Send Reply</>
+                  <><i className="bi bi-send"></i> Send Reply</>
                 )}
               </button>
             </div>
@@ -424,5 +576,3 @@ export function AdminInquiriesPage() {
     </div>
   )
 }
-
-export default AdminInquiriesPage

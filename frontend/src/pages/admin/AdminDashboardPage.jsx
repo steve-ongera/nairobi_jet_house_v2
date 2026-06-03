@@ -55,8 +55,7 @@ function Sparkline({ data, color, height = 36 }) {
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#${gradId})`} />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.8"
-        strokeLinecap="round" strokeLinejoin="round" />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={lx} cy={ly} r="3" fill={color} />
     </svg>
   )
@@ -81,31 +80,18 @@ function BarChart({ data }) {
         const isHov = hovered === i
         return (
           <g key={d.month} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-            {/* Gross bar */}
-            <rect x={x} width={barW} y={y} height={barH} rx={3}
-              fill="var(--navy)" opacity={isHov ? 0.7 : 0.4}
-              style={{ transition: 'opacity 0.15s' }} />
-            {/* Commission overlay */}
-            <rect x={x} width={barW} y={H - PB - commH} height={commH} rx={3}
-              fill="var(--gold)" opacity={isHov ? 1 : 0.85}
-              style={{ transition: 'opacity 0.15s' }} />
-            {/* Month label */}
-            <text x={x + barW / 2} y={H - 8} textAnchor="middle"
-              fontSize="9" fill="currentColor" opacity="0.45" fontFamily="inherit">
+            <rect x={x} width={barW} y={y} height={barH} rx={3} fill="var(--color-navy)" opacity={isHov ? 0.7 : 0.4} style={{ transition: 'opacity 0.15s' }} />
+            <rect x={x} width={barW} y={H - PB - commH} height={commH} rx={3} fill="var(--color-gold)" opacity={isHov ? 1 : 0.85} style={{ transition: 'opacity 0.15s' }} />
+            <text x={x + barW / 2} y={H - 8} textAnchor="middle" fontSize="9" fill="currentColor" opacity="0.45" fontFamily="inherit">
               {d.month.slice(5)}
             </text>
-            {/* Hover tooltip */}
             {isHov && (
               <g>
-                <rect x={x - 8} y={y - 42} width={barW + 16} height={36} rx={4}
-                  fill="var(--card-bg, #fff)" stroke="var(--gold)" strokeWidth="0.5"
-                  style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))' }} />
-                <text x={x + barW / 2} y={y - 25} textAnchor="middle"
-                  fontSize="9.5" fill="var(--gold)" fontFamily="inherit" fontWeight="700">
+                <rect x={x - 8} y={y - 42} width={barW + 16} height={36} rx={4} fill="var(--color-white)" stroke="var(--color-gold)" strokeWidth="0.5" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))' }} />
+                <text x={x + barW / 2} y={y - 25} textAnchor="middle" fontSize="9.5" fill="var(--color-gold)" fontFamily="inherit" fontWeight="700">
                   {fmt(d.gross_usd)}
                 </text>
-                <text x={x + barW / 2} y={y - 13} textAnchor="middle"
-                  fontSize="8" fill="currentColor" opacity="0.5" fontFamily="inherit">
+                <text x={x + barW / 2} y={y - 13} textAnchor="middle" fontSize="8" fill="currentColor" opacity="0.5" fontFamily="inherit">
                   Comm: {fmt(d.commission_usd)}
                 </text>
               </g>
@@ -113,8 +99,7 @@ function BarChart({ data }) {
           </g>
         )
       })}
-      <line x1={PL} y1={PT} x2={PL} y2={H - PB}
-        stroke="currentColor" strokeWidth="1" opacity="0.1" />
+      <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke="currentColor" strokeWidth="1" opacity="0.1" />
     </svg>
   )
 }
@@ -146,38 +131,27 @@ function DonutChart({ data }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
       <svg viewBox="0 0 180 180" style={{ width: 150, height: 150, flexShrink: 0 }}>
         {slices.map((s) => (
-          <path key={s.label} d={s.path}
-            fill={s.color}
-            stroke="var(--card-bg, #fff)" strokeWidth={hovered === s.i ? 2 : 1.5}
-            transform={hovered === s.i
-              ? `translate(${(s.lx - cx) * 0.06},${(s.ly - cy) * 0.06})` : ''}
-            style={{ transition: 'transform 0.15s, opacity 0.15s', cursor: 'pointer',
-              opacity: hovered != null && hovered !== s.i ? 0.5 : 1 }}
-            onMouseEnter={() => setHovered(s.i)}
-            onMouseLeave={() => setHovered(null)} />
+          <path key={s.label} d={s.path} fill={s.color} stroke="var(--color-white)" strokeWidth={hovered === s.i ? 2 : 1.5}
+            transform={hovered === s.i ? `translate(${(s.lx - cx) * 0.06},${(s.ly - cy) * 0.06})` : ''}
+            style={{ transition: 'transform 0.15s, opacity 0.15s', cursor: 'pointer', opacity: hovered != null && hovered !== s.i ? 0.5 : 1 }}
+            onMouseEnter={() => setHovered(s.i)} onMouseLeave={() => setHovered(null)} />
         ))}
-        {/* Centre hole — transparent so page bg shows through */}
-        <circle cx={cx} cy={cy} r={r} fill="var(--card-bg, #fff)" />
-        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10"
-          fill="currentColor" opacity="0.45" fontFamily="inherit">
+        <circle cx={cx} cy={cy} r={r} fill="var(--color-white)" />
+        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.45" fontFamily="inherit">
           {hov ? hov.label : 'Total'}
         </text>
-        <text x={cx} y={cy + 11} textAnchor="middle" fontSize="13" fontWeight="700"
-          fill={hov ? hov.color : 'var(--gold)'} fontFamily="inherit">
+        <text x={cx} y={cy + 11} textAnchor="middle" fontSize="13" fontWeight="700" fill={hov ? hov.color : 'var(--color-gold)'} fontFamily="inherit">
           {hov ? `${Math.round(hov.value / total * 100)}%` : fmt(total)}
         </text>
       </svg>
 
-      {/* Legend */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         {data.map((d, i) => (
-          <div key={d.label}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer',
-              opacity: hovered != null && hovered !== i ? 0.4 : 1, transition: 'opacity 0.15s' }}
+          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: hovered != null && hovered !== i ? 0.4 : 1, transition: 'opacity 0.15s' }}
             onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
             <span style={{ width: 10, height: 10, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-            <span className="text-muted" style={{ fontSize: '0.75rem' }}>{d.label}</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, marginLeft: 'auto', paddingLeft: '0.75rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>{d.label}</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, marginLeft: 'auto', paddingLeft: '0.75rem', color: 'var(--color-navy)' }}>
               {fmt(d.value)}
             </span>
           </div>
@@ -188,15 +162,21 @@ function DonutChart({ data }) {
 }
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
-function StatCard({ icon, label, value, sub, accent = 'var(--gold)', trend }) {
+function StatCard({ icon, label, value, sub, accent = 'var(--color-gold)', trend }) {
   return (
-    <div className="stat-card" style={{ borderTop: `2px solid ${accent}` }}>
+    <div style={{ 
+      background: 'var(--color-white)', 
+      border: '1px solid var(--color-light-gray)', 
+      borderRadius: '8px', 
+      padding: '1.25rem',
+      transition: 'all 0.2s ease'
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <span className="stat-label">{label}</span>
+        <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--color-mid-gray)' }}>{label}</span>
         <i className={`bi ${icon}`} style={{ color: accent, fontSize: '1rem', opacity: 0.8 }} />
       </div>
-      <div className="stat-value" style={{ marginTop: '0.2rem' }}>{value ?? '—'}</div>
-      {sub && <div className="text-xs text-muted" style={{ marginTop: '0.15rem' }}>{sub}</div>}
+      <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--color-navy)', marginTop: '0.2rem' }}>{value ?? '—'}</div>
+      {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', marginTop: '0.15rem' }}>{sub}</div>}
       {trend && (
         <div style={{ marginTop: '0.5rem' }}>
           <Sparkline data={trend} color={accent} height={32} />
@@ -227,7 +207,12 @@ export default function AdminDashboardPage() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-      <div className="spinner-ring" />
+      <div style={{ width: 40, height: 40, border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 
@@ -237,139 +222,107 @@ export default function AdminDashboardPage() {
   const bkgTrend  = last6.map(r => r.confirmed_count)
 
   const donutData = [
-    { label: 'Net Revenue',    value: last6.reduce((s, r) => s + r.net_usd, 0),        color: 'var(--navy)' },
-    { label: 'Commissions',    value: last6.reduce((s, r) => s + r.commission_usd, 0), color: 'var(--gold)' },
+    { label: 'Net Revenue',    value: last6.reduce((s, r) => s + r.net_usd, 0),        color: 'var(--color-navy)' },
+    { label: 'Commissions',    value: last6.reduce((s, r) => s + r.commission_usd, 0), color: 'var(--color-gold)' },
     { label: 'Pending Payout', value: data?.pending_payouts_usd || 0,                  color: '#22c55e' },
   ]
 
   return (
     <div>
       {/* Header */}
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Dashboard</h2>
-          <p>Platform overview — NairobiJetHouse V2</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Dashboard</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Platform overview — NairobiJetHouse V2</p>
         </div>
-        <div className="admin-actions-right">
-          <Link to="/admin/bookings" className="btn btn-outline-navy btn-sm">
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Link to="/admin/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s ease' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
             <i className="bi bi-airplane" /> Bookings
           </Link>
-          <Link to="/admin/operators" className="btn btn-navy btn-sm">
+          <Link to="/admin/operators" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s ease' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy-mid)'; e.currentTarget.style.borderColor = 'var(--color-navy-mid)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.borderColor = 'var(--color-navy)' }}>
             <i className="bi bi-building" /> Operators
           </Link>
         </div>
       </div>
 
-      {/* ── 4 Stat Cards ──────────────────────────────────────────────────── */}
-      <div className="stat-grid" style={{ marginBottom: '1.75rem' }}>
-        <StatCard
-          icon="bi-currency-dollar"
-          label="Total Revenue"
-          value={fmt(data?.total_platform_revenue)}
-          sub="all time"
-          accent="var(--gold)"
-          trend={revTrend}
-        />
-        <StatCard
-          icon="bi-percent"
-          label="Commissions (6mo)"
-          value={fmt(last6.reduce((s, r) => s + r.commission_usd, 0))}
-          sub="last 6 months"
-          accent="var(--navy)"
-          trend={commTrend}
-        />
-        <StatCard
-          icon="bi-people"
-          label="Active Members"
-          value={data?.total_members}
-          sub={`${data?.total_operators ?? '—'} operators`}
-          accent="#22c55e"
-          trend={bkgTrend}
-        />
-        <StatCard
-          icon="bi-clock-history"
-          label="Pending Actions"
-          value={(data?.pending_approvals ?? 0) + (data?.open_disputes ?? 0)}
-          sub={`${data?.pending_approvals ?? 0} approvals · ${data?.open_disputes ?? 0} disputes`}
-          accent="var(--red, #ef4444)"
-        />
+      {/* 4 Stat Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+        <StatCard icon="bi-currency-dollar" label="Total Revenue" value={fmt(data?.total_platform_revenue)} sub="all time" accent="var(--color-gold)" trend={revTrend} />
+        <StatCard icon="bi-percent" label="Commissions (6mo)" value={fmt(last6.reduce((s, r) => s + r.commission_usd, 0))} sub="last 6 months" accent="var(--color-navy)" trend={commTrend} />
+        <StatCard icon="bi-people" label="Active Members" value={data?.total_members} sub={`${data?.total_operators ?? '—'} operators`} accent="#22c55e" trend={bkgTrend} />
+        <StatCard icon="bi-clock-history" label="Pending Actions" value={(data?.pending_approvals ?? 0) + (data?.open_disputes ?? 0)} sub={`${data?.pending_approvals ?? 0} approvals · ${data?.open_disputes ?? 0} disputes`} accent="#ef4444" />
       </div>
 
-      {/* ── Charts row ────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.75rem' }}>
+      {/* Charts row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
 
-        {/* Bar Chart */}
-        <div className="table-card">
-          <div className="table-card-header">
-            <div className="table-card-title">
-              <i className="bi bi-bar-chart-fill" /> Monthly Revenue
+        {/* Bar Chart Card */}
+        <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-label)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-navy)' }}>
+              <i className="bi bi-bar-chart-fill" style={{ color: 'var(--color-gold)' }} /> Monthly Revenue
             </div>
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.68rem' }} className="text-muted">
-              <span>
-                <span style={{ display: 'inline-block', width: 8, height: 8,
-                  background: 'var(--navy)', borderRadius: 1, marginRight: 4 }} />
-                Gross
-              </span>
-              <span>
-                <span style={{ display: 'inline-block', width: 8, height: 8,
-                  background: 'var(--gold)', borderRadius: 1, marginRight: 4 }} />
-                Commission
-              </span>
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.68rem', color: 'var(--color-mid-gray)' }}>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: 'var(--color-navy)', borderRadius: '1px', marginRight: 4 }} />Gross</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: 'var(--color-gold)', borderRadius: '1px', marginRight: 4 }} />Commission</span>
             </div>
           </div>
-          <div style={{ padding: '0 0.5rem 0.75rem' }}>
+          <div style={{ padding: '0.75rem' }}>
             <BarChart data={last6} />
           </div>
         </div>
 
-        {/* Donut Chart */}
-        <div className="table-card">
-          <div className="table-card-header">
-            <div className="table-card-title">
-              <i className="bi bi-pie-chart-fill" /> Revenue Breakdown
-            </div>
+        {/* Donut Chart Card */}
+        <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)', fontFamily: 'var(--font-label)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-navy)' }}>
+            <i className="bi bi-pie-chart-fill" style={{ color: 'var(--color-gold)' }} /> Revenue Breakdown
           </div>
-          <div style={{ padding: '0.5rem 1rem 1rem' }}>
+          <div style={{ padding: '1rem' }}>
             <DonutChart data={donutData} />
           </div>
         </div>
 
       </div>
 
-      {/* ── Revenue Table ──────────────────────────────────────────────────── */}
-      <div className="table-card" style={{ marginBottom: '2rem' }}>
-        <div className="table-card-header">
-          <div className="table-card-title"><i className="bi bi-table" /> Monthly Breakdown</div>
-          <Link to="/admin/bookings" className="btn btn-ghost btn-sm">View all</Link>
+      {/* Revenue Table */}
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-label)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-navy)' }}>
+            <i className="bi bi-table" style={{ color: 'var(--color-gold)' }} /> Monthly Breakdown
+          </div>
+          <Link to="/admin/bookings" style={{ padding: '0.25rem 0.75rem', background: 'transparent', border: 'none', color: 'var(--color-navy)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}>
+            View all <i className="bi bi-arrow-right"></i>
+          </Link>
         </div>
-        <div className="table-scroll">
-          <table>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
-              <tr>
-                <th>Month</th>
-                <th style={{ textAlign: 'right' }}>Bookings</th>
-                <th style={{ textAlign: 'right' }}>Gross Revenue</th>
-                <th style={{ textAlign: 'right' }}>Commission</th>
-                <th style={{ textAlign: 'right' }}>Net</th>
+              <tr style={{ borderBottom: '1px solid var(--color-light-gray)', background: 'var(--color-off-white)' }}>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Month</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Bookings</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Gross Revenue</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Commission</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Net</th>
               </tr>
             </thead>
             <tbody>
               {last6.slice().reverse().map((r) => (
-                <tr key={r.month}>
-                  <td className="td-name">{r.month}</td>
-                  <td style={{ textAlign: 'right' }}>{r.confirmed_count}</td>
-                  <td className="td-price" style={{ textAlign: 'right' }}>{fmt(r.gross_usd)}</td>
-                  <td style={{ textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>
-                    {fmt(r.commission_usd)}
-                  </td>
-                  <td className="td-price" style={{ textAlign: 'right' }}>{fmt(r.net_usd)}</td>
+                <tr key={r.month} style={{ borderBottom: '1px solid var(--color-light-gray)' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 500, color: 'var(--color-navy)' }}>{r.month}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--color-dark-gray)' }}>{r.confirmed_count}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>{fmt(r.gross_usd)}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-gold)' }}>{fmt(r.commission_usd)}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>{fmt(r.net_usd)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-
     </div>
   )
 }

@@ -1,23 +1,98 @@
 import { useState, useEffect, useCallback } from 'react'
 import { adminAPI } from '../../services/api'
 
-const TIER_COLOR = { standard: 'gray', preferred: 'navy', exclusive: 'gold' }
-const STATUS_COLOR = { pending: 'amber', active: 'green', suspended: 'red', terminated: 'gray' }
+const TIER_COLOR = { 
+  standard: '#64748b', 
+  preferred: '#0f2d5e', 
+  exclusive: '#c9992e' 
+}
+const STATUS_COLOR = { 
+  pending: '#f59e0b', 
+  active: '#22c55e', 
+  suspended: '#ef4444', 
+  terminated: '#64748b' 
+}
+const TIER_LABEL = {
+  standard: 'Standard',
+  preferred: 'Preferred',
+  exclusive: 'Exclusive'
+}
+const STATUS_LABEL = {
+  pending: 'Pending',
+  active: 'Active',
+  suspended: 'Suspended',
+  terminated: 'Terminated'
+}
 
 function Badge({ label, color }) {
-  return <span className={`badge badge-${color || 'gray'}`}>{label}</span>
+  const bgColor = color === 'gold' ? '#c9992e' : color === 'navy' ? '#0f2d5e' : color === 'green' ? '#22c55e' : color === 'amber' ? '#f59e0b' : color === 'red' ? '#ef4444' : '#64748b'
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '0.2rem 0.6rem',
+      background: `${bgColor}15`,
+      color: bgColor,
+      border: `1px solid ${bgColor}30`,
+      borderRadius: '6px',
+      fontSize: '0.7rem',
+      fontWeight: 600,
+      textTransform: 'capitalize'
+    }}>
+      {label}
+    </span>
+  )
 }
 
 function Modal({ open, onClose, title, children, maxWidth = 580 }) {
   if (!open) return null
+  
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth }}>
-        <div className="modal-header">
-          <div className="modal-title">{title}</div>
-          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(5, 20, 43, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--color-white)',
+        borderRadius: '12px',
+        width: '100%',
+        maxWidth: maxWidth,
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid var(--color-light-gray)'
+        }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            color: 'var(--color-mid-gray)',
+            padding: '0.25rem'
+          }}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -30,12 +105,11 @@ export default function AdminOperatorsPage() {
   const [tierFilter, setTierFilter] = useState('')
   const [stFilter, setStFilter] = useState('')
   const [selected, setSelected] = useState(null)
-  const [modal, setModal] = useState(null) // 'detail' | 'create' | 'tier'
+  const [modal, setModal] = useState(null)
   const [detail, setDetail] = useState(null)
   const [detailTab, setDetailTab] = useState('aircraft')
   const [message, setMessage] = useState({ text: '', type: '' })
 
-  // Create form
   const blankForm = () => ({ 
     name: '', trading_name: '', country: '', city: '', 
     contact_email: '', contact_phone: '', tier: 'standard', 
@@ -169,75 +243,125 @@ export default function AdminOperatorsPage() {
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Charter Operators</h2>
-          <p>V2 partner operator network — aircraft & yacht suppliers</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Charter Operators</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>V2 partner operator network — aircraft & yacht suppliers</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={load}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={load} style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 1rem',
+            background: 'transparent',
+            color: 'var(--color-navy)',
+            border: '1.5px solid var(--color-navy)',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+            <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
-          <button className="btn btn-navy btn-sm" onClick={() => { setForm(blankForm()); setFormErr(''); setModal('create') }}>
-            <i className="bi bi-plus-lg" /> Add Operator
+          <button onClick={() => { setForm(blankForm()); setFormErr(''); setModal('create') }} style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 1rem',
+            background: 'var(--color-navy)',
+            color: 'var(--color-white)',
+            border: '1.5px solid var(--color-navy)',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}>
+            <i className="bi bi-plus-lg"></i> Add Operator
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="operator-stats">
-        <div className="operator-stat-card">
-          <div className="operator-stat-number">{stats.total}</div>
-          <div className="operator-stat-label">Total Operators</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.total}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total Operators</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--green)' }}>{stats.active}</div>
-          <div className="operator-stat-label">Active</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#22c55e' }}>{stats.active}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Active</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--amber)' }}>{stats.pending}</div>
-          <div className="operator-stat-label">Pending</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f59e0b' }}>{stats.pending}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Pending</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number">{stats.totalAircraft}</div>
-          <div className="operator-stat-label">Total Aircraft</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.totalAircraft}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total Aircraft</div>
         </div>
       </div>
 
       {/* Message Alert */}
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+          border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+          borderRadius: '6px',
+          color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Filters */}
-      <div className="filter-bar">
-        <div className="filter-group">
-          <label>Search</label>
-          <div className="search-wrap">
-            <i className="bi bi-search" />
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ flex: 2, minWidth: '200px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Search</label>
+          <div style={{ position: 'relative' }}>
+            <i className="bi bi-search" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-mid-gray)', fontSize: '0.9rem' }}></i>
             <input 
-              className="form-control search-input" 
+              style={{ width: '100%', padding: '0.6rem 0.75rem 0.6rem 2rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none', transition: 'all 0.2s ease' }}
               placeholder="Name, country, email..." 
               value={search} 
               onChange={e => setSearch(e.target.value)} 
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
             />
           </div>
         </div>
-        <div className="filter-group">
-          <label>Tier</label>
-          <select className="form-control" value={tierFilter} onChange={e => setTierFilter(e.target.value)}>
+        <div style={{ minWidth: '140px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Tier</label>
+          <select 
+            style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+            value={tierFilter} 
+            onChange={e => setTierFilter(e.target.value)}
+          >
             <option value="">All Tiers</option>
             <option value="standard">Standard</option>
             <option value="preferred">Preferred</option>
             <option value="exclusive">Exclusive</option>
           </select>
         </div>
-        <div className="filter-group">
-          <label>Status</label>
-          <select className="form-control" value={stFilter} onChange={e => setStFilter(e.target.value)}>
+        <div style={{ minWidth: '140px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Status</label>
+          <select 
+            style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+            value={stFilter} 
+            onChange={e => setStFilter(e.target.value)}
+          >
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
@@ -246,86 +370,121 @@ export default function AdminOperatorsPage() {
           </select>
         </div>
         {(search || tierFilter || stFilter) && (
-          <div className="filter-group" style={{ flex: '0 0 auto' }}>
-            <label>&nbsp;</label>
-            <button className="btn btn-ghost btn-sm" onClick={() => { setSearch(''); setTierFilter(''); setStFilter('') }}>
-              <i className="bi bi-x-lg" /> Clear
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>&nbsp;</label>
+            <button 
+              style={{ padding: '0.6rem 1rem', background: 'transparent', border: 'none', color: 'var(--color-mid-gray)', fontSize: '0.8rem', cursor: 'pointer' }}
+              onClick={() => { setSearch(''); setTierFilter(''); setStFilter('') }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-error)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-mid-gray)'}
+            >
+              <i className="bi bi-x-lg"></i> Clear
             </button>
           </div>
         )}
       </div>
 
       {/* Operators Table */}
-      <div className="table-card">
-        <div className="table-scroll">
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
           {loading ? (
-            <div className="table-empty">
-              <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-              <p>Loading operators...</p>
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ color: 'var(--color-mid-gray)' }}>Loading operators...</p>
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
             </div>
           ) : operators.length === 0 ? (
-            <div className="table-empty">
-              <i className="bi bi-building" />
-              <p>No operators found.</p>
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <i className="bi bi-building" style={{ fontSize: '3rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '1rem' }} />
+              <p style={{ color: 'var(--color-mid-gray)', marginBottom: '1rem' }}>No operators found.</p>
               {(search || tierFilter || stFilter) && (
-                <button className="btn btn-outline-navy btn-sm" onClick={() => { setSearch(''); setTierFilter(''); setStFilter('') }}>
+                <button 
+                  style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                  onClick={() => { setSearch(''); setTierFilter(''); setStFilter('') }}
+                >
                   Clear filters
                 </button>
               )}
             </div>
           ) : (
-            <table>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
-                <tr>
-                  <th>Operator</th>
-                  <th>Location</th>
-                  <th>Tier</th>
-                  <th>Status</th>
-                  <th>Aircraft</th>
-                  <th>Yachts</th>
-                  <th>Contact</th>
-                  <th>Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--color-light-gray)', background: 'var(--color-off-white)' }}>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Operator</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Location</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Tier</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Status</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Aircraft</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Yachts</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Contact</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {operators.map(op => (
-                  <tr key={op.id}>
-                    <td style={{ cursor: 'pointer' }} onClick={() => openDetail(op)}>
-                      <div className="td-name">{op.name}</div>
-                      {op.trading_name && <div className="td-email">{op.trading_name}</div>}
+                  <tr key={op.id} style={{ borderBottom: '1px solid var(--color-light-gray)' }}>
+                    <td style={{ padding: '0.75rem 1rem', cursor: 'pointer' }} onClick={() => openDetail(op)}>
+                      <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{op.name}</div>
+                      {op.trading_name && <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{op.trading_name}</div>}
                     </td>
-                    <td>{op.country}{op.city ? `, ${op.city}` : ''}</td>
-                    <td><Badge label={op.tier} color={TIER_COLOR[op.tier]} /></td>
-                    <td><Badge label={op.status} color={STATUS_COLOR[op.status]} /></td>
-                    <td>
-                      <span style={{ fontWeight: 600, color: 'var(--navy)' }}>{op.active_aircraft_count || 0}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}> active</span>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-dark-gray)' }}>
+                      {op.country}{op.city ? `, ${op.city}` : ''}
                     </td>
-                    <td>
-                      <span style={{ fontWeight: 600, color: 'var(--navy)' }}>{op.active_yacht_count || 0}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}> active</span>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <Badge label={TIER_LABEL[op.tier] || op.tier} color={TIER_COLOR[op.tier]} />
                     </td>
-                    <td>
-                      <div style={{ fontSize: '0.8rem' }}>{op.contact_email}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)' }}>{op.contact_phone || '—'}</div>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <Badge label={STATUS_LABEL[op.status] || op.status} color={STATUS_COLOR[op.status]} />
                     </td>
-                    <td>
-                      <div className="td-actions">
-                        <button className="btn btn-navy btn-xs" onClick={() => openDetail(op)} title="View details">
-                          <i className="bi bi-eye" />
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{op.active_aircraft_count || 0}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}> active</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{op.active_yacht_count || 0}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}> active</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--color-dark-gray)' }}>{op.contact_email}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{op.contact_phone || '—'}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <button 
+                          style={{ padding: '0.3rem 0.6rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                          onClick={() => openDetail(op)} 
+                          title="View details"
+                        >
+                          <i className="bi bi-eye"></i>
                         </button>
                         {op.status !== 'active' && (
-                          <button className="btn btn-green btn-xs" onClick={() => activate(op)} title="Activate">
-                            <i className="bi bi-check-circle" />
+                          <button 
+                            style={{ padding: '0.3rem 0.6rem', background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                            onClick={() => activate(op)} 
+                            title="Activate"
+                          >
+                            <i className="bi bi-check-circle"></i>
                           </button>
                         )}
                         {op.status === 'active' && (
-                          <button className="btn btn-amber btn-xs" onClick={() => suspend(op)} title="Suspend">
-                            <i className="bi bi-pause-circle" />
+                          <button 
+                            style={{ padding: '0.3rem 0.6rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                            onClick={() => suspend(op)} 
+                            title="Suspend"
+                          >
+                            <i className="bi bi-pause-circle"></i>
                           </button>
                         )}
-                        <button className="btn btn-outline-navy btn-xs" onClick={() => { setSelected(op); setModal('tier') }} title="Change tier">
-                          <i className="bi bi-stars" />
+                        <button 
+                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: 'var(--color-navy)', border: '1px solid var(--color-navy)', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                          onClick={() => { setSelected(op); setModal('tier') }} 
+                          title="Change tier"
+                        >
+                          <i className="bi bi-stars"></i>
                         </button>
                       </div>
                     </td>
@@ -339,117 +498,143 @@ export default function AdminOperatorsPage() {
 
       {/* Stats Summary */}
       {!loading && operators.length > 0 && (
-        <div style={{ 
-          marginTop: '1rem', 
-          padding: '0.75rem 1rem', 
-          fontSize: '0.8rem', 
-          color: 'var(--gray-400)',
-          textAlign: 'center',
-          borderTop: '1px solid var(--gray-100)'
-        }}>
+        <div style={{ marginTop: '1rem', padding: '0.75rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)', textAlign: 'center' }}>
           Showing {operators.length} operator{operators.length !== 1 ? 's' : ''}
           {(search || tierFilter || stFilter) && ' with current filters'}
         </div>
       )}
 
-      {/* ── Detail Modal ── */}
-      <Modal open={modal === 'detail'} onClose={() => { setModal(null); setDetail(null) }} title={<><i className="bi bi-building" /> {selected?.name}</>} maxWidth={820}>
+      {/* Detail Modal */}
+      <Modal open={modal === 'detail'} onClose={() => { setModal(null); setDetail(null) }} title={<><i className="bi bi-building"></i> {selected?.name}</>} maxWidth={820}>
         {selected && (
           <div>
             {/* Operator header info */}
-            <div className="operator-stats" style={{ marginBottom: '1rem' }}>
-              <div className="operator-stat-card">
-                <div className="operator-stat-number">{selected.tier}</div>
-                <div className="operator-stat-label">Tier</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ padding: '0.75rem', background: 'var(--color-off-white)', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: TIER_COLOR[selected.tier] }}>{TIER_LABEL[selected.tier] || selected.tier}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--color-mid-gray)' }}>Tier</div>
               </div>
-              <div className="operator-stat-card">
-                <div className="operator-stat-number">{selected.status}</div>
-                <div className="operator-stat-label">Status</div>
+              <div style={{ padding: '0.75rem', background: 'var(--color-off-white)', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: STATUS_COLOR[selected.status] }}>{STATUS_LABEL[selected.status] || selected.status}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--color-mid-gray)' }}>Status</div>
               </div>
-              <div className="operator-stat-card">
-                <div className="operator-stat-number">{selected.country}</div>
-                <div className="operator-stat-label">Country</div>
+              <div style={{ padding: '0.75rem', background: 'var(--color-off-white)', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>{selected.country}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--color-mid-gray)' }}>Country</div>
               </div>
-              <div className="operator-stat-card">
-                <div className="operator-stat-number">{selected.active_aircraft_count || 0}</div>
-                <div className="operator-stat-label">Aircraft</div>
+              <div style={{ padding: '0.75rem', background: 'var(--color-off-white)', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: 'var(--color-navy)' }}>{selected.active_aircraft_count || 0}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--color-mid-gray)' }}>Aircraft</div>
               </div>
             </div>
 
             {/* Contact Info */}
-            <div className="settings-card" style={{ marginBottom: '1rem' }}>
-              <div className="settings-card-header">
-                <h4><i className="bi bi-envelope" /> Contact Information</h4>
+            <div style={{ marginBottom: '1rem', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ padding: '0.75rem 1rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)', fontWeight: 600, color: 'var(--color-navy)' }}>
+                <i className="bi bi-envelope" style={{ marginRight: '0.5rem' }}></i> Contact Information
               </div>
-              <div className="settings-card-body">
-                <div className="detail-item">
-                  <span className="detail-item-label">Email</span>
-                  <span className="detail-item-value">{selected.contact_email}</span>
+              <div style={{ padding: '0.75rem 1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Email</span>
+                  <span style={{ color: 'var(--color-dark-gray)' }}>{selected.contact_email}</span>
                 </div>
-                <div className="detail-item">
-                  <span className="detail-item-label">Phone</span>
-                  <span className="detail-item-value">{selected.contact_phone || '—'}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Phone</span>
+                  <span style={{ color: 'var(--color-dark-gray)' }}>{selected.contact_phone || '—'}</span>
                 </div>
                 {selected.website && (
-                  <div className="detail-item">
-                    <span className="detail-item-label">Website</span>
-                    <span className="detail-item-value">
-                      <a href={selected.website} target="_blank" rel="noopener noreferrer">{selected.website}</a>
-                    </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Website</span>
+                    <a href={selected.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)', textDecoration: 'none' }}>{selected.website}</a>
                   </div>
                 )}
                 {selected.aoc_number && (
-                  <div className="detail-item">
-                    <span className="detail-item-label">AOC Number</span>
-                    <span className="detail-item-value">{selected.aoc_number}</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>AOC Number</span>
+                    <span style={{ color: 'var(--color-dark-gray)' }}>{selected.aoc_number}</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="tab-nav">
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap', borderBottom: '1px solid var(--color-light-gray)', paddingBottom: '0.5rem' }}>
               {['aircraft', 'yachts', 'bookings', 'payouts', 'reviews'].map(tab => (
-                <button key={tab} className={`tab-btn${detailTab === tab ? ' active' : ''}`} onClick={() => setDetailTab(tab)}>
+                <button 
+                  key={tab}
+                  onClick={() => setDetailTab(tab)}
+                  style={{
+                    padding: '0.4rem 1rem',
+                    background: detailTab === tab ? 'var(--color-navy)' : 'transparent',
+                    color: detailTab === tab ? 'var(--color-white)' : 'var(--color-mid-gray)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   {detail && detail[tab]?.length > 0 && (
-                    <span className="badge badge-gray" style={{ marginLeft: 5 }}>{detail[tab].length}</span>
+                    <span style={{ marginLeft: '0.3rem', padding: '0.1rem 0.3rem', background: detailTab === tab ? 'rgba(255,255,255,0.2)' : 'var(--color-off-white)', borderRadius: '4px', fontSize: '0.65rem' }}>
+                      {detail[tab].length}
+                    </span>
                   )}
                 </button>
               ))}
             </div>
 
             {!detail ? (
-              <div className="table-empty"><div className="spinner-ring" style={{ margin: '1rem auto' }} /></div>
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ width: '40px', height: '40px', margin: '0 auto', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
             ) : (
               <>
                 {/* Aircraft Tab */}
                 {detailTab === 'aircraft' && (
                   detail.aircraft.length === 0 ? (
-                    <div className="table-empty"><i className="bi bi-airplane" />No aircraft listed.</div>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-mid-gray)' }}>
+                      <i className="bi bi-airplane" style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}></i>
+                      No aircraft listed.
+                    </div>
                   ) : (
-                    <div className="table-scroll">
-                      <table>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                         <thead>
-                          <tr><th>Aircraft</th><th>Registration</th><th>Category</th><th>Rate/hr</th><th>Status</th><th>Action</th></tr>
+                          <tr style={{ borderBottom: '1px solid var(--color-light-gray)' }}>
+                            <th style={{ padding: '0.6rem', textAlign: 'left' }}>Aircraft</th>
+                            <th style={{ padding: '0.6rem', textAlign: 'left' }}>Registration</th>
+                            <th style={{ padding: '0.6rem', textAlign: 'left' }}>Category</th>
+                            <th style={{ padding: '0.6rem', textAlign: 'right' }}>Rate/hr</th>
+                            <th style={{ padding: '0.6rem', textAlign: 'center' }}>Status</th>
+                            <th style={{ padding: '0.6rem', textAlign: 'center' }}>Action</th>
+                          </tr>
                         </thead>
                         <tbody>
                           {detail.aircraft.map(ac => (
-                            <tr key={ac.id}>
-                              <td className="td-name">{ac.name}<div className="td-email">{ac.model}</div></td>
-                              <td style={{ fontFamily: 'monospace' }}>{ac.registration_number}</td>
-                              <td>{ac.category_display || ac.category}</td>
-                              <td className="td-price">{formatCurrency(ac.hourly_rate_usd)}</td>
-                              <td><Badge label={ac.status} color={ac.status === 'active' ? 'green' : 'amber'} /></td>
-                              <td>
-                                {!ac.is_approved && (
-                                  <button className="btn btn-green btn-xs" onClick={() => approveAircraft(ac.id)}>
-                                    <i className="bi bi-check-lg" /> Approve
+                            <tr key={ac.id} style={{ borderBottom: '1px solid var(--color-light-gray)' }}>
+                              <td style={{ padding: '0.6rem' }}>
+                                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{ac.name}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{ac.model}</div>
+                              </td>
+                              <td style={{ padding: '0.6rem', fontFamily: 'monospace', color: 'var(--color-dark-gray)' }}>{ac.registration_number}</td>
+                              <td style={{ padding: '0.6rem', color: 'var(--color-dark-gray)' }}>{ac.category_display || ac.category}</td>
+                              <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>{formatCurrency(ac.hourly_rate_usd)}</td>
+                              <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                                <Badge label={ac.status} color={ac.status === 'active' ? 'green' : 'amber'} />
+                              </td>
+                              <td style={{ padding: '0.6rem', textAlign: 'center' }}>
+                                {!ac.is_approved ? (
+                                  <button 
+                                    style={{ padding: '0.2rem 0.5rem', background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.7rem', cursor: 'pointer' }}
+                                    onClick={() => approveAircraft(ac.id)}
+                                  >
+                                    <i className="bi bi-check-lg"></i> Approve
                                   </button>
-                                )}
-                                {ac.is_approved && (
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--green)' }}>
-                                    <i className="bi bi-check-circle-fill" /> Approved
+                                ) : (
+                                  <span style={{ fontSize: '0.7rem', color: '#22c55e' }}>
+                                    <i className="bi bi-check-circle-fill"></i> Approved
                                   </span>
                                 )}
                               </td>
@@ -464,16 +649,19 @@ export default function AdminOperatorsPage() {
                 {/* Yachts Tab */}
                 {detailTab === 'yachts' && (
                   detail.yachts.length === 0 ? (
-                    <div className="table-empty"><i className="bi bi-water" />No yachts listed.</div>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-mid-gray)' }}>
+                      <i className="bi bi-water" style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}></i>
+                      No yachts listed.
+                    </div>
                   ) : (
                     detail.yachts.map(y => (
-                      <div key={y.id} className="yacht-card">
+                      <div key={y.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderBottom: '1px solid var(--color-light-gray)', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div>
-                          <div className="yacht-name">{y.name}</div>
-                          <div className="yacht-specs">{y.length_meters}m · {y.guest_capacity} guests · {y.home_port}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{y.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{y.length_meters}m · {y.guest_capacity} guests · {y.home_port}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <span className="td-price">{formatCurrency(y.daily_rate_usd)}/day</span>
+                          <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{formatCurrency(y.daily_rate_usd)}/day</span>
                           <Badge label={y.status} color={y.status === 'available' ? 'green' : 'amber'} />
                         </div>
                       </div>
@@ -484,17 +672,20 @@ export default function AdminOperatorsPage() {
                 {/* Bookings Tab */}
                 {detailTab === 'bookings' && (
                   detail.bookings.length === 0 ? (
-                    <div className="table-empty"><i className="bi bi-calendar-check" />No bookings yet.</div>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-mid-gray)' }}>
+                      <i className="bi bi-calendar-check" style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}></i>
+                      No bookings yet.
+                    </div>
                   ) : (
                     detail.bookings.map(b => (
-                      <div key={b.id} className="yacht-card">
+                      <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderBottom: '1px solid var(--color-light-gray)', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div>
-                          <div className="yacht-name" style={{ fontFamily: 'monospace' }}>{String(b.reference).slice(0, 8)}…</div>
-                          <div className="yacht-specs">{b.asset_type} · {new Date(b.created_at).toLocaleDateString()}</div>
+                          <div style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-navy)' }}>{String(b.reference).slice(0, 8)}…</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{b.asset_type} · {new Date(b.created_at).toLocaleDateString()}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <span className="td-price">{formatCurrency(b.operator_payout_usd)}</span>
-                          <Badge label={b.status} color={STATUS_COLOR[b.status] || 'gray'} />
+                          <span style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{formatCurrency(b.operator_payout_usd)}</span>
+                          <Badge label={b.status} color={STATUS_COLOR[b.status]} />
                         </div>
                       </div>
                     ))
@@ -504,13 +695,16 @@ export default function AdminOperatorsPage() {
                 {/* Payouts Tab */}
                 {detailTab === 'payouts' && (
                   detail.payouts.length === 0 ? (
-                    <div className="table-empty"><i className="bi bi-cash-stack" />No payouts yet.</div>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-mid-gray)' }}>
+                      <i className="bi bi-cash-stack" style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}></i>
+                      No payouts yet.
+                    </div>
                   ) : (
                     detail.payouts.map(p => (
-                      <div key={p.id} className="yacht-card">
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderBottom: '1px solid var(--color-light-gray)', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div>
-                          <div className="yacht-name">{formatCurrency(p.amount_usd)} {p.currency}</div>
-                          <div className="yacht-specs">{p.payment_method || 'Bank transfer'} · {new Date(p.created_at).toLocaleDateString()}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{formatCurrency(p.amount_usd)} {p.currency}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{p.payment_method || 'Bank transfer'} · {new Date(p.created_at).toLocaleDateString()}</div>
                         </div>
                         <Badge label={p.status} color={{ pending: 'amber', processing: 'navy', paid: 'green', failed: 'red' }[p.status] || 'gray'} />
                       </div>
@@ -521,21 +715,24 @@ export default function AdminOperatorsPage() {
                 {/* Reviews Tab */}
                 {detailTab === 'reviews' && (
                   detail.reviews.length === 0 ? (
-                    <div className="table-empty"><i className="bi bi-star" />No reviews yet.</div>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-mid-gray)' }}>
+                      <i className="bi bi-star" style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}></i>
+                      No reviews yet.
+                    </div>
                   ) : (
                     detail.reviews.map(r => (
-                      <div key={r.id} className="settings-card" style={{ marginBottom: '0.75rem' }}>
-                        <div className="settings-card-body">
+                      <div key={r.id} style={{ marginBottom: '0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
+                        <div style={{ padding: '0.75rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            <div className="yacht-name">{r.reviewer_name}</div>
-                            <div style={{ display: 'flex', gap: 2 }}>
+                            <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{r.reviewer_name}</div>
+                            <div style={{ display: 'flex', gap: '2px' }}>
                               {[1, 2, 3, 4, 5].map(n => (
-                                <i key={n} className={`bi bi-star${n <= r.rating_overall ? '-fill' : ''}`} style={{ color: 'var(--gold)', fontSize: '0.8rem' }} />
+                                <i key={n} className={`bi bi-star${n <= r.rating_overall ? '-fill' : ''}`} style={{ color: '#c9992e', fontSize: '0.8rem' }}></i>
                               ))}
                             </div>
                           </div>
-                          {r.comment && <p style={{ fontSize: '0.83rem', color: 'var(--gray-500)', margin: '0.5rem 0 0' }}>{r.comment}</p>}
-                          {!r.is_published && <span className="badge badge-amber" style={{ marginTop: '0.5rem' }}>Pending approval</span>}
+                          {r.comment && <p style={{ fontSize: '0.8rem', color: 'var(--color-mid-gray)', margin: '0.5rem 0 0' }}>{r.comment}</p>}
+                          {!r.is_published && <Badge label="Pending approval" color="amber" />}
                         </div>
                       </div>
                     ))
@@ -547,85 +744,96 @@ export default function AdminOperatorsPage() {
         )}
       </Modal>
 
-      {/* ── Create Operator Modal ── */}
-      <Modal open={modal === 'create'} onClose={() => setModal(null)} title={<><i className="bi bi-plus-lg" /> Add Charter Operator</>} maxWidth={620}>
+      {/* Create Operator Modal */}
+      <Modal open={modal === 'create'} onClose={() => setModal(null)} title={<><i className="bi bi-plus-lg"></i> Add Charter Operator</>} maxWidth={620}>
         <form onSubmit={submitCreate}>
           {formErr && (
-            <div className="alert alert-error">
-              <i className="bi bi-exclamation-triangle" />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', borderRadius: '6px', color: 'var(--color-error)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-exclamation-triangle"></i>
               <span>{formErr}</span>
             </div>
           )}
-          <div className="form-grid">
-            <div className="form-group form-full">
-              <label className="form-label">Company Name <span className="req">*</span></label>
-              <input className="form-control" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="East Africa Air" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Company Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="East Africa Air" />
             </div>
-            <div className="form-group">
-              <label className="form-label">Trading Name</label>
-              <input className="form-control" value={form.trading_name} onChange={e => setForm(f => ({ ...f, trading_name: e.target.value }))} placeholder="EA Air" />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Trading Name</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.trading_name} onChange={e => setForm(f => ({ ...f, trading_name: e.target.value }))} placeholder="EA Air" />
             </div>
-            <div className="form-group">
-              <label className="form-label">Country <span className="req">*</span></label>
-              <input className="form-control" value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} required placeholder="Kenya" />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Country <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} required placeholder="Kenya" />
             </div>
-            <div className="form-group">
-              <label className="form-label">City</label>
-              <input className="form-control" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="Nairobi" />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>City</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="Nairobi" />
             </div>
-            <div className="form-group">
-              <label className="form-label">Contact Email <span className="req">*</span></label>
-              <input className="form-control" type="email" value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} required />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Contact Email <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} type="email" value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} required />
             </div>
-            <div className="form-group">
-              <label className="form-label">Contact Phone</label>
-              <input className="form-control" value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Contact Phone</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} />
             </div>
-            <div className="form-group">
-              <label className="form-label">AOC Number</label>
-              <input className="form-control" value={form.aoc_number} onChange={e => setForm(f => ({ ...f, aoc_number: e.target.value }))} placeholder="KEN-AOC-001" />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>AOC Number</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.aoc_number} onChange={e => setForm(f => ({ ...f, aoc_number: e.target.value }))} placeholder="KEN-AOC-001" />
             </div>
-            <div className="form-group">
-              <label className="form-label">Tier</label>
-              <select className="form-control" value={form.tier} onChange={e => setForm(f => ({ ...f, tier: e.target.value }))}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Tier</label>
+              <select style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer' }} value={form.tier} onChange={e => setForm(f => ({ ...f, tier: e.target.value }))}>
                 <option value="standard">Standard</option>
                 <option value="preferred">Preferred</option>
                 <option value="exclusive">Exclusive</option>
               </select>
             </div>
-            <div className="form-group form-full">
-              <label className="form-label">Website</label>
-              <input className="form-control" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://..." />
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Website</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://..." />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setModal(null)}>Cancel</button>
-            <button type="submit" className="btn btn-navy" disabled={saving}>
-              {saving ? <><span className="spinner" /> Creating…</> : <><i className="bi bi-check-lg" /> Create Operator</>}
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={saving} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              {saving ? <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Creating…</> : <><i className="bi bi-check-lg"></i> Create Operator</>}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* ── Change Tier Modal ── */}
-      <Modal open={modal === 'tier'} onClose={() => setModal(null)} title={<><i className="bi bi-stars" /> Change Tier — {selected?.name}</>} maxWidth={420}>
-        <p style={{ marginBottom: '1rem', fontSize: '0.875rem', color: 'var(--gray-500)' }}>Select a new partnership tier for this operator.</p>
+      {/* Change Tier Modal */}
+      <Modal open={modal === 'tier'} onClose={() => setModal(null)} title={<><i className="bi bi-stars"></i> Change Tier — {selected?.name}</>} maxWidth={420}>
+        <p style={{ marginBottom: '1rem', fontSize: '0.875rem', color: 'var(--color-mid-gray)' }}>Select a new partnership tier for this operator.</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {[
-            ['standard', 'Standard Partner', 'Base commission rates apply'],
-            ['preferred', 'Preferred Partner', 'Reduced commission, priority dispatch'],
-            ['exclusive', 'Exclusive Partner', 'Custom commission, dedicated support']
-          ].map(([val, label, desc]) => (
+            ['standard', 'Standard Partner', 'Base commission rates apply', TIER_COLOR.standard],
+            ['preferred', 'Preferred Partner', 'Reduced commission, priority dispatch', TIER_COLOR.preferred],
+            ['exclusive', 'Exclusive Partner', 'Custom commission, dedicated support', TIER_COLOR.exclusive]
+          ].map(([val, label, desc, color]) => (
             <button 
               key={val} 
               type="button"
               onClick={() => changeTier(selected, val)}
-              className={`tier-option ${selected?.tier === val ? 'selected' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem 1rem',
+                background: selected?.tier === val ? `${color}10` : 'var(--color-white)',
+                border: selected?.tier === val ? `2px solid ${color}` : '1px solid var(--color-light-gray)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s ease'
+              }}
             >
-              <i className="bi bi-patch-check tier-icon" />
+              <i className="bi bi-patch-check" style={{ fontSize: '1.2rem', color: color }}></i>
               <div>
-                <div className="tier-title">{label}</div>
-                <div className="tier-desc">{desc}</div>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{label}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{desc}</div>
               </div>
             </button>
           ))}

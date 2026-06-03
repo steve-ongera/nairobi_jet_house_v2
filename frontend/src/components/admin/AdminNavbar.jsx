@@ -1,4 +1,4 @@
-// AdminNavbar.jsx (Updated - No logo)
+// AdminNavbar.jsx (Updated - With proper styling)
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
@@ -43,7 +43,6 @@ export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
   return (
     <nav className="admin-navbar">
       <div className="navbar-left">
-        {/* Drawer/Sidebar Toggle Button - 3 lines icon */}
         <button 
           className="navbar-toggle"
           onClick={() => {
@@ -60,7 +59,6 @@ export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
       </div>
 
       <div className="navbar-right">
-        {/* Profile Dropdown */}
         <div className="profile-dropdown" ref={dropdownRef}>
           <button 
             className="profile-trigger"

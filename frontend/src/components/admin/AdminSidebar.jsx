@@ -1,4 +1,4 @@
-// AdminSidebar.jsx (Updated)
+// AdminSidebar.jsx (Updated - With proper styling)
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth' 
 
@@ -43,7 +43,7 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
           <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto', display: 'block' }} />
+            <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '2rem', width: 'auto' }} />
             <div>
               <div className="sidebar-logo-text">Nairobi<span>JetHouse</span></div>
               <div className="sidebar-role-badge">Admin</div>
@@ -56,18 +56,14 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
       <nav className="sidebar-nav">
         {NAV.map((item, i) => {
           if (item.section) {
-            return collapsed
-              ? <div key={i} style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0.5rem 0' }} />
-              : (
-                <div key={i} className="sidebar-section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {item.section}
-                  {item.badge && (
-                    <span style={{ fontSize: '0.5rem', fontWeight: 700, background: 'var(--gold)', color: 'var(--navy)', padding: '1px 5px', borderRadius: 4 }}>
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
-              )
+            return collapsed ? (
+              <div key={i} className="sidebar-divider" />
+            ) : (
+              <div key={i} className="sidebar-section-label">
+                {item.section}
+                {item.badge && <span className="sidebar-badge">{item.badge}</span>}
+              </div>
+            )
           }
           return (
             <NavLink
@@ -81,11 +77,7 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
               {!collapsed && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1 }}>
                   {item.label}
-                  {item.badge && (
-                    <span style={{ fontSize: '0.5rem', fontWeight: 700, background: 'var(--gold)', color: 'var(--navy)', padding: '1px 5px', borderRadius: 4, marginLeft: 'auto' }}>
-                      {item.badge}
-                    </span>
-                  )}
+                  {item.badge && <span className="sidebar-link-badge">{item.badge}</span>}
                 </span>
               )}
             </NavLink>
@@ -107,20 +99,12 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
             <i className="bi bi-box-arrow-right" />
           </button>
         </div>
-        {!collapsed && (
-          <button
-            onClick={() => setCollapsed(true)}
-            style={{ marginTop: '0.75rem', width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', padding: '0.35rem', cursor: 'pointer' }}
-          >
+        {!collapsed ? (
+          <button className="sidebar-collapse-btn" onClick={() => setCollapsed(true)}>
             <i className="bi bi-arrow-bar-left" /> Collapse
           </button>
-        )}
-        {collapsed && (
-          <button
-            onClick={() => setCollapsed(false)}
-            style={{ marginTop: '0.5rem', width: '100%', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '1rem', cursor: 'pointer' }}
-            title="Expand"
-          >
+        ) : (
+          <button className="sidebar-expand-btn" onClick={() => setCollapsed(false)} title="Expand">
             <i className="bi bi-arrow-bar-right" />
           </button>
         )}

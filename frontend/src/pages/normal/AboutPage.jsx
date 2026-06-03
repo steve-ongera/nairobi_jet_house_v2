@@ -1,14 +1,15 @@
 // src/pages/public/About.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import PublicNavbar from '../../components/common/PublicNavbar';
 import PublicFooter from '../../components/common/PublicFooter';
 
 const LEADERSHIP = [
-  { name: 'Alexander Mercer', title: 'Chief Executive Officer', bio: 'Former VP at NetJets with 22 years in private aviation. Has overseen 40,000+ flights across 6 continents.', initials: 'AM' },
-  { name: 'Sophie Laurent', title: 'Chief Operations Officer', bio: 'Ex-Air France operations director. Built and manages our 24/7 global dispatch and concierge infrastructure.', initials: 'SL' },
-  { name: 'James Okonkwo', title: 'Head of Fleet Acquisitions', bio: 'Type-rated on 14 aircraft types. Oversees safety audits and operator vetting for all 2,400+ aircraft in our network.', initials: 'JO' },
-  { name: 'Priya Mehta', title: 'Director of Client Experience', bio: 'Pioneered our white-glove concierge program. Former luxury hospitality lead at Four Seasons Hotels globally.', initials: 'PM' },
+  { name: 'Alexander Mercer', title: 'Chief Executive Officer', bio: 'Former VP at NetJets with 22 years in private aviation. Has overseen 40,000+ flights across 6 continents.', initials: 'AM', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80' },
+  { name: 'Sophie Laurent', title: 'Chief Operations Officer', bio: 'Ex-Air France operations director. Built and manages our 24/7 global dispatch and concierge infrastructure.', initials: 'SL', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80' },
+  { name: 'James Okonkwo', title: 'Head of Fleet Acquisitions', bio: 'Type-rated on 14 aircraft types. Oversees safety audits and operator vetting for all 2,400+ aircraft in our network.', initials: 'JO', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80' },
+  { name: 'Priya Mehta', title: 'Director of Client Experience', bio: 'Pioneered our white-glove concierge program. Former luxury hospitality lead at Four Seasons Hotels globally.', initials: 'PM', image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80' },
 ]
 
 const MILESTONES = [
@@ -34,59 +35,84 @@ const STATS = [
   { number: '20', label: 'Years of Excellence' },
 ]
 
+const CERTIFICATIONS = [
+  { icon: 'bi-patch-check', label: 'ARGUS Platinum', sub: 'Highest charter operator rating', image: '/assets/certifications/argus.svg' },
+  { icon: 'bi-award', label: 'IS-BAO Stage 3', sub: 'International safety standards', image: '/assets/certifications/is-bao.svg' },
+  { icon: 'bi-shield-fill-check', label: 'Wyvern Wingman', sub: 'Independent safety audits', image: '/assets/certifications/wyvern.svg' },
+  { icon: 'bi-file-earmark-check', label: 'EASA & FAA', sub: 'Dual regulatory compliance', image: '/assets/certifications/easa-faa.svg' },
+]
+
+/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
+const STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: 'About NairobiJetHouse',
+  description: 'Two decades of defining private aviation. Learn about our mission, values, leadership team, and commitment to safety and excellence.',
+  url: 'https://www.nairobijethouse.com/about',
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ABOUT PAGE
 ═══════════════════════════════════════════════════════════════════════════ */
-export function AboutPage() {
+export default function AboutPage() {
   return (
     <>
+      <Helmet>
+        <title>About Us | NairobiJetHouse - Two Decades of Private Aviation Excellence</title>
+        <meta name="description" content="Learn about NairobiJetHouse's 20-year journey in private aviation. Our mission, values, leadership team, safety certifications, and commitment to excellence." />
+        <meta name="keywords" content="private aviation company, private jet charter about, luxury travel company, aircraft charter history" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://www.nairobijethouse.com/about" />
+        <meta property="og:title" content="About NairobiJetHouse | Private Aviation Excellence" />
+        <meta property="og:description" content="Two decades of defining private aviation. Learn about our mission, values, and leadership team." />
+        <meta property="og:image" content="https://www.nairobijethouse.com/images/about-og.jpg" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
+      </Helmet>
+
       <PublicNavbar />
 
       {/* Hero Section */}
-      <section style={{
-        position: 'relative',
-        padding: '9rem 0 7rem',
-        backgroundImage: 'url(https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=80)',
+      <div className="page-header" style={{ 
+        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%), url(https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=80)',
         backgroundSize: 'cover',
         backgroundPosition: 'center 40%',
+        backgroundBlend: 'overlay',
       }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, rgba(11,29,58,0.9) 0%, rgba(11,29,58,0.65) 100%)' }} />
-        <div className="container" style={{ position: 'relative' }}>
-          <div className="eyebrow" style={{ color: 'var(--gold-light)' }}>
-            <i className="bi bi-building" /> Our Story
-          </div>
-          <h1 style={{ color: 'var(--white)', marginTop: '0.5rem', maxWidth: 680 }}>
-            Two Decades of <em style={{ color: 'var(--gold-light)' }}>Defining</em> Private Aviation
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.72)', maxWidth: 560, marginTop: '1.25rem', fontSize: '1.05rem', lineHeight: 1.8 }}>
-            Founded in Geneva in 2004, NairobiJetHouse was born from a simple conviction: private aviation should feel effortless, transparent, and truly global. Twenty years later, that conviction drives everything we do.
-          </p>
+        <div className="page-header__glow"></div>
+        <div className="container page-header__inner">
+          <span className="section-label">
+            <i className="bi bi-building"></i> Our Story
+          </span>
+          <h1>Two Decades of <em style={{ color: 'var(--color-gold-light)' }}>Defining</em> Private Aviation</h1>
+          <p>Founded in Geneva in 2004, NairobiJetHouse was born from a simple conviction: private aviation should feel effortless, transparent, and truly global. Twenty years later, that conviction drives everything we do.</p>
         </div>
-      </section>
+      </div>
 
       {/* Mission & Stats Section */}
-      <section className="section" style={{ background: 'var(--off-white)' }}>
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
+          <div className="about-mission-grid">
             <div>
-              <div className="eyebrow">Our Mission</div>
-              <h2>Private Travel Without the <em>Friction</em></h2>
-              <div className="gold-rule" />
-              <p style={{ lineHeight: 1.9, marginBottom: '1.25rem' }}>
+              <div className="section-label">Our Mission</div>
+              <h2 className="section-title">Private Travel Without the <em style={{ color: 'var(--color-gold)' }}>Friction</em></h2>
+              <div className="gold-divider"></div>
+              <p className="about-mission-text">
                 We believe that the moment you decide to fly privately, every decision afterward should feel natural and inevitable — not complicated, not anxious, not expensive in unexpected ways.
               </p>
-              <p style={{ lineHeight: 1.9, marginBottom: '1.25rem' }}>
+              <p className="about-mission-text">
                 Our mission is to eliminate the opacity that has long defined this industry. We build technology and processes that give you clear pricing, instant access to aircraft, and human support that never sleeps.
               </p>
-              <p style={{ lineHeight: 1.9 }}>
+              <p className="about-mission-text">
                 Whether you're a first-time charter customer or a Fortune 500 flight department, you deserve the same standard of care, the same quality of aircraft, and the same level of honest communication.
               </p>
             </div>
-            <div className="grid-2" style={{ gap: '1.25rem' }}>
+            <div className="about-stats-grid">
               {STATS.map(({ number, label }) => (
-                <div key={label} className="card" style={{ textAlign: 'center', padding: '1.75rem' }}>
-                  <div className="stat-value" style={{ fontSize: '2rem' }}>{number}</div>
-                  <div className="stat-label">{label}</div>
+                <div key={label} className="about-stat-card">
+                  <div className="about-stat-number">{number}</div>
+                  <div className="about-stat-label">{label}</div>
                 </div>
               ))}
             </div>
@@ -95,24 +121,21 @@ export function AboutPage() {
       </section>
 
       {/* Values Section */}
-      <section className="section">
+      <section className="section-padding">
         <div className="container">
-          <div className="text-center">
-            <div className="eyebrow">What We Stand For</div>
-            <h2>Our Core <em>Values</em></h2>
-            <div className="gold-rule gold-rule-center" />
+          <div className="section-header centered">
+            <div className="section-label">What We Stand For</div>
+            <h2 className="section-title">Our Core <em style={{ color: 'var(--color-gold)' }}>Values</em></h2>
+            <div className="gold-divider center"></div>
           </div>
-          <div className="grid-4" style={{ marginTop: '3rem' }}>
+          <div className="about-values-grid">
             {VALUES.map(({ icon, title, desc }) => (
-              <div key={title} className="card" style={{ padding: '2rem' }}>
-                <div style={{
-                  width: 52, height: 52, background: 'var(--gold-pale)', borderRadius: 10,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem',
-                }}>
-                  <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
+              <div key={title} className="about-value-card">
+                <div className="about-value-icon">
+                  <i className={`bi ${icon}`}></i>
                 </div>
-                <h4 style={{ marginBottom: '0.65rem' }}>{title}</h4>
-                <p style={{ fontSize: '0.875rem', lineHeight: 1.75, color: 'var(--gray-500)' }}>{desc}</p>
+                <h4 className="about-value-title">{title}</h4>
+                <p className="about-value-desc">{desc}</p>
               </div>
             ))}
           </div>
@@ -120,32 +143,34 @@ export function AboutPage() {
       </section>
 
       {/* Timeline Section */}
-      <section className="section section-dark">
+      <section className="about-timeline-section">
         <div className="container">
-          <div className="text-center">
-            <div className="eyebrow" style={{ color: 'var(--gold-light)' }}>Our Journey</div>
-            <h2 style={{ color: 'var(--white)' }}>Twenty Years of <em style={{ color: 'var(--gold-light)' }}>Milestones</em></h2>
-            <div className="gold-rule gold-rule-center" />
+          <div className="section-header centered">
+            <div className="section-label" style={{ color: 'var(--color-gold-light)' }}>Our Journey</div>
+            <h2 className="section-title" style={{ color: 'var(--color-white)' }}>Twenty Years of <em style={{ color: 'var(--color-gold-light)' }}>Milestones</em></h2>
+            <div className="gold-divider center"></div>
           </div>
-          <div style={{ maxWidth: 720, margin: '3rem auto 0', position: 'relative' }}>
-            <div style={{
-              position: 'absolute', left: '50%', top: 0, bottom: 0,
-              width: 2, background: 'rgba(255,255,255,0.1)', transform: 'translateX(-50%)',
-            }} />
+          <div className="about-timeline">
             {MILESTONES.map(({ year, event }, i) => (
-              <div key={year} style={{
-                display: 'flex', gap: '2rem', marginBottom: '2.5rem',
-                flexDirection: i % 2 === 0 ? 'row' : 'row-reverse', alignItems: 'flex-start',
-              }}>
-                <div style={{ flex: 1, textAlign: i % 2 === 0 ? 'right' : 'left' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--gold)', marginBottom: '0.4rem' }}>{year}</div>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.7 }}>{event}</p>
-                </div>
-                <div style={{
-                  width: 14, height: 14, background: 'var(--gold)', borderRadius: '50%',
-                  flexShrink: 0, marginTop: '0.5rem', boxShadow: '0 0 0 4px rgba(196,160,90,0.25)',
-                }} />
-                <div style={{ flex: 1 }} />
+              <div key={year} className={`about-timeline-item ${i % 2 === 0 ? 'left' : 'right'}`}>
+                <div className="about-timeline-dot"></div>
+                {i % 2 === 0 ? (
+                  <>
+                    <div className="about-timeline-content">
+                      <div className="about-timeline-year">{year}</div>
+                      <p className="about-timeline-event">{event}</p>
+                    </div>
+                    <div className="about-timeline-spacer"></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="about-timeline-spacer"></div>
+                    <div className="about-timeline-content">
+                      <div className="about-timeline-year">{year}</div>
+                      <p className="about-timeline-event">{event}</p>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -153,34 +178,24 @@ export function AboutPage() {
       </section>
 
       {/* Leadership Section */}
-      <section className="section">
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
-          <div className="text-center">
-            <div className="eyebrow">The Team</div>
-            <h2>Leadership You Can <em>Trust</em></h2>
-            <div className="gold-rule gold-rule-center" />
-            <p style={{ maxWidth: 540, margin: '0 auto', color: 'var(--gray-500)' }}>
-              Our leadership team brings over 150 combined years of aviation, hospitality, and technology experience to every decision we make.
-            </p>
+          <div className="section-header centered">
+            <div className="section-label">The Team</div>
+            <h2 className="section-title">Leadership You Can <em style={{ color: 'var(--color-gold)' }}>Trust</em></h2>
+            <div className="gold-divider center"></div>
+            <p className="section-subtitle">Our leadership team brings over 150 combined years of aviation, hospitality, and technology experience to every decision we make.</p>
           </div>
-          <div className="grid-4" style={{ marginTop: '3rem' }}>
-            {LEADERSHIP.map(({ name, title, bio, initials }) => (
-              <div key={name} className="card" style={{ overflow: 'hidden', padding: 0 }}>
-                <div style={{
-                  height: 120, background: 'linear-gradient(135deg, var(--navy) 0%, #1a3a6b 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <div style={{
-                    width: 70, height: 70, background: 'rgba(196,160,90,0.2)',
-                    border: '2px solid var(--gold)', borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--gold)',
-                  }}>{initials}</div>
+          <div className="about-leadership-grid">
+            {LEADERSHIP.map(({ name, title, bio, image }) => (
+              <div key={name} className="about-leadership-card">
+                <div className="about-leadership-image">
+                  <img src={image} alt={name} loading="lazy" />
                 </div>
-                <div className="card-body">
-                  <div style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: '0.2rem', fontSize: '1rem' }}>{name}</div>
-                  <div style={{ fontSize: '0.73rem', color: 'var(--gold)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{title}</div>
-                  <p style={{ fontSize: '0.825rem', lineHeight: 1.7, color: 'var(--gray-500)', margin: 0 }}>{bio}</p>
+                <div className="about-leadership-body">
+                  <h4 className="about-leadership-name">{name}</h4>
+                  <div className="about-leadership-title">{title}</div>
+                  <p className="about-leadership-bio">{bio}</p>
                 </div>
               </div>
             ))}
@@ -189,24 +204,21 @@ export function AboutPage() {
       </section>
 
       {/* Certifications Section */}
-      <section className="section" style={{ background: 'var(--gray-50)' }}>
+      <section className="section-padding">
         <div className="container">
-          <div className="text-center">
-            <div className="eyebrow">Safety & Compliance</div>
-            <h2>Certified to the <em>Highest Standard</em></h2>
-            <div className="gold-rule gold-rule-center" />
+          <div className="section-header centered">
+            <div className="section-label">Safety & Compliance</div>
+            <h2 className="section-title">Certified to the <em style={{ color: 'var(--color-gold)' }}>Highest Standard</em></h2>
+            <div className="gold-divider center"></div>
           </div>
-          <div className="grid-4" style={{ marginTop: '2.5rem' }}>
-            {[
-              { icon: 'bi-patch-check', label: 'ARGUS Platinum', sub: 'Highest charter operator rating' },
-              { icon: 'bi-award', label: 'IS-BAO Stage 3', sub: 'International safety standards' },
-              { icon: 'bi-shield-fill-check', label: 'Wyvern Wingman', sub: 'Independent safety audits' },
-              { icon: 'bi-file-earmark-check', label: 'EASA & FAA', sub: 'Dual regulatory compliance' },
-            ].map(({ icon, label, sub }) => (
-              <div key={label} className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-                <i className={`bi ${icon}`} style={{ fontSize: '2rem', color: 'var(--gold)', marginBottom: '1rem', display: 'block' }} />
-                <div style={{ fontWeight: 700, color: 'var(--navy)', marginBottom: '0.3rem' }}>{label}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)' }}>{sub}</div>
+          <div className="about-cert-grid">
+            {CERTIFICATIONS.map(({ label, sub }) => (
+              <div key={label} className="about-cert-card">
+                <div className="about-cert-icon">
+                  <i className="bi bi-patch-check"></i>
+                </div>
+                <div className="about-cert-label">{label}</div>
+                <div className="about-cert-sub">{sub}</div>
               </div>
             ))}
           </div>
@@ -214,32 +226,311 @@ export function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="section" style={{ background: 'var(--navy)', textAlign: 'center' }}>
-        <div className="container" style={{ maxWidth: 680 }}>
-          <div className="eyebrow" style={{ color: 'var(--gold-light)' }}>Ready to Fly?</div>
-          <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
-            Experience the <em style={{ color: 'var(--gold-light)' }}>NairobiJetHouse</em> Difference
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>
-            Whether you're booking your first private flight or managing a fleet of corporate aircraft, we're here to make every journey seamless, safe, and exceptional.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/book-flight" className="btn btn-gold btn-lg">
-              <i className="bi bi-airplane" /> Book a Flight
-            </Link>
-            <Link to="/contact" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}>
-              <i className="bi bi-envelope" /> Get in Touch
-            </Link>
-            <Link to="/membership" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}>
-              <i className="bi bi-star" /> View Membership
-            </Link>
+      <section className="cta-banner">
+        <div className="container">
+          <div className="cta-content">
+            <div>
+              <div className="section-label" style={{ color: 'var(--color-gold-light)' }}>Ready to Fly?</div>
+              <h2>Experience the <em>NairobiJetHouse</em> Difference</h2>
+              <p>Whether you're booking your first private flight or managing a fleet of corporate aircraft, we're here to make every journey seamless, safe, and exceptional.</p>
+            </div>
+            <div className="cta-actions">
+              <Link to="/book-flight" className="btn-gold btn-lg">
+                <i className="bi bi-airplane"></i> Book a Flight
+              </Link>
+              <Link to="/contact" className="btn-outline-white btn-lg">
+                <i className="bi bi-envelope"></i> Get in Touch
+              </Link>
+              <Link to="/membership" className="btn-outline-white btn-lg">
+                <i className="bi bi-star"></i> View Membership
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       <PublicFooter />
-    </>
-  )
-}
 
-export default AboutPage;
+      <style>{`
+        /* About Mission Grid */
+        .about-mission-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4rem;
+          align-items: center;
+        }
+        .about-mission-text {
+          color: var(--color-dark-gray);
+          line-height: 1.8;
+          margin-bottom: 1.25rem;
+        }
+        .about-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.25rem;
+        }
+        .about-stat-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          padding: 1.75rem;
+          text-align: center;
+        }
+        .about-stat-number {
+          font-family: var(--font-heading);
+          font-size: 2rem;
+          font-weight: 700;
+          color: var(--color-gold);
+          line-height: 1.2;
+          margin-bottom: 0.3rem;
+        }
+        .about-stat-label {
+          font-family: var(--font-label);
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--color-mid-gray);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        /* Values Grid */
+        .about-values-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2rem;
+          margin-top: 3rem;
+        }
+        .about-value-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          padding: 2rem;
+        }
+        .about-value-icon {
+          width: 52px;
+          height: 52px;
+          background: var(--color-off-white);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 1.25rem;
+        }
+        .about-value-icon i {
+          font-size: 1.4rem;
+          color: var(--color-gold);
+        }
+        .about-value-title {
+          font-family: var(--font-heading);
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--color-navy);
+          margin-bottom: 0.65rem;
+        }
+        .about-value-desc {
+          font-size: 0.875rem;
+          line-height: 1.75;
+          color: var(--color-mid-gray);
+          margin: 0;
+        }
+
+        /* Timeline Section */
+        .about-timeline-section {
+          padding: 5rem 0;
+          background: var(--color-navy);
+          position: relative;
+          overflow: hidden;
+        }
+        .about-timeline-section::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: linear-gradient(rgba(201,153,46,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(201,153,46,0.04) 1px, transparent 1px);
+          background-size: 48px 48px;
+          pointer-events: none;
+        }
+        .about-timeline {
+          max-width: 720px;
+          margin: 3rem auto 0;
+          position: relative;
+        }
+        .about-timeline::before {
+          content: '';
+          position: absolute;
+          left: 50%;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background: rgba(255,255,255,0.1);
+          transform: translateX(-50%);
+        }
+        .about-timeline-item {
+          display: flex;
+          gap: 2rem;
+          margin-bottom: 2.5rem;
+          position: relative;
+        }
+        .about-timeline-item.left {
+          flex-direction: row;
+        }
+        .about-timeline-item.right {
+          flex-direction: row-reverse;
+        }
+        .about-timeline-dot {
+          width: 14px;
+          height: 14px;
+          background: var(--color-gold);
+          flex-shrink: 0;
+          margin-top: 0.5rem;
+          box-shadow: 0 0 0 4px rgba(201,153,46,0.25);
+        }
+        .about-timeline-content {
+          flex: 1;
+        }
+        .about-timeline-item.left .about-timeline-content {
+          text-align: right;
+        }
+        .about-timeline-item.right .about-timeline-content {
+          text-align: left;
+        }
+        .about-timeline-spacer {
+          flex: 1;
+        }
+        .about-timeline-year {
+          font-family: var(--font-heading);
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--color-gold);
+          margin-bottom: 0.4rem;
+        }
+        .about-timeline-event {
+          color: rgba(255,255,255,0.7);
+          font-size: 0.875rem;
+          line-height: 1.7;
+        }
+
+        /* Leadership Grid */
+        .about-leadership-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2rem;
+          margin-top: 3rem;
+        }
+        .about-leadership-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          overflow: hidden;
+        }
+        .about-leadership-image {
+          height: 200px;
+          overflow: hidden;
+        }
+        .about-leadership-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .about-leadership-body {
+          padding: 1.25rem;
+        }
+        .about-leadership-name {
+          font-family: var(--font-heading);
+          font-size: 1rem;
+          font-weight: 700;
+          color: var(--color-navy);
+          margin-bottom: 0.2rem;
+        }
+        .about-leadership-title {
+          font-size: 0.7rem;
+          color: var(--color-gold-dark);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 0.75rem;
+        }
+        .about-leadership-bio {
+          font-size: 0.8rem;
+          line-height: 1.65;
+          color: var(--color-mid-gray);
+          margin: 0;
+        }
+
+        /* Certifications Grid */
+        .about-cert-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2rem;
+          margin-top: 2.5rem;
+        }
+        .about-cert-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          text-align: center;
+          padding: 2rem;
+        }
+        .about-cert-icon {
+          margin-bottom: 1rem;
+        }
+        .about-cert-icon i {
+          font-size: 2rem;
+          color: var(--color-gold);
+        }
+        .about-cert-label {
+          font-weight: 700;
+          color: var(--color-navy);
+          margin-bottom: 0.3rem;
+        }
+        .about-cert-sub {
+          font-size: 0.78rem;
+          color: var(--color-mid-gray);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+          .about-values-grid,
+          .about-leadership-grid,
+          .about-cert-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (max-width: 900px) {
+          .about-mission-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+          }
+        }
+        @media (max-width: 768px) {
+          .about-values-grid,
+          .about-leadership-grid,
+          .about-cert-grid {
+            grid-template-columns: 1fr;
+          }
+          .about-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .about-timeline::before {
+            left: 16px;
+          }
+          .about-timeline-item {
+            flex-direction: row !important;
+            padding-left: 2rem;
+          }
+          .about-timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+          }
+          .about-timeline-item.left .about-timeline-content,
+          .about-timeline-item.right .about-timeline-content {
+            text-align: left;
+          }
+          .about-timeline-spacer {
+            display: none;
+          }
+        }
+        @media (max-width: 480px) {
+          .about-stats-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </>
+  );
+}

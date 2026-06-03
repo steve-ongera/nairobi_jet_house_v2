@@ -548,12 +548,10 @@ export default function HomePage() {
   const [modal, setModal]       = useState(null)
 
   useEffect(() => {
-    // Use catalogAPI.opAircraft (matches your existing API)
     catalogAPI.opAircraft({ limit: 3 })
       .then(r => setAircraft(r.data.results || r.data || []))
       .catch(() => {})
     
-    // Use catalogAPI.opYachts for yachts
     catalogAPI.opYachts({ limit: 3 })
       .then(r => setYachts(r.data.results || r.data || []))
       .catch(() => {})
@@ -561,7 +559,6 @@ export default function HomePage() {
 
   const open  = (type, asset) => setModal({ type, asset })
   const close = useCallback(() => setModal(null), [])
-
 
   return (
     <div>

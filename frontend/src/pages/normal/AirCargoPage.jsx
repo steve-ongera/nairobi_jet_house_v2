@@ -9,13 +9,13 @@ import { cargoAPI } from '../../services/api';
 // Values match AirCargoInquiry.CARGO_TYPE_CHOICES exactly
 const CARGO_TYPES = [
   ['general',        'General Cargo'],
-  ['perishables',    'Perishable / Cold Chain'],       // was 'perishable'
-  ['dangerous_goods','Dangerous Goods (DG)'],          // was 'dangerous'
-  ['artwork',        'Valuables & High-Security'],     // was 'valuable'
-  ['live_animals',   'Live Animals / Livestock'],      // was 'livestock'
+  ['perishables',    'Perishable / Cold Chain'],
+  ['dangerous_goods','Dangerous Goods (DG)'],
+  ['artwork',        'Valuables & High-Security'],
+  ['live_animals',   'Live Animals / Livestock'],
   ['oversized',      'Oversized / Heavy Lift'],
   ['humanitarian',   'Humanitarian / Relief'],
-  ['pharma',         'Pharmaceutical / Medical'],      // was 'pharmaceutical'
+  ['pharma',         'Pharmaceutical / Medical'],
   ['automotive',     'Automotive Parts'],
   ['other',          'Other'],
 ];
@@ -43,13 +43,13 @@ export default function AirCargoPage() {
     weight_kg: '',
     volume_m3: '',
     cargo_description: '',
-    special_handling: '',           // encoded into additional_notes on submit
+    special_handling: '',
     is_hazardous: false,
-    requires_refrigeration: false,  // mapped to requires_temperature_control on submit
+    requires_refrigeration: false,
     insurance_required: false,
     contact_name: '',
-    contact_email: '',              // mapped to email on submit
-    contact_phone: '',              // mapped to phone on submit
+    contact_email: '',
+    contact_phone: '',
     company: '',
     additional_notes: '',
   });
@@ -64,38 +64,33 @@ export default function AirCargoPage() {
     setLoading(true);
     setError('');
     try {
-      // Merge special_handling into additional_notes since it's not a model field
       const notesWithHandling = [
         form.additional_notes,
         form.special_handling ? `Special handling: ${form.special_handling}` : '',
       ].filter(Boolean).join('\n');
 
       const payload = {
-        // Route
         origin_description:      form.origin_description,
         destination_description: form.destination_description,
         pickup_date:             form.pickup_date,
         urgency:                 form.urgency,
-        // Cargo
-        cargo_type:                    form.cargo_type,
-        cargo_description:             form.cargo_description || '-',  // required field
-        weight_kg:                     parseFloat(form.weight_kg) || null,
-        volume_m3:                     form.volume_m3 ? parseFloat(form.volume_m3) : null,
-        is_hazardous:                  form.is_hazardous,
-        requires_temperature_control:  form.requires_refrigeration,  // correct model field name
-        insurance_required:            form.insurance_required,
-        // Contact — model uses email/phone not contact_email/contact_phone
-        contact_name:  form.contact_name,
-        email:         form.contact_email,
-        phone:         form.contact_phone,
-        company:       form.company,
-        additional_notes: notesWithHandling,
+        cargo_type:              form.cargo_type,
+        cargo_description:       form.cargo_description || '-',
+        weight_kg:               parseFloat(form.weight_kg) || null,
+        volume_m3:               form.volume_m3 ? parseFloat(form.volume_m3) : null,
+        is_hazardous:            form.is_hazardous,
+        requires_temperature_control: form.requires_refrigeration,
+        insurance_required:      form.insurance_required,
+        contact_name:            form.contact_name,
+        email:                   form.contact_email,
+        phone:                   form.contact_phone,
+        company:                 form.company,
+        additional_notes:        notesWithHandling,
       };
 
       const { data } = await cargoAPI.create(payload);
       setSuccess(data.reference || data.id || 'CGO-' + Date.now());
     } catch (err) {
-      console.log('CARGO ERROR:', JSON.stringify(err.response?.data));
       const msg = err.response?.data;
       if (typeof msg === 'object') {
         const first = Object.values(msg)[0];
@@ -116,25 +111,25 @@ export default function AirCargoPage() {
           <meta name="robots" content="noindex" />
         </Helmet>
         <PublicNavbar />
-        <section className="section" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
+        <section className="section-padding" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
           <div className="container">
-            <div className="success-wrap">
-              <div className="success-icon">
+            <div className="cargo-success">
+              <div className="cargo-success__icon">
                 <i className="bi bi-check-lg"></i>
               </div>
-              <h2 style={{ marginBottom: '0.5rem' }}>Cargo Inquiry Received</h2>
-              <p style={{ color: 'var(--gray-500)', marginBottom: '1.5rem' }}>
+              <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Cargo Inquiry Received</h2>
+              <p style={{ color: 'var(--color-mid-gray)', marginBottom: '1.5rem' }}>
                 Our freight specialists will contact you within <strong>2 hours</strong> during business hours.
               </p>
-              <div className="ref-box">
-                <div className="ref-label">Reference Number</div>
-                <div className="ref-value">{String(success).slice(0, 8).toUpperCase()}</div>
+              <div className="cargo-success__ref">
+                <div className="cargo-success__ref-label">Reference Number</div>
+                <div className="cargo-success__ref-value">{String(success).slice(0, 8).toUpperCase()}</div>
               </div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link to="/track" className="btn btn-navy">
+              <div className="cargo-success__actions">
+                <Link to="/track" className="btn-primary-gov">
                   <i className="bi bi-search"></i> Track Your Shipment
                 </Link>
-                <Link to="/" className="btn btn-outline-navy">
+                <Link to="/" className="btn-outline-gov">
                   <i className="bi bi-house"></i> Return Home
                 </Link>
               </div>
@@ -142,6 +137,63 @@ export default function AirCargoPage() {
           </div>
         </section>
         <PublicFooter />
+        <style>{`
+          .cargo-success {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+          }
+          .cargo-success__icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(26,127,90,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+          }
+          .cargo-success__icon i {
+            font-size: 2.5rem;
+            color: var(--color-success);
+          }
+          .cargo-success__ref {
+            background: var(--color-off-white);
+            border: 1px solid var(--color-light-gray);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 2rem;
+          }
+          .cargo-success__ref-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--color-gold);
+            margin-bottom: 0.25rem;
+          }
+          .cargo-success__ref-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-navy);
+          }
+          .cargo-success__actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          @media (max-width: 480px) {
+            .cargo-success__actions {
+              flex-direction: column;
+            }
+            .cargo-success__actions a {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+        `}</style>
       </>
     );
   }
@@ -158,24 +210,21 @@ export default function AirCargoPage() {
 
       <PublicNavbar />
 
-      {/* Hero */}
-      <section className="page-hero">
+      {/* Page Header */}
+      <div className="page-header">
         <div className="container">
-          <div className="eyebrow">Air Cargo Services</div>
-          <h1>Your Cargo. <em style={{ color: 'var(--gold-light)' }}>Our Priority.</em></h1>
-          <p style={{ maxWidth: 560, marginTop: '0.5rem' }}>
-            Time-critical freight, perishables, dangerous goods, and oversized cargo —
-            we move what matters most, anywhere in Africa and beyond.
-          </p>
+          <span className="section-label">Air Cargo Services</span>
+          <h1>Your Cargo. <em style={{ color: 'var(--color-gold-light)' }}>Our Priority.</em></h1>
+          <p>Time-critical freight, perishables, dangerous goods, and oversized cargo — we move what matters most, anywhere in Africa and beyond.</p>
         </div>
-      </section>
+      </div>
 
-      {/* Form */}
-      <section className="section" style={{ background: 'var(--off-white)' }}>
+      {/* Form Section */}
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container" style={{ maxWidth: 820 }}>
 
           {error && (
-            <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>
+            <div className="alert-error" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <i className="bi bi-exclamation-triangle"></i>
               <span>{error}</span>
             </div>
@@ -183,19 +232,17 @@ export default function AirCargoPage() {
 
           <form onSubmit={submit}>
 
-            {/* ── Route & Schedule ── */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-geo-alt"></i> Route & Schedule
-                </div>
+            {/* Route & Schedule */}
+            <div className="cargo-card">
+              <div className="cargo-card__header">
+                <i className="bi bi-geo-alt"></i> Route & Schedule
               </div>
-              <div className="detail-card-body">
-                <div className="form-grid">
+              <div className="cargo-card__body">
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Origin <span className="req">*</span></label>
+                    <label className="form-label-gov">Origin <span className="required">*</span></label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.origin_description}
                       onChange={e => set('origin_description', e.target.value)}
                       required
@@ -203,9 +250,9 @@ export default function AirCargoPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Destination <span className="req">*</span></label>
+                    <label className="form-label-gov">Destination <span className="required">*</span></label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.destination_description}
                       onChange={e => set('destination_description', e.target.value)}
                       required
@@ -213,10 +260,10 @@ export default function AirCargoPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Pickup Date <span className="req">*</span></label>
+                    <label className="form-label-gov">Pickup Date <span className="required">*</span></label>
                     <input
                       type="date"
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.pickup_date}
                       onChange={e => set('pickup_date', e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
@@ -226,23 +273,12 @@ export default function AirCargoPage() {
                 </div>
 
                 <div className="form-group" style={{ marginTop: '0.5rem' }}>
-                  <label className="form-label">Urgency Level <span className="req">*</span></label>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  <label className="form-label-gov">Urgency Level <span className="required">*</span></label>
+                  <div className="cargo-urgency-grid">
                     {URGENCY_LEVELS.map(([val, label, desc]) => (
                       <label
                         key={val}
-                        style={{
-                          flex: '1 1 180px',
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '0.6rem',
-                          padding: '0.75rem 1rem',
-                          border: `1.5px solid ${form.urgency === val ? 'var(--navy)' : 'var(--gray-200, #e5e7eb)'}`,
-                          borderRadius: '0.5rem',
-                          background: form.urgency === val ? 'var(--navy-50, #f0f4ff)' : 'var(--white, #fff)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                        }}
+                        className={`cargo-urgency-option ${form.urgency === val ? 'selected' : ''}`}
                       >
                         <input
                           type="radio"
@@ -250,11 +286,10 @@ export default function AirCargoPage() {
                           value={val}
                           checked={form.urgency === val}
                           onChange={() => set('urgency', val)}
-                          style={{ marginTop: '0.2rem', accentColor: 'var(--navy)' }}
                         />
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--navy)' }}>{label}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{desc}</div>
+                          <div className="cargo-urgency-option__label">{label}</div>
+                          <div className="cargo-urgency-option__desc">{desc}</div>
                         </div>
                       </label>
                     ))}
@@ -263,18 +298,16 @@ export default function AirCargoPage() {
               </div>
             </div>
 
-            {/* ── Cargo Details ── */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-boxes"></i> Cargo Details
-                </div>
+            {/* Cargo Details */}
+            <div className="cargo-card">
+              <div className="cargo-card__header">
+                <i className="bi bi-boxes"></i> Cargo Details
               </div>
-              <div className="detail-card-body">
+              <div className="cargo-card__body">
                 <div className="form-group">
-                  <label className="form-label">Cargo Type <span className="req">*</span></label>
+                  <label className="form-label-gov">Cargo Type <span className="required">*</span></label>
                   <select
-                    className="form-control"
+                    className="form-input-gov"
                     value={form.cargo_type}
                     onChange={e => set('cargo_type', e.target.value)}
                     required
@@ -286,12 +319,12 @@ export default function AirCargoPage() {
                   </select>
                 </div>
 
-                <div className="form-grid">
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Total Weight (kg) <span className="req">*</span></label>
+                    <label className="form-label-gov">Total Weight (kg) <span className="required">*</span></label>
                     <input
                       type="number"
-                      className="form-control"
+                      className="form-input-gov"
                       min="0.1"
                       step="0.1"
                       placeholder="e.g. 500"
@@ -301,13 +334,10 @@ export default function AirCargoPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">
-                      Volume (m³){' '}
-                      <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>optional</span>
-                    </label>
+                    <label className="form-label-gov">Volume (m³) <span className="optional">(optional)</span></label>
                     <input
                       type="number"
-                      className="form-control"
+                      className="form-input-gov"
                       min="0.01"
                       step="0.01"
                       placeholder="e.g. 2.5"
@@ -318,9 +348,9 @@ export default function AirCargoPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Cargo Description</label>
+                  <label className="form-label-gov">Cargo Description</label>
                   <textarea
-                    className="form-control"
+                    className="form-input-gov"
                     rows={3}
                     placeholder="Brief description of goods, packaging, dimensions, etc."
                     value={form.cargo_description}
@@ -329,48 +359,46 @@ export default function AirCargoPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Special Handling Requirements</label>
+                  <label className="form-label-gov">Special Handling Requirements</label>
                   <input
-                    className="form-control"
+                    className="form-input-gov"
                     placeholder="e.g. Keep upright, temperature range, fragile…"
                     value={form.special_handling}
                     onChange={e => set('special_handling', e.target.value)}
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                <div className="cargo-checkboxes">
                   {[
-                    ['is_hazardous',          'bi-exclamation-triangle', 'Contains hazardous / dangerous goods (DG)'],
-                    ['requires_refrigeration', 'bi-thermometer-snow',    'Requires refrigeration / temperature control'],
-                    ['insurance_required',     'bi-shield-check',        'Cargo insurance required'],
+                    ['is_hazardous', 'bi-exclamation-triangle', 'Contains hazardous / dangerous goods (DG)'],
+                    ['requires_refrigeration', 'bi-thermometer-snow', 'Requires refrigeration / temperature control'],
+                    ['insurance_required', 'bi-shield-check', 'Cargo insurance required'],
                   ].map(([k, icon, label]) => (
-                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <label key={k} className="checkbox-label">
                       <input
                         type="checkbox"
                         checked={form[k]}
                         onChange={e => set(k, e.target.checked)}
                       />
-                      <i className={`bi ${icon}`} style={{ color: 'var(--gold)' }}></i>
-                      <span style={{ fontSize: '0.875rem' }}>{label}</span>
+                      <i className={`bi ${icon}`} style={{ color: 'var(--color-gold)' }}></i>
+                      <span>{label}</span>
                     </label>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* ── Contact Information ── */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-person"></i> Contact Information
-                </div>
+            {/* Contact Information */}
+            <div className="cargo-card">
+              <div className="cargo-card__header">
+                <i className="bi bi-person"></i> Contact Information
               </div>
-              <div className="detail-card-body">
-                <div className="form-grid">
+              <div className="cargo-card__body">
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Full Name <span className="req">*</span></label>
+                    <label className="form-label-gov">Full Name <span className="required">*</span></label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.contact_name}
                       onChange={e => set('contact_name', e.target.value)}
                       required
@@ -378,10 +406,10 @@ export default function AirCargoPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Email Address <span className="req">*</span></label>
+                    <label className="form-label-gov">Email Address <span className="required">*</span></label>
                     <input
                       type="email"
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.contact_email}
                       onChange={e => set('contact_email', e.target.value)}
                       required
@@ -389,18 +417,18 @@ export default function AirCargoPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Phone Number</label>
+                    <label className="form-label-gov">Phone Number</label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.contact_phone}
                       onChange={e => set('contact_phone', e.target.value)}
                       placeholder="+254 7XX XXX XXX"
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Company / Organisation</label>
+                    <label className="form-label-gov">Company / Organisation</label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.company}
                       onChange={e => set('company', e.target.value)}
                       placeholder="Your company name"
@@ -408,25 +436,25 @@ export default function AirCargoPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Additional Notes</label>
+                  <label className="form-label-gov">Additional Notes</label>
                   <textarea
-                    className="form-control"
+                    className="form-input-gov"
                     rows={3}
                     placeholder="Any other information that might help us prepare your quote…"
                     value={form.additional_notes}
                     onChange={e => set('additional_notes', e.target.value)}
                   />
-                  <span className="form-hint">We'll do our best to accommodate all requirements</span>
+                  <div className="form-hint">We'll do our best to accommodate all requirements</div>
                 </div>
               </div>
             </div>
 
-            {/* Submit */}
+            {/* Submit Button */}
             <div style={{ marginTop: '2rem' }}>
-              <button type="submit" className="btn btn-navy btn-lg btn-full" disabled={loading}>
+              <button type="submit" className="btn-primary-gov btn-lg btn-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <span className="spinner" style={{ borderTopColor: 'white' }}></span>
+                    <div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>
                     &nbsp; Submitting Request...
                   </>
                 ) : (
@@ -435,7 +463,7 @@ export default function AirCargoPage() {
                   </>
                 )}
               </button>
-              <p className="text-center text-sm" style={{ marginTop: '1rem', color: 'var(--gray-400)' }}>
+              <p className="text-center" style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)' }}>
                 <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 2 hours.
               </p>
             </div>
@@ -445,6 +473,108 @@ export default function AirCargoPage() {
       </section>
 
       <PublicFooter />
+
+      <style>{`
+        /* Cargo Cards */
+        .cargo-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          margin-bottom: 1.5rem;
+        }
+        .cargo-card__header {
+          background: var(--color-navy);
+          color: var(--color-white);
+          padding: 1rem 1.5rem;
+          font-family: var(--font-label);
+          font-size: 0.85rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .cargo-card__header i {
+          color: var(--color-gold);
+          font-size: 1rem;
+        }
+        .cargo-card__body {
+          padding: 1.5rem;
+        }
+
+        /* Urgency Grid */
+        .cargo-urgency-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 0.75rem;
+          margin-top: 0.25rem;
+        }
+        .cargo-urgency-option {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.6rem;
+          padding: 0.75rem 1rem;
+          border: 1.5px solid var(--color-light-gray);
+          border-radius: var(--radius-sm);
+          background: var(--color-white);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+        .cargo-urgency-option.selected {
+          border-color: var(--color-navy);
+          background: var(--color-off-white);
+        }
+        .cargo-urgency-option input {
+          margin-top: 0.2rem;
+          accent-color: var(--color-navy);
+        }
+        .cargo-urgency-option__label {
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--color-navy);
+        }
+        .cargo-urgency-option__desc {
+          font-size: 0.7rem;
+          color: var(--color-mid-gray);
+        }
+
+        /* Checkboxes */
+        .cargo-checkboxes {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+          margin-top: 1rem;
+        }
+
+        /* Optional text styling */
+        .optional {
+          font-weight: 400;
+          color: var(--color-mid-gray);
+          font-size: 0.7rem;
+          margin-left: 0.25rem;
+        }
+
+        /* Full width button */
+        .btn-full {
+          width: 100%;
+          justify-content: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .cargo-card__body {
+            padding: 1rem;
+          }
+          .cargo-urgency-grid {
+            grid-template-columns: 1fr;
+          }
+          .cargo-checkboxes {
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+        }
+      `}</style>
     </>
   );
 }

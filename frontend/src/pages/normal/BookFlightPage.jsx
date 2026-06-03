@@ -20,7 +20,6 @@ const CATEGORY_NAMES = {
   'helicopter': 'Helicopters'
 };
 
-/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -30,24 +29,21 @@ const STRUCTURED_DATA = {
 
 /* ─── Airport Combobox ────────────────────────────────────────────────────── */
 function AirportCombobox({ airports, value, onChange, placeholder, required }) {
-  // value is an airport ID; we need to display the label
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  // Resolve display label from current value ID
   const selectedAirport = airports.find(a => a.id === value || String(a.id) === String(value));
 
-  // When value changes externally (e.g. form reset), sync query
   useEffect(() => {
     if (!value) {
       setQuery('');
     } else if (selectedAirport) {
       setQuery(`${selectedAirport.code} – ${selectedAirport.name}, ${selectedAirport.city}`);
     }
-  }, [value]);
+  }, [value, selectedAirport]);
 
   const filtered = query.length >= 2
     ? airports.filter(a => {
@@ -71,7 +67,6 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
     setQuery(e.target.value);
     setOpen(true);
     setHighlighted(0);
-    // Clear selection if user edits the text
     if (value) onChange('');
   };
 
@@ -91,11 +86,9 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
     }
   };
 
-  const handleBlur = (e) => {
-    // Delay close so click on list item registers first
+  const handleBlur = () => {
     setTimeout(() => {
       setOpen(false);
-      // If nothing valid selected, clear the query
       if (!value) setQuery('');
     }, 150);
   };
@@ -104,7 +97,7 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
     <div style={{ position: 'relative' }}>
       <input
         ref={inputRef}
-        className="form-control"
+        className="form-input-gov"
         type="text"
         value={query}
         onChange={handleInputChange}
@@ -115,7 +108,6 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
         required={required}
         autoComplete="off"
       />
-      {/* Hidden input to carry the actual ID value for form validation */}
       <input type="hidden" value={value || ''} />
 
       {open && filtered.length > 0 && (
@@ -127,10 +119,10 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
             left: 0,
             right: 0,
             zIndex: 1000,
-            background: 'var(--white, #fff)',
-            border: '1px solid var(--gray-200, #e5e7eb)',
-            borderRadius: '0.5rem',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            background: 'var(--color-white)',
+            border: '1px solid var(--color-light-gray)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-lg)',
             margin: 0,
             padding: '0.25rem 0',
             listStyle: 'none',
@@ -146,25 +138,18 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
               style={{
                 padding: '0.6rem 1rem',
                 cursor: 'pointer',
-                background: i === highlighted ? 'var(--navy-50, #f0f4ff)' : 'transparent',
+                background: i === highlighted ? 'var(--color-off-white)' : 'transparent',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                transition: 'background 0.1s',
               }}
             >
-              <span style={{
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                letterSpacing: '0.05em',
-                color: 'var(--navy, #1a2e52)',
-                minWidth: '2.5rem',
-              }}>
+              <span className="badge-gov" style={{ minWidth: '2.5rem', textAlign: 'center' }}>
                 {a.code}
               </span>
-              <span style={{ fontSize: '0.875rem', color: 'var(--gray-700, #374151)' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--color-dark-gray)' }}>
                 {a.name}
-                <span style={{ color: 'var(--gray-400, #9ca3af)', marginLeft: '0.35rem' }}>
+                <span style={{ color: 'var(--color-mid-gray)', marginLeft: '0.35rem' }}>
                   {a.city}
                 </span>
               </span>
@@ -180,13 +165,13 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
           left: 0,
           right: 0,
           zIndex: 1000,
-          background: 'var(--white, #fff)',
-          border: '1px solid var(--gray-200, #e5e7eb)',
-          borderRadius: '0.5rem',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          background: 'var(--color-white)',
+          border: '1px solid var(--color-light-gray)',
+          borderRadius: 'var(--radius-sm)',
+          boxShadow: 'var(--shadow-lg)',
           padding: '0.75rem 1rem',
           fontSize: '0.875rem',
-          color: 'var(--gray-400, #9ca3af)',
+          color: 'var(--color-mid-gray)',
         }}>
           No airports found for "{query}"
         </div>
@@ -240,25 +225,25 @@ export default function BookFlightPage() {
           <meta name="robots" content="noindex" />
         </Helmet>
         <PublicNavbar />
-        <section className="section" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
+        <section className="section-padding" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
           <div className="container">
-            <div className="success-wrap">
-              <div className="success-icon">
+            <div className="booking-success">
+              <div className="booking-success__icon">
                 <i className="bi bi-check-lg"></i>
               </div>
-              <h2 style={{ marginBottom: '0.5rem' }}>Booking Submitted</h2>
-              <p style={{ color: 'var(--gray-500)', marginBottom: '1.5rem' }}>
+              <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Booking Submitted</h2>
+              <p style={{ color: 'var(--color-mid-gray)', marginBottom: '1.5rem' }}>
                 Our team will contact you within 2–4 hours with a tailored quote.
               </p>
-              <div className="ref-box">
-                <div className="ref-label">Reference Number</div>
-                <div className="ref-value">{String(success).slice(0, 8).toUpperCase()}</div>
+              <div className="booking-success__ref">
+                <div className="booking-success__ref-label">Reference Number</div>
+                <div className="booking-success__ref-value">{String(success).slice(0, 8).toUpperCase()}</div>
               </div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link to="/track" className="btn btn-navy">
+              <div className="booking-success__actions">
+                <Link to="/track" className="btn-primary-gov">
                   <i className="bi bi-search"></i> Track Your Booking
                 </Link>
-                <Link to="/" className="btn btn-outline-navy">
+                <Link to="/" className="btn-outline-gov">
                   <i className="bi bi-house"></i> Return Home
                 </Link>
               </div>
@@ -266,6 +251,64 @@ export default function BookFlightPage() {
           </div>
         </section>
         <PublicFooter />
+
+        <style>{`
+          .booking-success {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+          }
+          .booking-success__icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(26,127,90,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+          }
+          .booking-success__icon i {
+            font-size: 2.5rem;
+            color: var(--color-success);
+          }
+          .booking-success__ref {
+            background: var(--color-off-white);
+            border: 1px solid var(--color-light-gray);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 2rem;
+          }
+          .booking-success__ref-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--color-gold);
+            margin-bottom: 0.25rem;
+          }
+          .booking-success__ref-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-navy);
+          }
+          .booking-success__actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          @media (max-width: 480px) {
+            .booking-success__actions {
+              flex-direction: column;
+            }
+            .booking-success__actions a {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+        `}</style>
       </>
     );
   }
@@ -282,23 +325,21 @@ export default function BookFlightPage() {
 
       <PublicNavbar />
 
-      {/* Hero Section */}
-      <section className="page-hero">
+      {/* Page Header */}
+      <div className="page-header">
         <div className="container">
-          <div className="eyebrow">Charter a Private Jet</div>
-          <h1>Request Your <em style={{ color: 'var(--gold-light)' }}>Personalised Quote</em></h1>
-          <p style={{ maxWidth: 560, marginTop: '0.5rem' }}>
-            Complete the form below and our aviation specialists will respond within 2–4 hours with a tailored quote.
-          </p>
+          <span className="section-label">Charter a Private Jet</span>
+          <h1>Request Your <em style={{ color: 'var(--color-gold-light)' }}>Personalised Quote</em></h1>
+          <p>Complete the form below and our aviation specialists will respond within 2–4 hours with a tailored quote.</p>
         </div>
-      </section>
+      </div>
 
       {/* Form Section */}
-      <section className="section" style={{ background: 'var(--off-white)' }}>
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container" style={{ maxWidth: 820 }}>
 
           {error && (
-            <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>
+            <div className="alert-error" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <i className="bi bi-exclamation-triangle"></i>
               <span>{error}</span>
             </div>
@@ -306,18 +347,16 @@ export default function BookFlightPage() {
 
           <form onSubmit={submit}>
             {/* Contact Information */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-person"></i> Contact Information
-                </div>
+            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+              <div className="booking-card__header">
+                <i className="bi bi-person"></i> Contact Information
               </div>
-              <div className="detail-card-body">
-                <div className="form-grid">
+              <div className="booking-card__body">
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Full Name <span className="req">*</span></label>
+                    <label className="form-label-gov">Full Name <span className="required">*</span></label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.guest_name}
                       onChange={e => set('guest_name', e.target.value)}
                       required
@@ -325,10 +364,10 @@ export default function BookFlightPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Email <span className="req">*</span></label>
+                    <label className="form-label-gov">Email <span className="required">*</span></label>
                     <input
                       type="email"
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.guest_email}
                       onChange={e => set('guest_email', e.target.value)}
                       required
@@ -336,18 +375,18 @@ export default function BookFlightPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Phone</label>
+                    <label className="form-label-gov">Phone</label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.guest_phone}
                       onChange={e => set('guest_phone', e.target.value)}
                       placeholder="+254 700 000 000"
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Company</label>
+                    <label className="form-label-gov">Company</label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.company}
                       onChange={e => set('company', e.target.value)}
                       placeholder="Optional"
@@ -358,15 +397,13 @@ export default function BookFlightPage() {
             </div>
 
             {/* Flight Details */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-airplane"></i> Flight Details
-                </div>
+            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+              <div className="booking-card__header">
+                <i className="bi bi-airplane"></i> Flight Details
               </div>
-              <div className="detail-card-body">
+              <div className="booking-card__body">
                 {/* Trip Type Selection */}
-                <div className="tab-nav" style={{ marginBottom: '1.5rem' }}>
+                <div className="tabs-gov" style={{ marginBottom: '1.5rem' }}>
                   {TRIP_TYPES.map(([v, l]) => (
                     <button
                       key={v}
@@ -379,9 +416,9 @@ export default function BookFlightPage() {
                   ))}
                 </div>
 
-                <div className="form-grid">
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">From <span className="req">*</span></label>
+                    <label className="form-label-gov">From <span className="required">*</span></label>
                     {airports.length ? (
                       <AirportCombobox
                         airports={airports}
@@ -392,7 +429,7 @@ export default function BookFlightPage() {
                       />
                     ) : (
                       <input
-                        className="form-control"
+                        className="form-input-gov"
                         placeholder="Origin airport / city"
                         value={form.origin}
                         onChange={e => set('origin', e.target.value)}
@@ -401,7 +438,7 @@ export default function BookFlightPage() {
                     )}
                   </div>
                   <div className="form-group">
-                    <label className="form-label">To <span className="req">*</span></label>
+                    <label className="form-label-gov">To <span className="required">*</span></label>
                     {airports.length ? (
                       <AirportCombobox
                         airports={airports}
@@ -412,7 +449,7 @@ export default function BookFlightPage() {
                       />
                     ) : (
                       <input
-                        className="form-control"
+                        className="form-input-gov"
                         placeholder="Destination airport / city"
                         value={form.destination}
                         onChange={e => set('destination', e.target.value)}
@@ -421,10 +458,10 @@ export default function BookFlightPage() {
                     )}
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Departure Date <span className="req">*</span></label>
+                    <label className="form-label-gov">Departure Date <span className="required">*</span></label>
                     <input
                       type="date"
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.departure_date}
                       onChange={e => set('departure_date', e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
@@ -432,20 +469,20 @@ export default function BookFlightPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Departure Time</label>
+                    <label className="form-label-gov">Departure Time</label>
                     <input
                       type="time"
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.departure_time}
                       onChange={e => set('departure_time', e.target.value)}
                     />
                   </div>
                   {form.trip_type === 'round_trip' && (
                     <div className="form-group">
-                      <label className="form-label">Return Date <span className="req">*</span></label>
+                      <label className="form-label-gov">Return Date <span className="required">*</span></label>
                       <input
                         type="date"
-                        className="form-control"
+                        className="form-input-gov"
                         value={form.return_date}
                         onChange={e => set('return_date', e.target.value)}
                         min={form.departure_date || new Date().toISOString().split('T')[0]}
@@ -454,24 +491,24 @@ export default function BookFlightPage() {
                     </div>
                   )}
                   <div className="form-group">
-                    <label className="form-label">Passengers <span className="req">*</span></label>
+                    <label className="form-label-gov">Passengers <span className="required">*</span></label>
                     <input
                       type="number"
                       min={1}
                       max={200}
-                      className="form-control"
+                      className="form-input-gov"
                       value={form.passenger_count}
                       onChange={e => set('passenger_count', parseInt(e.target.value))}
                       required
                     />
-                    <span className="form-hint">Maximum 200 passengers per aircraft</span>
+                    <div className="form-hint">Maximum 200 passengers per aircraft</div>
                   </div>
                 </div>
 
                 <div className="form-group" style={{ marginTop: '1rem' }}>
-                  <label className="form-label">Preferred Aircraft Category</label>
+                  <label className="form-label-gov">Preferred Aircraft Category</label>
                   <select
-                    className="form-control"
+                    className="form-input-gov"
                     value={form.preferred_category}
                     onChange={e => set('preferred_category', e.target.value)}
                   >
@@ -485,27 +522,25 @@ export default function BookFlightPage() {
             </div>
 
             {/* Add-on Services */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-stars"></i> Add-on Services
-                </div>
+            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+              <div className="booking-card__header">
+                <i className="bi bi-stars"></i> Add-on Services
               </div>
-              <div className="detail-card-body">
-                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+              <div className="booking-card__body">
+                <div className="checkbox-group">
                   {[
                     ['catering_requested', 'bi-cup-hot', 'In-Flight Catering'],
                     ['ground_transport_requested', 'bi-car-front', 'Ground Transport'],
                     ['concierge_requested', 'bi-headset', 'Concierge Service'],
                   ].map(([k, icon, label]) => (
-                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <label key={k} className="checkbox-label">
                       <input
                         type="checkbox"
                         checked={form[k]}
                         onChange={e => set(k, e.target.checked)}
                       />
-                      <i className={`bi ${icon}`} style={{ color: 'var(--gold)' }}></i>
-                      <span style={{ fontSize: '0.875rem' }}>{label}</span>
+                      <i className={`bi ${icon}`} style={{ color: 'var(--color-gold)' }}></i>
+                      <span>{label}</span>
                     </label>
                   ))}
                 </div>
@@ -513,33 +548,31 @@ export default function BookFlightPage() {
             </div>
 
             {/* Special Requests */}
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-chat-text"></i> Special Requests
-                </div>
+            <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
+              <div className="booking-card__header">
+                <i className="bi bi-chat-text"></i> Special Requests
               </div>
-              <div className="detail-card-body">
+              <div className="booking-card__body">
                 <div className="form-group">
-                  <label className="form-label">Special Requests or Preferences</label>
+                  <label className="form-label-gov">Special Requests or Preferences</label>
                   <textarea
-                    className="form-control"
+                    className="form-input-gov"
                     rows={4}
                     value={form.special_requests}
                     onChange={e => set('special_requests', e.target.value)}
                     placeholder="Dietary requirements, specific aircraft preferences, occasions to celebrate, or any other details we should know..."
                   />
-                  <span className="form-hint">We'll do our best to accommodate all requests</span>
+                  <div className="form-hint">We'll do our best to accommodate all requests</div>
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
             <div style={{ marginTop: '2rem' }}>
-              <button type="submit" className="btn btn-navy btn-lg btn-full" disabled={loading}>
+              <button type="submit" className="btn-primary-gov btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
                 {loading ? (
                   <>
-                    <span className="spinner" style={{ borderTopColor: 'white' }}></span>
+                    <div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>
                     &nbsp; Submitting Request...
                   </>
                 ) : (
@@ -548,7 +581,7 @@ export default function BookFlightPage() {
                   </>
                 )}
               </button>
-              <p className="text-center text-sm" style={{ marginTop: '1rem', color: 'var(--gray-400)' }}>
+              <p className="text-center" style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)' }}>
                 <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 2-4 hours.
               </p>
             </div>
@@ -557,6 +590,70 @@ export default function BookFlightPage() {
       </section>
 
       <PublicFooter />
+
+      <style>{`
+        .booking-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+        }
+        
+        .booking-card__header {
+          background: var(--color-navy);
+          color: var(--color-white);
+          padding: 1rem 1.5rem;
+          font-family: var(--font-label);
+          font-size: 0.85rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .booking-card__header i {
+          color: var(--color-gold);
+          font-size: 1rem;
+        }
+        
+        .booking-card__body {
+          padding: 1.5rem;
+        }
+        
+        .checkbox-group {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+        }
+        
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          cursor: pointer;
+          font-size: 0.875rem;
+          color: var(--color-dark-gray);
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+          width: 17px;
+          height: 17px;
+          accent-color: var(--color-navy);
+          cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+          .booking-card__body {
+            padding: 1rem;
+          }
+          
+          .checkbox-group {
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+        }
+      `}</style>
     </>
   );
 }

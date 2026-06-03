@@ -13,7 +13,6 @@ const DEPT_COLORS = {
   partnerships: '#80cbc4',
 };
 
-/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -56,7 +55,8 @@ export default function CareersPage() {
     <>
       <Helmet>
         <title>Careers | NairobiJetHouse - Join Our Team</title>
-        <meta name="description" content="Build Africa's aviation future with NairobiJetHouse. We're hiring across operations, technology, charter services, and more." />
+        <meta name="description" content="Build Africa's aviation future with NairobiJetHouse. We're hiring across operations, technology, charter services, and more. Join a fast-growing private aviation platform." />
+        <meta name="keywords" content="aviation careers, private jet jobs, airline careers, Nairobi jobs, aviation jobs Africa" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.nairobijethouse.com/careers" />
         <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
@@ -64,29 +64,27 @@ export default function CareersPage() {
 
       <PublicNavbar />
 
-      {/* Hero Section */}
-      <section className="page-hero">
+      {/* Page Header */}
+      <div className="page-header">
         <div className="container">
-          <div className="eyebrow">Join the Team</div>
-          <h1>Build Africa's <em style={{ color: 'var(--gold-light)' }}>Aviation Future</em></h1>
-          <p style={{ maxWidth: 580, marginTop: '0.5rem' }}>
-            We're a fast-growing private aviation platform hiring across operations, technology, charter services, and more. 
-            We operate across 35 countries and are headquartered in Nairobi, Kenya.
-          </p>
+          <span className="section-label">
+            <i className="bi bi-briefcase"></i> Join the Team
+          </span>
+          <h1>Build Africa's <em style={{ color: 'var(--color-gold-light)' }}>Aviation Future</em></h1>
+          <p>We're a fast-growing private aviation platform hiring across operations, technology, charter services, and more. We operate across 35 countries and are headquartered in Nairobi, Kenya.</p>
         </div>
-      </section>
+      </div>
 
       {/* Main Content */}
-      <section className="section" style={{ background: 'var(--off-white)' }}>
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
           
           {/* Filters */}
-          <div className="filter-bar" style={{ marginBottom: '2rem' }}>
+          <div className="careers-filters">
             <select 
               value={deptFilter} 
               onChange={e => setDeptFilter(e.target.value)} 
-              className="form-control"
-              style={{ width: 'auto', minWidth: '180px' }}
+              className="form-input-gov careers-filter-select"
             >
               <option value="">All Departments</option>
               {departments.map(d => <option key={d} value={d}>{d.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
@@ -94,8 +92,7 @@ export default function CareersPage() {
             <select 
               value={typeFilter} 
               onChange={e => setTypeFilter(e.target.value)} 
-              className="form-control"
-              style={{ width: 'auto', minWidth: '160px' }}
+              className="form-input-gov careers-filter-select"
             >
               <option value="">All Types</option>
               {['full_time', 'part_time', 'contract', 'internship'].map(t => (
@@ -105,140 +102,344 @@ export default function CareersPage() {
             {(deptFilter || typeFilter) && (
               <button 
                 onClick={() => { setDeptFilter(''); setTypeFilter(''); }}
-                className="btn btn-ghost btn-sm"
+                className="btn-ghost btn-sm"
               >
-                Clear filters
+                <i className="bi bi-x-circle"></i> Clear filters
               </button>
             )}
           </div>
 
           {/* Jobs List */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem' }}>
-              <div className="spinner-dark" style={{ margin: '0 auto' }}></div>
-              <p style={{ color: 'var(--gray-400)', marginTop: '1rem' }}>Loading positions...</p>
+            <div className="loading-page">
+              <div className="spinner-gov"></div>
+              <p>Loading positions...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-              <i className="bi bi-inbox" style={{ fontSize: '3rem', color: 'var(--gray-300)', marginBottom: '1rem', display: 'block' }} />
-              <p style={{ color: 'var(--gray-400)' }}>No open positions matching your filters.</p>
+            <div className="empty-state">
+              <div className="empty-state__icon">
+                <i className="bi bi-inbox"></i>
+              </div>
+              <h3>No open positions</h3>
+              <p>No open positions matching your filters.</p>
               <button 
                 onClick={() => { setDeptFilter(''); setTypeFilter(''); }}
-                className="btn btn-outline-navy btn-sm"
-                style={{ marginTop: '1rem' }}
+                className="btn-primary-gov btn-sm"
               >
                 Clear Filters
               </button>
             </div>
           ) : (
-            <>
+            <div className="careers-jobs-list">
               {featured.length > 0 && (
-                <div style={{ marginBottom: '2rem' }}>
-                  <div className="eyebrow" style={{ marginBottom: '1rem' }}>Featured Roles</div>
+                <div className="careers-section">
+                  <div className="section-label">Featured Roles</div>
                   {featured.map(job => <JobCard key={job.id} job={job} featured />)}
                 </div>
               )}
               {regular.length > 0 && (
-                <div>
-                  {featured.length > 0 && (
-                    <div className="eyebrow" style={{ marginBottom: '1rem' }}>All Open Positions</div>
-                  )}
+                <div className="careers-section">
+                  {featured.length > 0 && <div className="section-label">All Open Positions</div>}
                   {regular.map(job => <JobCard key={job.id} job={job} />)}
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* Perks Section */}
-          <div className="card" style={{ marginTop: '4rem', padding: '2.5rem' }}>
-            <div className="text-center mb-4">
-              <div className="eyebrow">Why NairobiJetHouse?</div>
-              <h2>Join a Team That <em>Takes Flight</em></h2>
-              <div className="gold-rule gold-rule-center" />
+          <div className="careers-perks">
+            <div className="section-header centered">
+              <div className="section-label">Why NairobiJetHouse?</div>
+              <h2 className="section-title">Join a Team That <em style={{ color: 'var(--color-gold)' }}>Takes Flight</em></h2>
+              <div className="gold-divider center"></div>
             </div>
-            <div className="grid-3" style={{ marginTop: '2rem' }}>
+            <div className="careers-perks-grid">
               {PERKS.map(({ icon, title, desc }) => (
-                <div key={title} style={{ textAlign: 'center', padding: '1rem' }}>
-                  <div style={{
-                    width: 64, height: 64, background: 'var(--gold-pale)', borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 1rem'
-                  }}>
-                    <i className={`bi ${icon}`} style={{ fontSize: '1.6rem', color: 'var(--gold)' }} />
+                <div key={title} className="careers-perk-card">
+                  <div className="careers-perk-icon">
+                    <i className={`bi ${icon}`}></i>
                   </div>
-                  <h4 style={{ color: 'var(--navy)', marginBottom: '0.5rem', fontSize: '1rem' }}>{title}</h4>
-                  <p style={{ color: 'var(--gray-500)', fontSize: '0.85rem', lineHeight: '1.6', margin: 0 }}>{desc}</p>
+                  <h4 className="careers-perk-title">{title}</h4>
+                  <p className="careers-perk-desc">{desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* CTA Section */}
-          <div className="card" style={{ marginTop: '2rem', textAlign: 'center', padding: '3rem', background: 'var(--navy)' }}>
-            <h3 style={{ color: 'var(--white)', marginBottom: '0.5rem' }}>Don't see the perfect role?</h3>
-            <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
-              We're always looking for talented people. Send us your CV and we'll keep you in mind.
-            </p>
-            <Link to="/contact?subject=careers" className="btn btn-gold">
-              <i className="bi bi-envelope" /> Send Speculative Application
-            </Link>
+          <div className="careers-cta">
+            <h3>Don't see the perfect role?</h3>
+            <p>We're always looking for talented people. Send us your CV and we'll keep you in mind.</p>
+            <div className="careers-cta-actions">
+              <Link to="/contact?subject=careers" className="btn-gold">
+                <i className="bi bi-envelope"></i> Send Speculative Application
+              </Link>
+            </div>
           </div>
 
         </div>
       </section>
 
       <PublicFooter />
+
+      <style>{`
+        /* Careers Filters */
+        .careers-filters {
+          display: flex;
+          gap: 1rem;
+          justify-content: flex-start;
+          margin-bottom: 2rem;
+          flex-wrap: wrap;
+        }
+        .careers-filter-select {
+          width: auto;
+          min-width: 180px;
+        }
+        @media (max-width: 768px) {
+          .careers-filters {
+            flex-direction: column;
+          }
+          .careers-filter-select {
+            width: 100%;
+          }
+        }
+
+        /* Jobs List */
+        .careers-jobs-list {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+        .careers-section {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        /* Job Card */
+        .careers-job-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          transition: all var(--transition-base);
+        }
+        .careers-job-card.featured {
+          border: 2px solid var(--color-gold);
+          background: var(--color-off-white);
+        }
+        .careers-job-card:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-2px);
+        }
+        .careers-job-card__content {
+          padding: 1.25rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        .careers-job-card__info {
+          flex: 1;
+        }
+        .careers-job-card__header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          margin-bottom: 0.5rem;
+        }
+        .careers-job-card__title {
+          font-family: var(--font-heading);
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--color-navy);
+          margin: 0;
+        }
+        .careers-job-card__featured {
+          font-size: 0.65rem;
+        }
+        .careers-job-card__meta {
+          display: flex;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+        .careers-job-meta {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.25rem 0.6rem;
+          background: var(--color-off-white);
+          border: 1px solid var(--color-light-gray);
+          font-family: var(--font-label);
+          font-size: 0.7rem;
+          font-weight: 500;
+          color: var(--color-mid-gray);
+        }
+        .careers-job-meta i {
+          font-size: 0.7rem;
+          color: var(--color-gold);
+        }
+        .careers-job-meta--success {
+          background: rgba(26,127,90,0.1);
+          border-color: rgba(26,127,90,0.2);
+          color: var(--color-success);
+        }
+        .careers-job-meta--warning {
+          background: rgba(200,117,0,0.1);
+          border-color: rgba(200,117,0,0.2);
+          color: var(--color-warning);
+        }
+        .careers-job-card__action {
+          flex-shrink: 0;
+        }
+        @media (max-width: 768px) {
+          .careers-job-card__content {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .careers-job-card__action {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+
+        /* Perks Section */
+        .careers-perks {
+          margin-top: 4rem;
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          padding: 2.5rem;
+        }
+        .careers-perks-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+          margin-top: 2rem;
+        }
+        .careers-perk-card {
+          text-align: center;
+          padding: 1rem;
+        }
+        .careers-perk-icon {
+          width: 64px;
+          height: 64px;
+          background: var(--color-off-white);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 1rem;
+        }
+        .careers-perk-icon i {
+          font-size: 1.6rem;
+          color: var(--color-gold);
+        }
+        .careers-perk-title {
+          font-family: var(--font-heading);
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--color-navy);
+          margin-bottom: 0.5rem;
+        }
+        .careers-perk-desc {
+          font-size: 0.85rem;
+          line-height: 1.6;
+          color: var(--color-mid-gray);
+          margin: 0;
+        }
+        @media (max-width: 900px) {
+          .careers-perks-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (max-width: 768px) {
+          .careers-perks {
+            padding: 1.5rem;
+          }
+          .careers-perks-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+        }
+
+        /* CTA Section */
+        .careers-cta {
+          margin-top: 2rem;
+          text-align: center;
+          padding: 3rem;
+          background: var(--color-navy);
+          position: relative;
+          overflow: hidden;
+        }
+        .careers-cta::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: linear-gradient(rgba(201,153,46,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(201,153,46,0.04) 1px, transparent 1px);
+          background-size: 48px 48px;
+          pointer-events: none;
+        }
+        .careers-cta h3 {
+          color: var(--color-white);
+          margin-bottom: 0.5rem;
+          position: relative;
+          z-index: 1;
+        }
+        .careers-cta p {
+          color: rgba(255,255,255,0.6);
+          margin-bottom: 1.5rem;
+          position: relative;
+          z-index: 1;
+        }
+        .careers-cta-actions {
+          position: relative;
+          z-index: 1;
+        }
+        @media (max-width: 768px) {
+          .careers-cta {
+            padding: 2rem;
+          }
+        }
+      `}</style>
     </>
   );
 }
 
 function JobCard({ job, featured }) {
-  const deptColor = DEPT_COLORS[job.department] || '#aaa';
-  
   return (
-    <div className={`card ${featured ? 'featured' : ''}`} style={{ 
-      marginBottom: '1rem',
-      border: featured ? '2px solid var(--gold)' : '1px solid var(--gray-100)',
-      background: featured ? 'var(--gold-pale)' : 'var(--white)',
-    }}>
-      <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-            <h4 style={{ margin: 0, color: 'var(--navy)', fontSize: '1rem' }}>{job.title}</h4>
+    <div className={`careers-job-card ${featured ? 'featured' : ''}`}>
+      <div className="careers-job-card__content">
+        <div className="careers-job-card__info">
+          <div className="careers-job-card__header">
+            <h4 className="careers-job-card__title">{job.title}</h4>
             {featured && (
-              <span className="badge badge-gold" style={{ fontSize: '0.65rem' }}>
-                <i className="bi bi-star-fill" /> FEATURED
+              <span className="badge-gold careers-job-card__featured">
+                <i className="bi bi-star-fill"></i> FEATURED
               </span>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span className="pill" style={{ 
-              background: `${deptColor}22`, 
-              borderColor: deptColor,
-              color: deptColor,
-              cursor: 'default'
-            }}>
-              <i className="bi bi-building" /> {job.department_display || job.department?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          <div className="careers-job-card__meta">
+            <span className="careers-job-meta">
+              <i className="bi bi-building"></i> {job.department_display || job.department?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </span>
-            <span className="pill" style={{ cursor: 'default' }}>
-              <i className="bi bi-geo-alt" /> {job.location_display || job.location?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            <span className="careers-job-meta">
+              <i className="bi bi-geo-alt"></i> {job.location_display || job.location?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </span>
-            <span className="pill" style={{ cursor: 'default' }}>
-              <i className="bi bi-briefcase" /> {job.job_type_display || job.job_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            <span className="careers-job-meta">
+              <i className="bi bi-briefcase"></i> {job.job_type_display || job.job_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </span>
             {job.salary_range && (
-              <span className="pill" style={{ background: 'var(--green-light)', borderColor: 'var(--green)', color: 'var(--green)', cursor: 'default' }}>
-                <i className="bi bi-cash" /> {job.salary_range}
+              <span className="careers-job-meta careers-job-meta--success">
+                <i className="bi bi-cash"></i> {job.salary_range}
               </span>
             )}
             {job.deadline && (
-              <span className="pill" style={{ background: 'var(--amber-light)', borderColor: 'var(--amber)', color: 'var(--amber)', cursor: 'default' }}>
-                <i className="bi bi-calendar" /> Deadline: {new Date(job.deadline).toLocaleDateString()}
+              <span className="careers-job-meta careers-job-meta--warning">
+                <i className="bi bi-calendar"></i> Deadline: {new Date(job.deadline).toLocaleDateString()}
               </span>
             )}
           </div>
         </div>
-        <Link to={`/careers/apply/${job.id}`} className="btn btn-navy btn-sm">
+        <Link to={`/careers/apply/${job.id}`} className="btn-primary-gov btn-sm careers-job-card__action">
           Apply Now <i className="bi bi-arrow-right"></i>
         </Link>
       </div>

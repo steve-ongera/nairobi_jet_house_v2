@@ -1,14 +1,35 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 
-const SERVICES = [
-  { icon: 'bi-airplane',          label: 'Private Jet Charter',  desc: 'Airport to airport, worldwide',        href: '/book-flight' },
-  { icon: 'bi-water',             label: 'Superyacht Charter',   desc: 'Mediterranean, Caribbean & beyond',    href: '/book-yacht' },
-  { icon: 'bi-file-earmark-text', label: 'Long-Term Leasing',    desc: 'Dedicated aircraft & yacht programs',  href: '/lease' },
-  { icon: 'bi-send',              label: 'Flight Inquiry',       desc: 'Explore options, no commitment',       href: '/book-flight' },
-  { icon: 'bi-boxes',             label: 'Air Cargo',            desc: 'Gold, minerals, pharma & freight',     href: '/air-cargo' },
-  { icon: 'bi-people',            label: 'Group Charter',        desc: 'Corporate, sports & incentives',       href: '/contact' },
+// Services dropdown data
+const SERVICES_DROPDOWN = [
+  { path: '/book-flight', label: 'Private Jet Charter', icon: 'bi-airplane', desc: 'Airport to airport, worldwide' },
+  { path: '/book-yacht',  label: 'Superyacht Charter',  icon: 'bi-water', desc: 'Mediterranean, Caribbean & beyond' },
+  { path: '/lease',       label: 'Long-Term Leasing',   icon: 'bi-file-earmark-text', desc: 'Dedicated aircraft & yacht programs' },
+  { path: '/air-cargo',   label: 'Air Cargo',           icon: 'bi-boxes', desc: 'Gold, minerals, pharma & freight' },
+  { path: '/contact',     label: 'Group Charter',       icon: 'bi-people', desc: 'Corporate, sports & incentives' },
+  { path: '/membership',  label: 'Membership',          icon: 'bi-star', desc: 'Exclusive jet house membership' },
+]
+
+// Subnavbar links (TOP BAR) - Priority order for responsive
+const SUBNAV_LINKS = [
+  { path: '/emergency', label: '24/7 Emergency Charter', icon: 'bi-exclamation-triangle', priority: 1 },
+  { path: '/corporate', label: 'Corporate Accounts',     icon: 'bi-briefcase', priority: 2 },
+  { path: '/membership', label: 'Jet House Membership',  icon: 'bi-gem', priority: 3 },
+  { path: '/safety',     label: 'Safety Standards',      icon: 'bi-shield-check', priority: 4 },
+]
+
+// Main nav links
+const NAV_LINKS = [
+  { path: '/',          label: 'Home',      icon: 'bi-house-door' },
+  { path: '/fleet',     label: 'Fleet',     icon: 'bi-grid-3x3' },
+  { path: '/yachts',    label: 'Yachts',    icon: 'bi-water' },
+  { path: '/services',  label: 'Services',  icon: 'bi-grid-1x2' },
+  { path: '/book-flight', label: 'Charter',   icon: 'bi-airplane' },
+  { path: '/lease',     label: 'Leasing',   icon: 'bi-file-earmark-text' },
+  { path: '/air-cargo', label: 'Air Cargo', icon: 'bi-boxes' },
+  { path: '/contact',   label: 'Contact',   icon: 'bi-envelope' },
 ]
 
 const PORTAL_MAP = {
@@ -19,364 +40,388 @@ const PORTAL_MAP = {
   operator: '/operator',
 }
 
-export default function PublicNavbar({ dark = false }) {
-  const { user, logout }        = useAuth()
-  const navigate                = useNavigate()
+export default function PublicNavbar() {
+  const { user, logout } = useAuth()
   const [scrolled, setScrolled] = useState(false)
-  const [drawerOpen, setDrawer] = useState(false)
-  const [servOpen, setServ]     = useState(false)
-  const [userOpen, setUser]     = useState(false)
-  const servRef = useRef(null)
-  const userRef = useRef(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [servicesOpen, setServicesOpen] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024)
+  const { pathname } = useLocation()
+  const servicesRef = useRef(null)
 
+  // Close drawer on route change
+  useEffect(() => setDrawerOpen(false), [pathname])
+
+  // Close dropdown on route change
+  useEffect(() => setServicesOpen(false), [pathname])
+
+  // Scroll detection
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
+    const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Window resize detection for responsive subnavbar
   useEffect(() => {
-    const handler = (e) => {
-      if (servRef.current && !servRef.current.contains(e.target)) setServ(false)
-      if (userRef.current && !userRef.current.contains(e.target)) setUser(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Lock body scroll when drawer open
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [drawerOpen])
 
-  const handleLogout = () => { logout(); navigate('/'); setDrawer(false) }
+  // Click outside for services dropdown
+  useEffect(() => {
+    const handler = (e) => {
+      if (servicesRef.current && !servicesRef.current.contains(e.target)) {
+        setServicesOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
-  const navbarClass = `navbar${scrolled ? ' scrolled' : ''}${dark && !scrolled ? ' navbar-dark-mode' : ''}`
+  // ESC key closes drawer and dropdown
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      setDrawerOpen(false)
+      setServicesOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
+  const handleLogout = () => {
+    logout()
+    setDrawerOpen(false)
+  }
+
+  const openDrawer = () => setDrawerOpen(true)
+  const closeDrawer = () => setDrawerOpen(false)
+
+  // Responsive subnavbar logic - show fewer items on smaller screens
+  const getVisibleSubnavLinks = () => {
+    if (windowWidth >= 1024) return SUBNAV_LINKS // Show all on desktop
+    if (windowWidth >= 768) return SUBNAV_LINKS.slice(0, 3) // Show first 3 on tablet
+    if (windowWidth >= 480) return SUBNAV_LINKS.slice(0, 2) // Show first 2 on mobile
+    return SUBNAV_LINKS.slice(0, 1) // Show only 1 on very small screens
+  }
+
+  const visibleSubnavLinks = getVisibleSubnavLinks()
 
   return (
     <>
-      <style>{`
-        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-           Google Fonts - Playfair Display + DM Sans + DM Mono
-           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+      {/* ── SUBNAVBAR (TOP BAR - ABOVE MAIN NAVBAR) ── */}
+      <div className="subnavbar-gov">
+        <div className="subnavbar-container">
+          {visibleSubnavLinks.map(({ path, label, icon }) => (
+            <Link key={path} to={path} className="subnavbar-link">
+              <i className={`bi ${icon}`}></i>
+              <span className="subnavbar-label">{label}</span>
+            </Link>
+          ))}
+          <a href="tel:+254700000000" className="subnavbar-phone">
+            <i className="bi bi-telephone-fill"></i>
+            <span className="subnavbar-phone-text">+254 700 000 000</span>
+          </a>
+        </div>
+      </div>
 
-        /* Override root variables for new fonts */
-        :root {
-          --font-display: 'Playfair Display', Georgia, serif;
-          --font-body: 'DM Sans', system-ui, sans-serif;
-          --font-mono: 'DM Mono', monospace;
-        }
+      {/* ── MAIN NAVBAR ── */}
+      <nav className={`navbar-gov${scrolled ? ' scrolled' : ''}`} role="navigation" aria-label="Main navigation">
+        <div className="nav-container">
 
-        /* Apply body font */
-        body {
-          font-family: var(--font-body);
-        }
-
-        /* Headings use Playfair Display */
-        h1, h2, h3, h4, h5, h6,
-        .navbar-logo, .navbar-logo-wordmark,
-        .drawer-logo, .sidebar-logo-text {
-          font-family: var(--font-display);
-        }
-
-        /* Monospace elements */
-        code, pre, .mono, .ref-value, .td-ref {
-          font-family: var(--font-mono);
-        }
-
-        .navbar-dark-mode {
-          background: rgba(11,29,58,0.15) !important;
-          border-bottom-color: rgba(255,255,255,0.1) !important;
-          backdrop-filter: blur(12px);
-        }
-        .navbar-dark-mode .navbar-links a,
-        .navbar-dark-mode .dropdown-toggle { color: rgba(255,255,255,0.92) !important; }
-        .navbar-dark-mode .navbar-links a:hover,
-        .navbar-dark-mode .dropdown-toggle:hover { background: transparent !important; color: inherit !important; }
-        .navbar-dark-mode .sign-in-btn { border-color: rgba(255,255,255,0.5) !important; color: #fff !important; }
-        .navbar-dark-mode .sign-in-btn:hover { background: rgba(255,255,255,0.15) !important; }
-        .navbar-dark-mode .navbar-cta-btn { background: var(--gold) !important; color: var(--navy) !important; }
-        .navbar-dark-mode .navbar-toggle { color: #fff !important; }
-        .navbar-dark-mode .navbar-logo-wordmark { color: rgba(255,255,255,0.88) !important; }
-        .navbar-dark-mode .navbar-logo-divider  { color: rgba(255,255,255,0.4) !important; }
-
-        /* Nav links — no hover background, underline active only */
-        .navbar-links a {
-          background: transparent !important;
-          text-decoration: none !important;
-        }
-        .navbar-links a:hover {
-          background: transparent !important;
-          text-decoration: none !important;
-        }
-        .navbar-links a.active {
-          text-decoration: underline !important;
-          text-underline-offset: 4px !important;
-          text-decoration-thickness: 2px !important;
-          background: transparent !important;
-        }
-
-        /* Logo lockup */
-        .navbar-logo {
-          display: flex;
-          align-items: center;
-          gap: 0.55rem;
-          text-decoration: none !important;
-        }
-        .navbar-logo-wordmark {
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          font-size: 0.95rem;
-          color: var(--navy);
-          letter-spacing: 0.01em;
-        }
-        .navbar-logo-divider {
-          color: var(--gray-400, #aaa);
-          font-weight: 300;
-          font-size: 1rem;
-          line-height: 1;
-        }
-        .navbar-logo-name {
-          font-weight: 700;
-          white-space: nowrap;
-        }
-
-        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-           Responsive: Hide text on small screens - show only logo
-           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-        @media (max-width: 768px) {
-          .navbar-logo-wordmark {
-            display: none !important;
-          }
-          .sign-in-btn {
-            display: none !important;
-          }
-        }
-
-        /* Drawer sign in button styling */
-        .drawer-sign-in-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.65rem;
-          width: 100%;
-          padding: 0.75rem 1rem;
-          background: var(--navy);
-          color: var(--white);
-          border: none;
-          border-radius: var(--r);
-          font-family: var(--font-body);
-          font-size: 0.9rem;
-          font-weight: 600;
-          text-decoration: none;
-          transition: var(--t);
-          margin-top: 0.5rem;
-        }
-        .drawer-sign-in-btn:hover {
-          background: var(--navy-mid);
-          transform: translateY(-1px);
-        }
-        .drawer-sign-in-btn i {
-          font-size: 1rem;
-        }
-      `}</style>
-
-      <nav className={navbarClass}>
-        <div className="navbar-inner">
-
-          {/* Logo - text hidden on mobile */}
-          <Link to="/" className="navbar-logo">
-            <img
-              src="/nairobijethouse.png"
-              alt="Nairobi Jet House"
-              style={{ height: '2.24em', width: 'auto', display: 'block' }}
-            />
-            <span className="navbar-logo-wordmark">
-              <span className="navbar-logo-divider">|</span>
-              <span className="navbar-logo-name">Nairobi Jet House</span>
-            </span>
+          {/* Logo - Always shows icon AND text on all screen sizes */}
+          <Link to="/" className="nav-logo" aria-label="Nairobi Jet House — Home">
+            <div className="logo-icon" aria-hidden="true">
+              <img src="/nairobijethouse.png" alt="Nairobi Jet House logo" className="logo-img" />
+            </div>
+            <div className="logo-text">
+              <span className="logo-main">Nairobi</span>
+              <span className="logo-sub">Jet House</span>
+            </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <ul className="navbar-links">
-            <li><NavLink to="/" end>Home</NavLink></li>
-            <li><NavLink to="/fleet">Fleet</NavLink></li>
-            <li><NavLink to="/yachts">Yachts</NavLink></li>
-
-            {/* Services dropdown */}
-            <li ref={servRef} className="dropdown">
-              <button className={`dropdown-toggle${servOpen ? ' open' : ''}`} onClick={() => setServ(s => !s)}>
-                Services <i className={`bi bi-chevron-${servOpen ? 'up' : 'down'}`} />
-              </button>
-              {servOpen && (
-                <div className="dropdown-menu services-menu">
-                  <div className="dropdown-header">Our Services</div>
-                  <div className="services-grid">
-                    {SERVICES.map(s => (
-                      <Link key={s.label} to={s.href} className="service-item" onClick={() => setServ(false)}>
-                        <div className="service-icon"><i className={`bi ${s.icon}`} /></div>
-                        <div className="service-info">
-                          <div className="service-label">{s.label}</div>
-                          <div className="service-desc">{s.desc}</div>
+          {/* Desktop Nav Links */}
+          <ul className="nav-links" role="list">
+            {NAV_LINKS.map(({ path, label }) => {
+              // Special handling for Services dropdown
+              if (label === 'Services') {
+                return (
+                  <li key={label} ref={servicesRef} style={{ position: 'relative' }}>
+                    <button
+                      className={`nav-link-item${servicesOpen ? ' active' : ''}`}
+                      onClick={() => setServicesOpen(!servicesOpen)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem'
+                      }}
+                    >
+                      {label}
+                      <i className={`bi bi-chevron-${servicesOpen ? 'up' : 'down'}`} style={{ fontSize: '0.7rem' }}></i>
+                    </button>
+                    
+                    {servicesOpen && (
+                      <div className="services-dropdown">
+                        <div className="dropdown-header">
+                          <div className="dropdown-header-title">Our Services</div>
+                          <div className="dropdown-header-desc">Luxury travel solutions tailored to you</div>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                  <div className="dropdown-footer">
-                    <Link to="/track" className="track-link" onClick={() => setServ(false)}>
-                      <i className="bi bi-search" /> Track a booking
-                    </Link>
-                    <Link to="/membership" className="track-link" onClick={() => setServ(false)}>
-                      <i className="bi bi-star" /> Membership
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </li>
-
-            <li><NavLink to="/book-flight">Private Charter</NavLink></li>
-            <li><NavLink to="/lease">Leasing</NavLink></li>
-            <li><NavLink to="/air-cargo">Air Cargo</NavLink></li>
-            <li><NavLink to="/contact">Contact</NavLink></li>
+                        <div className="dropdown-grid">
+                          {SERVICES_DROPDOWN.map((service) => (
+                            <Link
+                              key={service.path}
+                              to={service.path}
+                              className="dropdown-item"
+                              onClick={() => setServicesOpen(false)}
+                            >
+                              <div className="dropdown-item-icon">
+                                <i className={`bi ${service.icon}`}></i>
+                              </div>
+                              <div className="dropdown-item-content">
+                                <div className="dropdown-item-label">{service.label}</div>
+                                <div className="dropdown-item-desc">{service.desc}</div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="dropdown-footer">
+                          <Link to="/track" className="dropdown-footer-link" onClick={() => setServicesOpen(false)}>
+                            <i className="bi bi-search"></i> Track a booking
+                          </Link>
+                          <Link to="/membership" className="dropdown-footer-link" onClick={() => setServicesOpen(false)}>
+                            <i className="bi bi-star"></i> Membership program
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                )
+              }
+              
+              // Regular nav links
+              return (
+                <li key={path}>
+                  <NavLink
+                    to={path}
+                    className={({ isActive }) => `nav-link-item${isActive ? ' active' : ''}`}
+                    end={path === '/'}
+                  >
+                    {label}
+                  </NavLink>
+                </li>
+              )
+            })}
           </ul>
 
-          {/* Right side - Sign In hidden on mobile, appears in drawer */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {user ? (
-              <div ref={userRef} className="dropdown">
-                <button className={`user-menu-btn${userOpen ? ' open' : ''}`} onClick={() => setUser(u => !u)}>
-                  <i className="bi bi-person-circle" />
-                  <span className="user-name">{user.first_name || user.username}</span>
-                  <i className={`bi bi-chevron-${userOpen ? 'up' : 'down'}`} style={{ fontSize: '0.6rem' }} />
-                </button>
-                {userOpen && (
-                  <div className="dropdown-menu user-menu">
-                    <div className="user-info">
-                      <div className="user-name-full">{user.first_name} {user.last_name}</div>
-                      <div className="user-email">{user.email}</div>
-                      <span className="user-role-badge">{user.role}</span>
-                    </div>
-                    <div className="user-menu-links">
-                      {PORTAL_MAP[user.role] && (
-                        <Link to={PORTAL_MAP[user.role]} className="user-menu-link" onClick={() => setUser(false)}>
-                          <i className="bi bi-grid-1x2" /> My Portal
-                        </Link>
-                      )}
-                      <Link to="/track" className="user-menu-link" onClick={() => setUser(false)}>
-                        <i className="bi bi-search" /> Track Booking
-                      </Link>
-                    </div>
-                    <button className="logout-btn" onClick={handleLogout}>
-                      <i className="bi bi-box-arrow-right" /> Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <Link to="/login" className="sign-in-btn">Sign In</Link>
-                <Link to="/book-flight" className="btn btn-gold btn-sm navbar-cta-btn">
-                  <i className="bi bi-airplane" /> Request Quote
-                </Link>
-              </>
-            )}
-            <button className="navbar-toggle" onClick={() => setDrawer(true)} aria-label="Menu">
-              <i className="bi bi-list" />
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* ── Mobile Drawer ── */}
-      <div className={`drawer-overlay${drawerOpen ? ' open' : ''}`} onClick={() => setDrawer(false)} />
-      <div className={`drawer${drawerOpen ? ' open' : ''}`}>
-        <div className="drawer-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <img src="/nairobijethouse.png" alt="Nairobi Jet House" style={{ height: '1.8rem', width: 'auto', display: 'block' }} />
-            <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--navy)', fontFamily: "var(--font-display)" }}>Nairobi Jet House</span>
-          </div>
-          <button className="drawer-close" onClick={() => setDrawer(false)}>
-            <i className="bi bi-x-lg" />
-          </button>
-        </div>
-
-        <nav className="drawer-nav">
-          <div className="drawer-section-label">Book</div>
-          {[
-            ['/',            'bi-house',     'Home'],
-            ['/book-flight', 'bi-airplane',  'Request Quote'],
-            ['/book-yacht',  'bi-water',     'Charter a Yacht'],
-            ['/fleet',       'bi-grid-3x3',  'Browse Fleet'],
-            ['/yachts',      'bi-grid-3x3',  'Browse Yachts'],
-            ['/track',       'bi-search',    'Track Booking'],
-          ].map(([to, icon, label]) => (
-            <Link key={to} to={to} className="drawer-link" onClick={() => setDrawer(false)}>
-              <i className={`bi ${icon}`} />{label}
-            </Link>
-          ))}
-
-          <div className="drawer-divider" />
-          <div className="drawer-section-label">Explore</div>
-          {[
-            ['/services',    'bi-grid',              'Services'],
-            ['/membership',  'bi-star',              'Membership'],
-            ['/book-flight', 'bi-airplane',          'Request Quote'],
-            ['/lease',       'bi-file-earmark-text', 'Leasing'],
-            ['/air-cargo',   'bi-boxes',             'Air Cargo'],
-            ['/contact',     'bi-envelope',          'Contact'],
-          ].map(([to, icon, label]) => (
-            <Link key={to + label} to={to} className="drawer-link" onClick={() => setDrawer(false)}>
-              <i className={`bi ${icon}`} />{label}
-            </Link>
-          ))}
-
-          {/* Sign In button in drawer for mobile users - only shows when not logged in */}
-          {!user && (
+          {/* Sign In / User Menu (desktop) */}
+          {user ? (
             <>
-              <div className="drawer-divider" />
-              <div className="drawer-section-label">Account</div>
-              <Link to="/login" className="drawer-sign-in-btn" onClick={() => setDrawer(false)}>
-                <i className="bi bi-box-arrow-in-right" /> Sign In
+              <button className="nav-lang" aria-label="My Account" title="My Account">
+                <i className="bi bi-person-circle"></i>
+                <span className="nav-lang-text">{user.first_name || user.username}</span>
+              </button>
+              {PORTAL_MAP[user.role] && (
+                <Link to={PORTAL_MAP[user.role]} className="nav-lang">
+                  <i className="bi bi-grid-1x2"></i>
+                  <span className="nav-lang-text">Portal</span>
+                </Link>
+              )}
+              <button onClick={handleLogout} className="nav-lang" aria-label="Sign Out">
+                <i className="bi bi-box-arrow-right"></i>
+                <span className="nav-lang-text">Sign Out</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="nav-lang" aria-label="Sign In">
+                <i className="bi bi-box-arrow-in-right"></i>
+                <span className="nav-lang-text">Sign In</span>
               </Link>
-              <Link to="/register" className="drawer-link" onClick={() => setDrawer(false)}>
-                <i className="bi bi-person-plus" /> Create Account
+              <Link to="/book-flight" className="nav-cta">
+                <i className="bi bi-airplane" aria-hidden="true"></i>
+                <span className="nav-cta-text">Request Quote</span>
               </Link>
             </>
           )}
 
-          {user && (
+          {/* Hamburger (mobile) */}
+          <button
+            className="hamburger"
+            onClick={openDrawer}
+            aria-label="Open navigation menu"
+            aria-expanded={drawerOpen}
+            aria-controls="side-drawer"
+          >
+            <i className="bi bi-list" aria-hidden="true"></i>
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Side Drawer (mobile) ── */}
+      <div
+        className={`drawer-overlay${drawerOpen ? ' open' : ''}`}
+        onClick={closeDrawer}
+        aria-hidden="true"
+      />
+
+      <aside
+        id="side-drawer"
+        className={`side-drawer${drawerOpen ? ' open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        {/* Drawer header */}
+        <div className="drawer-header">
+          <Link to="/" className="drawer-logo" onClick={closeDrawer} aria-label="Home">
+            <div className="drawer-logo-icon">
+              <img src="/nairobijethouse.png" alt="Nairobi Jet House logo" className="logo-img" />
+            </div>
+            <div className="drawer-logo-text">
+              <span className="logo-main">Nairobi</span>
+              <span className="logo-sub">Jet House</span>
+            </div>
+          </Link>
+
+          <button
+            className="drawer-close"
+            onClick={closeDrawer}
+            aria-label="Close navigation menu"
+          >
+            <i className="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        {/* Drawer navigation */}
+        <nav className="drawer-nav" aria-label="Mobile navigation">
+          <span className="drawer-section-label">Navigation</span>
+
+          {NAV_LINKS.map(({ path, label, icon }) => {
+            // Special handling for Services dropdown in drawer
+            if (label === 'Services') {
+              return (
+                <div key={label}>
+                  <div className="drawer-link static">
+                    <i className={`bi ${icon}`} aria-hidden="true"></i>
+                    {label}
+                  </div>
+                  <div style={{ paddingLeft: '2rem' }}>
+                    {SERVICES_DROPDOWN.map((service) => (
+                      <NavLink
+                        key={service.path}
+                        to={service.path}
+                        className={({ isActive }) => `drawer-link${isActive ? ' active' : ''}`}
+                        onClick={closeDrawer}
+                      >
+                        <i className={`bi ${service.icon}`} aria-hidden="true"></i>
+                        {service.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            
+            // Regular nav links
+            return (
+              <NavLink
+                key={path}
+                to={path}
+                className={({ isActive }) => `drawer-link${isActive ? ' active' : ''}`}
+                end={path === '/'}
+                onClick={closeDrawer}
+              >
+                <i className={`bi ${icon}`} aria-hidden="true"></i>
+                {label}
+              </NavLink>
+            )
+          })}
+
+          <div className="drawer-divider" role="separator" />
+
+          <span className="drawer-section-label">Quick Links</span>
+
+          <NavLink to="/track" className="drawer-link" onClick={closeDrawer}>
+            <i className="bi bi-search" aria-hidden="true"></i>
+            Track Booking
+          </NavLink>
+
+          <NavLink to="/emergency" className="drawer-link" onClick={closeDrawer}>
+            <i className="bi bi-exclamation-triangle" aria-hidden="true"></i>
+            24/7 Emergency
+          </NavLink>
+
+          <div className="drawer-divider" role="separator" />
+
+          <span className="drawer-section-label">Account</span>
+
+          {!user ? (
             <>
-              <div className="drawer-divider" />
-              <div className="drawer-section-label">My Account</div>
+              <NavLink to="/login" className="drawer-link" onClick={closeDrawer}>
+                <i className="bi bi-box-arrow-in-right"></i>
+                Sign In
+              </NavLink>
+              <NavLink to="/register" className="drawer-link" onClick={closeDrawer}>
+                <i className="bi bi-person-plus"></i>
+                Create Account
+              </NavLink>
+            </>
+          ) : (
+            <>
+              <div className="drawer-link static" style={{ cursor: 'default' }}>
+                <i className="bi bi-person-circle"></i>
+                {user.first_name || user.username}
+              </div>
               {PORTAL_MAP[user.role] && (
-                <Link to={PORTAL_MAP[user.role]} className="drawer-link" onClick={() => setDrawer(false)}>
-                  <i className="bi bi-grid-1x2" /> My Portal
-                </Link>
+                <NavLink to={PORTAL_MAP[user.role]} className="drawer-link" onClick={closeDrawer}>
+                  <i className="bi bi-grid-1x2"></i>
+                  My Portal
+                </NavLink>
               )}
-              <button className="drawer-logout-btn" onClick={handleLogout}>
-                <i className="bi bi-box-arrow-right" /> Sign Out
+              <button className="drawer-link" onClick={handleLogout} style={{ width: '100%', textAlign: 'left' }}>
+                <i className="bi bi-box-arrow-right"></i>
+                Sign Out
               </button>
             </>
           )}
         </nav>
 
+        {/* Drawer footer */}
         <div className="drawer-footer">
-          {!user ? (
-            <>
-              <p className="drawer-footer-text">New to NairobiJetHouse?</p>
-              <Link to="/book-flight" className="btn btn-navy drawer-footer-btn" onClick={() => setDrawer(false)}>
-                <i className="bi bi-airplane" /> Request Quote
-              </Link>
-            </>
-          ) : (
-            <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)' }}>
-              Signed in as <strong style={{ color: 'var(--navy)' }}>{user.username}</strong>
-            </div>
-          )}
+          <Link to="/book-flight" className="drawer-cta" onClick={closeDrawer}>
+            <i className="bi bi-airplane" aria-hidden="true"></i>
+            Request a Quote
+          </Link>
+
+          <div className="drawer-contact-info">
+            <a href="mailto:info@nairobijethouse.co.ke" onClick={closeDrawer}>
+              <i className="bi bi-envelope-fill" aria-hidden="true"></i>
+              info@nairobijethouse.co.ke
+            </a>
+            <a href="tel:+254700000000" onClick={closeDrawer}>
+              <i className="bi bi-telephone-fill" aria-hidden="true"></i>
+              +254 700 000 000
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer" onClick={closeDrawer}>
+              <i className="bi bi-linkedin" aria-hidden="true"></i>
+              Follow us on LinkedIn
+            </a>
+          </div>
         </div>
-      </div>
+      </aside>
     </>
   )
 }

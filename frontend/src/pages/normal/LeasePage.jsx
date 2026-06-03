@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import PublicNavbar from '../../components/common/PublicNavbar';
 import PublicFooter from '../../components/common/PublicFooter';
 import { leaseAPI } from '../../services/api';
@@ -14,7 +15,7 @@ const ASSET_TYPES = [
   {
     value: 'yacht',
     label: 'Yacht',
-    icon: 'bi-tsunami',
+    icon: 'bi-water',
     desc: 'Sailing, motor, and superyacht lease arrangements',
   },
 ];
@@ -30,6 +31,39 @@ const BILLING_FREQUENCIES = [
   { value: 'monthly',   label: 'Monthly Payments' },
   { value: 'quarterly', label: 'Quarterly Payments' },
   { value: 'upfront',   label: 'Full Upfront' },
+];
+
+const LEASE_TYPES = [
+  {
+    name: 'Wet Lease',
+    tag: 'Aircraft + Crew',
+    desc: 'The operator provides the aircraft and full crew. Ideal for airlines, charter companies, or corporates that need turnkey operations.',
+  },
+  {
+    name: 'Dry Lease',
+    tag: 'Asset Only',
+    desc: 'You get the aircraft or yacht without crew or maintenance. Best for AOC holders and operators who bring their own team.',
+  },
+  {
+    name: 'ACMI',
+    tag: 'Full-Service',
+    desc: 'Aircraft, Crew, Maintenance & Insurance. The gold standard for commercial operators requiring a complete solution.',
+  },
+  {
+    name: 'Short-Term Charter Lease',
+    tag: '1 – 6 Months',
+    desc: 'Flexible short-term arrangements with no long-term commitment. Perfect for seasonal demand or project-based needs.',
+  },
+  {
+    name: 'Long-Term Lease',
+    tag: '2+ Years',
+    desc: 'Predictable cost structure with multi-year commitment. Typically includes preferred rates and dedicated asset allocation.',
+  },
+  {
+    name: 'Yacht Lease',
+    tag: 'Coastal & Ocean',
+    desc: 'From bareboat to fully crewed superyacht leases, covering the East African coast, Indian Ocean islands, and beyond.',
+  },
 ];
 
 const STEPS = ['Asset Type', 'Lease Terms', 'Your Details', 'Review'];
@@ -73,7 +107,6 @@ export default function LeasePage() {
     setSubmitting(true);
     setError('');
     try {
-      // Encode billing preference and budget into notes since LeaseInquiry model doesn't have those fields
       const billingNote = [
         form.billing_frequency && `Billing preference: ${form.billing_frequency}`,
         form.budget_monthly_usd && `Monthly budget: ~$${Number(form.budget_monthly_usd).toLocaleString()}`,
@@ -112,31 +145,34 @@ export default function LeasePage() {
     }
   };
 
-  // ── Success Screen ──────────────────────────────────────────────────────────
+  // Success Screen
   if (submitted) {
     return (
       <>
+        <Helmet>
+          <title>Lease Inquiry Submitted | NairobiJetHouse</title>
+          <meta name="robots" content="noindex" />
+        </Helmet>
         <PublicNavbar />
-        <section className="section" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
+        <section className="section-padding" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center' }}>
           <div className="container">
-            <div className="success-wrap">
-              <div className="success-icon">
+            <div className="lease-success">
+              <div className="lease-success__icon">
                 <i className="bi bi-check-lg"></i>
               </div>
-              <h2 style={{ marginBottom: '0.5rem' }}>Lease Inquiry Received</h2>
-              <p style={{ color: 'var(--gray-500)', marginBottom: '1.5rem' }}>
-                A dedicated lease consultant will reach out within{' '}
-                <strong>4 business hours</strong> with tailored options and indicative pricing.
+              <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>Lease Inquiry Received</h2>
+              <p style={{ color: 'var(--color-mid-gray)', marginBottom: '1.5rem' }}>
+                A dedicated lease consultant will reach out within <strong>4 business hours</strong> with tailored options and indicative pricing.
               </p>
-              <div className="ref-box">
-                <div className="ref-label">Reference Number</div>
-                <div className="ref-value">{String(reference).slice(0, 8).toUpperCase()}</div>
+              <div className="lease-success__ref">
+                <div className="lease-success__ref-label">Reference Number</div>
+                <div className="lease-success__ref-value">{String(reference).slice(0, 8).toUpperCase()}</div>
               </div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link to="/fleet" className="btn btn-navy">
+              <div className="lease-success__actions">
+                <Link to="/fleet" className="btn-primary-gov">
                   <i className="bi bi-collection"></i> Browse Fleet
                 </Link>
-                <Link to="/" className="btn btn-outline-navy">
+                <Link to="/" className="btn-outline-gov">
                   <i className="bi bi-house"></i> Return Home
                 </Link>
               </div>
@@ -144,80 +180,129 @@ export default function LeasePage() {
           </div>
         </section>
         <PublicFooter />
+
+        <style>{`
+          .lease-success {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+          }
+          .lease-success__icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(26,127,90,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+          }
+          .lease-success__icon i {
+            font-size: 2.5rem;
+            color: var(--color-success);
+          }
+          .lease-success__ref {
+            background: var(--color-off-white);
+            border: 1px solid var(--color-light-gray);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 2rem;
+          }
+          .lease-success__ref-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--color-gold);
+            margin-bottom: 0.25rem;
+          }
+          .lease-success__ref-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-navy);
+          }
+          .lease-success__actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          @media (max-width: 480px) {
+            .lease-success__actions {
+              flex-direction: column;
+            }
+            .lease-success__actions a {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+        `}</style>
       </>
     );
   }
 
-  // ── Main Page ───────────────────────────────────────────────────────────────
+  // Main Page
   return (
     <>
+      <Helmet>
+        <title>Asset Leasing | NairobiJetHouse - Aircraft & Yacht Leasing</title>
+        <meta name="description" content="Short-term to multi-year lease arrangements for business jets, turboprops, helicopters, and luxury yachts. Flexible structures tailored to your operations." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://www.nairobijethouse.com/lease" />
+      </Helmet>
+
       <PublicNavbar />
 
-      {/* Hero */}
-      <section className="page-hero">
+      {/* Page Header */}
+      <div className="page-header">
         <div className="container">
-          <div className="eyebrow">Asset Leasing</div>
-          <h1>Lease. <em style={{ color: 'var(--gold-light)' }}>Fly.</em> Sail.</h1>
-          <p style={{ maxWidth: 560, marginTop: '0.5rem' }}>
-            Short-term to multi-year lease arrangements for business jets, turboprops,
-            helicopters, and luxury yachts — flexible structures tailored to your operations.
-          </p>
+          <span className="section-label">Asset Leasing</span>
+          <h1>Lease. <em style={{ color: 'var(--color-gold-light)' }}>Fly.</em> Sail.</h1>
+          <p>Short-term to multi-year lease arrangements for business jets, turboprops, helicopters, and luxury yachts — flexible structures tailored to your operations.</p>
         </div>
-      </section>
+      </div>
 
-      {/* Step Trail + Form */}
-      <section className="section" style={{ background: 'var(--off-white)' }}>
+      {/* Form Section */}
+      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container" style={{ maxWidth: 820 }}>
 
           {/* Step Progress */}
-          <div className="step-trail" style={{ marginBottom: '2rem' }}>
+          <div className="lease-steps">
             {STEPS.map((s, i) => (
-              <div key={i} className={`trail-item ${i === step ? 'active' : i < step ? 'done' : ''}`}>
-                <div className="trail-dot">
+              <div key={i} className={`lease-step ${i === step ? 'active' : i < step ? 'done' : ''}`}>
+                <div className="lease-step__dot">
                   {i < step ? <i className="bi bi-check"></i> : i + 1}
                 </div>
-                <span>{s}</span>
-                {i < STEPS.length - 1 && <div className="trail-line" />}
+                <span className="lease-step__label">{s}</span>
+                {i < STEPS.length - 1 && <div className="lease-step__line" />}
               </div>
             ))}
           </div>
 
-          {/* Error Banner */}
+          {/* Error Alert */}
           {error && (
-            <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>
+            <div className="alert-error" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <i className="bi bi-exclamation-triangle"></i>
               <span>{error}</span>
             </div>
           )}
 
-          {/* ── Step 0: Asset Type ── */}
+          {/* Step 0: Asset Type */}
           {step === 0 && (
             <>
-              <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-                <div className="detail-card-header">
-                  <div className="detail-card-title">
-                    <i className="bi bi-collection"></i> Asset Type
-                  </div>
+              <div className="lease-card">
+                <div className="lease-card__header">
+                  <i className="bi bi-collection"></i> Asset Type
                 </div>
-                <div className="detail-card-body">
+                <div className="lease-card__body">
                   <div className="form-group">
-                    <label className="form-label">What would you like to lease? <span className="req">*</span></label>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                    <label className="form-label-gov">What would you like to lease? <span className="required">*</span></label>
+                    <div className="lease-asset-types">
                       {ASSET_TYPES.map(a => (
                         <label
                           key={a.value}
-                          style={{
-                            flex: '1 1 220px',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '0.6rem',
-                            padding: '0.75rem 1rem',
-                            border: `1.5px solid ${form.asset_type === a.value ? 'var(--navy)' : 'var(--gray-200, #e5e7eb)'}`,
-                            borderRadius: '0.5rem',
-                            background: form.asset_type === a.value ? 'var(--navy-50, #f0f4ff)' : 'var(--white, #fff)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                          }}
+                          className={`lease-asset-option ${form.asset_type === a.value ? 'selected' : ''}`}
                         >
                           <input
                             type="radio"
@@ -225,14 +310,13 @@ export default function LeasePage() {
                             value={a.value}
                             checked={form.asset_type === a.value}
                             onChange={() => update('asset_type', a.value)}
-                            style={{ marginTop: '0.2rem', accentColor: 'var(--navy)' }}
                           />
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--navy)' }}>
-                              <i className={`bi ${a.icon}`} style={{ marginRight: '0.35rem' }}></i>
+                            <div className="lease-asset-option__title">
+                              <i className={`bi ${a.icon}`}></i>
                               {a.label}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{a.desc}</div>
+                            <div className="lease-asset-option__desc">{a.desc}</div>
                           </div>
                         </label>
                       ))}
@@ -242,33 +326,26 @@ export default function LeasePage() {
               </div>
 
               {form.asset_type && (
-                <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-                  <div className="detail-card-header">
-                    <div className="detail-card-title">
-                      <i className="bi bi-sliders"></i>{' '}
-                      {form.asset_type === 'aircraft' ? 'Aircraft' : 'Yacht'} Preferences{' '}
-                      <span style={{ fontWeight: 400, color: 'var(--gray-400)', fontSize: '0.8rem' }}>(optional)</span>
-                    </div>
+                <div className="lease-card">
+                  <div className="lease-card__header">
+                    <i className="bi bi-sliders"></i> {form.asset_type === 'aircraft' ? 'Aircraft' : 'Yacht'} Preferences
+                    <span className="lease-card__optional">(optional)</span>
                   </div>
-                  <div className="detail-card-body">
-                    <div className="form-grid">
+                  <div className="lease-card__body">
+                    <div className="form-row">
                       <div className="form-group">
-                        <label className="form-label">
-                          {form.asset_type === 'aircraft' ? 'Aircraft Type / Model' : 'Yacht Type / Model'}
-                        </label>
+                        <label className="form-label-gov">{form.asset_type === 'aircraft' ? 'Aircraft Type / Model' : 'Yacht Type / Model'}</label>
                         <input
-                          className="form-control"
+                          className="form-input-gov"
                           placeholder={form.asset_type === 'aircraft' ? 'e.g. Gulfstream G550, King Air…' : 'e.g. Sailing yacht, Sunseeker…'}
                           value={form.preferred_asset_name}
                           onChange={e => update('preferred_asset_name', e.target.value)}
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">
-                          {form.asset_type === 'aircraft' ? 'Category' : 'Size'}
-                        </label>
+                        <label className="form-label-gov">{form.asset_type === 'aircraft' ? 'Category' : 'Size'}</label>
                         <input
-                          className="form-control"
+                          className="form-input-gov"
                           placeholder={form.asset_type === 'aircraft' ? 'e.g. Heavy jet, Turboprop…' : 'e.g. 30m, Superyacht…'}
                           value={form.preferred_category}
                           onChange={e => update('preferred_category', e.target.value)}
@@ -276,9 +353,9 @@ export default function LeasePage() {
                       </div>
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Preferred Base / Home Port</label>
+                      <label className="form-label-gov">Preferred Base / Home Port</label>
                       <input
-                        className="form-control"
+                        className="form-input-gov"
                         placeholder={form.asset_type === 'aircraft' ? 'e.g. Nairobi JKIA, Mombasa…' : 'e.g. Mombasa, Zanzibar, Seychelles…'}
                         value={form.preferred_location}
                         onChange={e => update('preferred_location', e.target.value)}
@@ -290,34 +367,21 @@ export default function LeasePage() {
             </>
           )}
 
-          {/* ── Step 1: Lease Terms ── */}
+          {/* Step 1: Lease Terms */}
           {step === 1 && (
             <>
-              <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-                <div className="detail-card-header">
-                  <div className="detail-card-title">
-                    <i className="bi bi-file-earmark-text"></i> Lease Structure
-                  </div>
+              <div className="lease-card">
+                <div className="lease-card__header">
+                  <i className="bi bi-file-earmark-text"></i> Lease Structure
                 </div>
-                <div className="detail-card-body">
+                <div className="lease-card__body">
                   <div className="form-group">
-                    <label className="form-label">Lease Type <span className="req">*</span></label>
-                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                    <label className="form-label-gov">Lease Type <span className="required">*</span></label>
+                    <div className="lease-duration-grid">
                       {LEASE_DURATIONS.map(ld => (
                         <label
                           key={ld.value}
-                          style={{
-                            flex: '1 1 150px',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '0.6rem',
-                            padding: '0.65rem 0.85rem',
-                            border: `1.5px solid ${form.lease_duration === ld.value ? 'var(--navy)' : 'var(--gray-200, #e5e7eb)'}`,
-                            borderRadius: '0.5rem',
-                            background: form.lease_duration === ld.value ? 'var(--navy-50, #f0f4ff)' : 'var(--white, #fff)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                          }}
+                          className={`lease-duration-option ${form.lease_duration === ld.value ? 'selected' : ''}`}
                         >
                           <input
                             type="radio"
@@ -325,11 +389,10 @@ export default function LeasePage() {
                             value={ld.value}
                             checked={form.lease_duration === ld.value}
                             onChange={() => update('lease_duration', ld.value)}
-                            style={{ marginTop: '0.2rem', accentColor: 'var(--navy)' }}
                           />
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--navy)' }}>{ld.label}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{ld.sub}</div>
+                            <div className="lease-duration-option__label">{ld.label}</div>
+                            <div className="lease-duration-option__sub">{ld.sub}</div>
                           </div>
                         </label>
                       ))}
@@ -338,32 +401,27 @@ export default function LeasePage() {
                 </div>
               </div>
 
-              <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-                <div className="detail-card-header">
-                  <div className="detail-card-title">
-                    <i className="bi bi-calendar3"></i> Timeline & Billing
-                  </div>
+              <div className="lease-card">
+                <div className="lease-card__header">
+                  <i className="bi bi-calendar3"></i> Timeline & Billing
                 </div>
-                <div className="detail-card-body">
-                  <div className="form-grid">
+                <div className="lease-card__body">
+                  <div className="form-row">
                     <div className="form-group">
-                      <label className="form-label">Desired Start Date <span className="req">*</span></label>
+                      <label className="form-label-gov">Desired Start Date <span className="required">*</span></label>
                       <input
                         type="date"
-                        className="form-control"
+                        className="form-input-gov"
                         min={new Date().toISOString().split('T')[0]}
                         value={form.lease_start_date}
                         onChange={e => update('lease_start_date', e.target.value)}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">
-                        End Date{' '}
-                        <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>optional</span>
-                      </label>
+                      <label className="form-label-gov">End Date <span className="optional">(optional)</span></label>
                       <input
                         type="date"
-                        className="form-control"
+                        className="form-input-gov"
                         min={form.lease_start_date || new Date().toISOString().split('T')[0]}
                         value={form.lease_end_date}
                         onChange={e => update('lease_end_date', e.target.value)}
@@ -371,66 +429,56 @@ export default function LeasePage() {
                     </div>
                   </div>
 
-                  <div className="form-group" style={{ marginTop: '0.5rem' }}>
-                    <label className="form-label">Billing Preference</label>
-                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  <div className="form-group">
+                    <label className="form-label-gov">Billing Preference</label>
+                    <div className="billing-options">
                       {BILLING_FREQUENCIES.map(b => (
-                        <label key={b.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <label key={b.value} className="checkbox-label">
                           <input
                             type="radio"
                             name="billing"
                             value={b.value}
                             checked={form.billing_frequency === b.value}
                             onChange={() => update('billing_frequency', b.value)}
-                            style={{ accentColor: 'var(--navy)' }}
                           />
-                          <span style={{ fontSize: '0.875rem' }}>{b.label}</span>
+                          <span>{b.label}</span>
                         </label>
                       ))}
                     </div>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">
-                      Indicative Monthly Budget (USD){' '}
-                      <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>optional</span>
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{
-                        position: 'absolute', left: '0.75rem', top: '50%',
-                        transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none',
-                      }}>$</span>
+                    <label className="form-label-gov">Indicative Monthly Budget (USD) <span className="optional">(optional)</span></label>
+                    <div className="budget-input">
+                      <span className="budget-currency">$</span>
                       <input
                         type="number"
-                        className="form-control"
+                        className="form-input-gov"
                         min="0"
                         placeholder="e.g. 50000"
                         value={form.budget_monthly_usd}
                         onChange={e => update('budget_monthly_usd', e.target.value)}
-                        style={{ paddingLeft: '1.75rem' }}
                       />
                     </div>
-                    <span className="form-hint">Helps us match you to the right assets. Not binding.</span>
+                    <div className="form-hint">Helps us match you to the right assets. Not binding.</div>
                   </div>
                 </div>
               </div>
             </>
           )}
 
-          {/* ── Step 2: Contact ── */}
+          {/* Step 2: Contact Details */}
           {step === 2 && (
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-person"></i> Your Details
-                </div>
+            <div className="lease-card">
+              <div className="lease-card__header">
+                <i className="bi bi-person"></i> Your Details
               </div>
-              <div className="detail-card-body">
-                <div className="form-grid">
+              <div className="lease-card__body">
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Full Name <span className="req">*</span></label>
+                    <label className="form-label-gov">Full Name <span className="required">*</span></label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       placeholder="Jane Mwangi"
                       value={form.guest_name}
                       onChange={e => update('guest_name', e.target.value)}
@@ -438,10 +486,10 @@ export default function LeasePage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Email Address <span className="req">*</span></label>
+                    <label className="form-label-gov">Email Address <span className="required">*</span></label>
                     <input
                       type="email"
-                      className="form-control"
+                      className="form-input-gov"
                       placeholder="jane@company.com"
                       value={form.guest_email}
                       onChange={e => update('guest_email', e.target.value)}
@@ -449,19 +497,19 @@ export default function LeasePage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Phone Number</label>
+                    <label className="form-label-gov">Phone Number</label>
                     <input
                       type="tel"
-                      className="form-control"
+                      className="form-input-gov"
                       placeholder="+254 7XX XXX XXX"
                       value={form.guest_phone}
                       onChange={e => update('guest_phone', e.target.value)}
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Company / Organisation</label>
+                    <label className="form-label-gov">Company / Organisation</label>
                     <input
-                      className="form-control"
+                      className="form-input-gov"
                       placeholder="Your company name"
                       value={form.company}
                       onChange={e => update('company', e.target.value)}
@@ -469,117 +517,126 @@ export default function LeasePage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Intended Use</label>
+                  <label className="form-label-gov">Intended Use</label>
                   <input
-                    className="form-control"
+                    className="form-input-gov"
                     placeholder="e.g. Corporate travel, charter operations, personal use…"
                     value={form.intended_use}
                     onChange={e => update('intended_use', e.target.value)}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Additional Notes</label>
+                  <label className="form-label-gov">Additional Notes</label>
                   <textarea
-                    className="form-control"
+                    className="form-input-gov"
                     rows={3}
                     placeholder="Any specific requirements, questions, or context for our team…"
                     value={form.additional_notes}
                     onChange={e => update('additional_notes', e.target.value)}
                   />
-                  <span className="form-hint">We'll do our best to accommodate all requirements</span>
+                  <div className="form-hint">We'll do our best to accommodate all requirements</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── Step 3: Review ── */}
+          {/* Step 3: Review & Submit */}
           {step === 3 && (
-            <div className="detail-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="detail-card-header">
-                <div className="detail-card-title">
-                  <i className="bi bi-clipboard-check"></i> Review & Submit
-                </div>
+            <div className="lease-card">
+              <div className="lease-card__header">
+                <i className="bi bi-clipboard-check"></i> Review & Submit
               </div>
-              <div className="detail-card-body">
-                <p style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-                  Please confirm your lease inquiry details below.
-                </p>
+              <div className="lease-card__body">
+                <p className="lease-review-intro">Please confirm your lease inquiry details below.</p>
 
-                {/* Asset */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{
-                    fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
-                    letterSpacing: '0.1em', color: 'var(--gold, #d4af37)', marginBottom: '0.5rem',
-                  }}>Asset</div>
-                  {[
-                    ['Type', form.asset_type === 'aircraft' ? '✈ Aircraft' : '⛵ Yacht'],
-                    form.preferred_asset_name && ['Model', form.preferred_asset_name],
-                    form.preferred_category && ['Category', form.preferred_category],
-                    form.preferred_location && ['Base', form.preferred_location],
-                  ].filter(Boolean).map(([label, val]) => (
-                    <div key={label} style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      padding: '0.4rem 0', borderBottom: '1px solid var(--gray-100, #f3f4f6)',
-                      fontSize: '0.875rem',
-                    }}>
-                      <span style={{ color: 'var(--gray-400)' }}>{label}</span>
-                      <strong style={{ color: 'var(--navy)' }}>{val}</strong>
+                {/* Asset Section */}
+                <div className="lease-review-section">
+                  <div className="lease-review-section__title">Asset</div>
+                  <div className="lease-review-items">
+                    <div className="lease-review-item">
+                      <span>Type</span>
+                      <strong>{form.asset_type === 'aircraft' ? '✈ Aircraft' : '⛵ Yacht'}</strong>
                     </div>
-                  ))}
+                    {form.preferred_asset_name && (
+                      <div className="lease-review-item">
+                        <span>Model</span>
+                        <strong>{form.preferred_asset_name}</strong>
+                      </div>
+                    )}
+                    {form.preferred_category && (
+                      <div className="lease-review-item">
+                        <span>Category</span>
+                        <strong>{form.preferred_category}</strong>
+                      </div>
+                    )}
+                    {form.preferred_location && (
+                      <div className="lease-review-item">
+                        <span>Base</span>
+                        <strong>{form.preferred_location}</strong>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Lease Terms */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{
-                    fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
-                    letterSpacing: '0.1em', color: 'var(--gold, #d4af37)', marginBottom: '0.5rem',
-                  }}>Lease Terms</div>
-                  {[
-                    ['Type', LEASE_DURATIONS.find(d => d.value === form.lease_duration)?.label],
-                    ['Start', form.lease_start_date],
-                    form.lease_end_date && ['End', form.lease_end_date],
-                    ['Billing', BILLING_FREQUENCIES.find(b => b.value === form.billing_frequency)?.label],
-                    form.budget_monthly_usd && ['Budget', `~$${Number(form.budget_monthly_usd).toLocaleString()}/mo`],
-                  ].filter(Boolean).map(([label, val]) => (
-                    <div key={label} style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      padding: '0.4rem 0', borderBottom: '1px solid var(--gray-100, #f3f4f6)',
-                      fontSize: '0.875rem',
-                    }}>
-                      <span style={{ color: 'var(--gray-400)' }}>{label}</span>
-                      <strong style={{ color: 'var(--navy)' }}>{val}</strong>
+                {/* Lease Terms Section */}
+                <div className="lease-review-section">
+                  <div className="lease-review-section__title">Lease Terms</div>
+                  <div className="lease-review-items">
+                    <div className="lease-review-item">
+                      <span>Type</span>
+                      <strong>{LEASE_DURATIONS.find(d => d.value === form.lease_duration)?.label}</strong>
                     </div>
-                  ))}
+                    <div className="lease-review-item">
+                      <span>Start</span>
+                      <strong>{form.lease_start_date}</strong>
+                    </div>
+                    {form.lease_end_date && (
+                      <div className="lease-review-item">
+                        <span>End</span>
+                        <strong>{form.lease_end_date}</strong>
+                      </div>
+                    )}
+                    <div className="lease-review-item">
+                      <span>Billing</span>
+                      <strong>{BILLING_FREQUENCIES.find(b => b.value === form.billing_frequency)?.label}</strong>
+                    </div>
+                    {form.budget_monthly_usd && (
+                      <div className="lease-review-item">
+                        <span>Budget</span>
+                        <strong>~${Number(form.budget_monthly_usd).toLocaleString()}/mo</strong>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Contact */}
-                <div>
-                  <div style={{
-                    fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
-                    letterSpacing: '0.1em', color: 'var(--gold, #d4af37)', marginBottom: '0.5rem',
-                  }}>Contact</div>
-                  {[
-                    ['Name', form.guest_name],
-                    ['Email', form.guest_email],
-                    form.guest_phone && ['Phone', form.guest_phone],
-                    form.company && ['Company', form.company],
-                  ].filter(Boolean).map(([label, val]) => (
-                    <div key={label} style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      padding: '0.4rem 0', borderBottom: '1px solid var(--gray-100, #f3f4f6)',
-                      fontSize: '0.875rem',
-                    }}>
-                      <span style={{ color: 'var(--gray-400)' }}>{label}</span>
-                      <strong style={{ color: 'var(--navy)' }}>{val}</strong>
+                {/* Contact Section */}
+                <div className="lease-review-section">
+                  <div className="lease-review-section__title">Contact</div>
+                  <div className="lease-review-items">
+                    <div className="lease-review-item">
+                      <span>Name</span>
+                      <strong>{form.guest_name}</strong>
                     </div>
-                  ))}
+                    <div className="lease-review-item">
+                      <span>Email</span>
+                      <strong>{form.guest_email}</strong>
+                    </div>
+                    {form.guest_phone && (
+                      <div className="lease-review-item">
+                        <span>Phone</span>
+                        <strong>{form.guest_phone}</strong>
+                      </div>
+                    )}
+                    {form.company && (
+                      <div className="lease-review-item">
+                        <span>Company</span>
+                        <strong>{form.company}</strong>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <p style={{
-                  marginTop: '1.25rem', fontSize: '0.75rem',
-                  color: 'var(--gray-400)', lineHeight: 1.6,
-                  paddingTop: '1rem', borderTop: '1px solid var(--gray-100, #f3f4f6)',
-                }}>
+                <p className="lease-review-disclaimer">
                   By submitting, you agree to be contacted by a NairobiJetHouse lease consultant.
                   No commitment is required at this stage.
                 </p>
@@ -587,14 +644,10 @@ export default function LeasePage() {
             </div>
           )}
 
-          {/* Navigation */}
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+          {/* Navigation Buttons */}
+          <div className="lease-navigation">
             {step > 0 && (
-              <button
-                type="button"
-                className="btn btn-outline-navy"
-                onClick={() => setStep(s => s - 1)}
-              >
+              <button type="button" className="btn-outline-gov" onClick={() => setStep(s => s - 1)}>
                 <i className="bi bi-arrow-left"></i> Back
               </button>
             )}
@@ -602,7 +655,7 @@ export default function LeasePage() {
             {step < STEPS.length - 1 ? (
               <button
                 type="button"
-                className="btn btn-navy btn-lg"
+                className="btn-primary-gov btn-lg"
                 onClick={() => setStep(s => s + 1)}
                 disabled={!stepValid()}
               >
@@ -611,14 +664,14 @@ export default function LeasePage() {
             ) : (
               <button
                 type="button"
-                className="btn btn-navy btn-lg"
+                className="btn-primary-gov btn-lg"
                 onClick={handleSubmit}
                 disabled={submitting}
               >
                 {submitting ? (
                   <>
-                    <span className="spinner" style={{ borderTopColor: 'white' }}></span>
-                    &nbsp; Submitting…
+                    <div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>
+                    &nbsp; Submitting...
                   </>
                 ) : (
                   <>
@@ -628,66 +681,27 @@ export default function LeasePage() {
               </button>
             )}
           </div>
-          <p className="text-center text-sm" style={{ marginTop: '1rem', color: 'var(--gray-400)' }}>
+          <p className="lease-security-note">
             <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 4 business hours.
           </p>
 
         </div>
       </section>
 
-      {/* Lease Types Info */}
-      <section className="section" style={{ background: 'var(--navy, #0d1117)' }}>
+      {/* Lease Types Info Section */}
+      <section className="lease-types-section">
         <div className="container">
-          <h2 style={{
-            fontFamily: 'Georgia, serif', fontSize: '2rem', fontWeight: 700,
-            color: '#fff', textAlign: 'center', marginBottom: '3rem',
-          }}>
-            Lease Structures We Offer
-          </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1.25rem',
-          }}>
-            {[
-              {
-                name: 'Wet Lease',      tag: 'Aircraft + Crew',
-                desc: 'The operator provides the aircraft and full crew. Ideal for airlines, charter companies, or corporates that need turnkey operations.',
-              },
-              {
-                name: 'Dry Lease',      tag: 'Asset Only',
-                desc: 'You get the aircraft or yacht without crew or maintenance. Best for AOC holders and operators who bring their own team.',
-              },
-              {
-                name: 'ACMI',           tag: 'Full-Service',
-                desc: 'Aircraft, Crew, Maintenance & Insurance. The gold standard for commercial operators requiring a complete solution.',
-              },
-              {
-                name: 'Short-Term Charter Lease', tag: '1 – 6 Months',
-                desc: 'Flexible short-term arrangements with no long-term commitment. Perfect for seasonal demand or project-based needs.',
-              },
-              {
-                name: 'Long-Term Lease', tag: '2+ Years',
-                desc: 'Predictable cost structure with multi-year commitment. Typically includes preferred rates and dedicated asset allocation.',
-              },
-              {
-                name: 'Yacht Lease',    tag: 'Coastal & Ocean',
-                desc: 'From bareboat to fully crewed superyacht leases, covering the East African coast, Indian Ocean islands, and beyond.',
-              },
-            ].map((lt, i) => (
-              <div key={i} style={{
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '0.75rem',
-                padding: '1.5rem',
-                background: 'rgba(255,255,255,0.03)',
-                transition: 'border-color 0.2s',
-              }}>
-                <div style={{
-                  fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase',
-                  letterSpacing: '0.12em', color: 'var(--gold, #d4af37)', marginBottom: '0.6rem',
-                }}>{lt.tag}</div>
-                <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.6rem' }}>{lt.name}</h4>
-                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.65, margin: 0 }}>{lt.desc}</p>
+          <div className="section-header centered">
+            <div className="section-label">Lease Structures</div>
+            <h2 className="section-title">We Offer <em style={{ color: 'var(--color-gold)' }}>Flexible</em> Lease Options</h2>
+            <div className="gold-divider center"></div>
+          </div>
+          <div className="lease-types-grid">
+            {LEASE_TYPES.map((lt, i) => (
+              <div key={i} className="lease-type-card">
+                <div className="lease-type-card__tag">{lt.tag}</div>
+                <h4 className="lease-type-card__title">{lt.name}</h4>
+                <p className="lease-type-card__desc">{lt.desc}</p>
               </div>
             ))}
           </div>
@@ -697,13 +711,14 @@ export default function LeasePage() {
       <PublicFooter />
 
       <style>{`
-        /* ── Step Trail ── */
-        .step-trail {
+        /* Lease Steps */
+        .lease-steps {
           display: flex;
           align-items: flex-start;
           justify-content: center;
+          margin-bottom: 2rem;
         }
-        .trail-item {
+        .lease-step {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -712,53 +727,339 @@ export default function LeasePage() {
           position: relative;
           max-width: 120px;
         }
-        .trail-dot {
+        .lease-step__dot {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          border: 2px solid #d1cec7;
-          background: #fff;
+          border: 2px solid var(--color-light-gray);
+          background: var(--color-white);
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 12px;
           font-weight: 700;
-          color: #bbb;
+          color: var(--color-mid-gray);
           position: relative;
           z-index: 1;
-          transition: all 0.2s;
-          flex-shrink: 0;
+          transition: all var(--transition-base);
         }
-        .trail-item.active .trail-dot {
-          border-color: var(--navy, #0d1117);
-          background: var(--navy, #0d1117);
-          color: var(--gold, #d4af37);
+        .lease-step.active .lease-step__dot {
+          border-color: var(--color-navy);
+          background: var(--color-navy);
+          color: var(--color-gold);
         }
-        .trail-item.done .trail-dot {
-          border-color: #2d6a4f;
-          background: #2d6a4f;
-          color: #fff;
+        .lease-step.done .lease-step__dot {
+          border-color: var(--color-success);
+          background: var(--color-success);
+          color: var(--color-white);
         }
-        .trail-item > span {
+        .lease-step__label {
           font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.07em;
-          color: #aaa;
+          color: var(--color-mid-gray);
           text-align: center;
         }
-        .trail-item.active > span { color: var(--navy, #0d1117); }
-        .trail-item.done > span   { color: #2d6a4f; }
-        .trail-line {
+        .lease-step.active .lease-step__label {
+          color: var(--color-navy);
+        }
+        .lease-step.done .lease-step__label {
+          color: var(--color-success);
+        }
+        .lease-step__line {
           position: absolute;
           top: 17px;
           left: calc(50% + 20px);
           right: calc(-50% + 20px);
           height: 2px;
-          background: #e0ddd8;
+          background: var(--color-light-gray);
           z-index: 0;
         }
-        .trail-item.done .trail-line { background: #2d6a4f; }
+        .lease-step.done .lease-step__line {
+          background: var(--color-success);
+        }
+
+        /* Lease Cards */
+        .lease-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-light-gray);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          margin-bottom: 1.5rem;
+        }
+        .lease-card__header {
+          background: var(--color-navy);
+          color: var(--color-white);
+          padding: 1rem 1.5rem;
+          font-family: var(--font-label);
+          font-size: 0.85rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .lease-card__header i {
+          color: var(--color-gold);
+          font-size: 1rem;
+        }
+        .lease-card__optional {
+          margin-left: 0.5rem;
+          font-weight: 400;
+          color: rgba(255,255,255,0.5);
+          font-size: 0.75rem;
+        }
+        .lease-card__body {
+          padding: 1.5rem;
+        }
+
+        /* Asset Type Options */
+        .lease-asset-types {
+          display: flex;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          margin-top: 0.25rem;
+        }
+        .lease-asset-option {
+          flex: 1 1 220px;
+          display: flex;
+          align-items: flex-start;
+          gap: 0.6rem;
+          padding: 0.75rem 1rem;
+          border: 1.5px solid var(--color-light-gray);
+          border-radius: var(--radius-sm);
+          background: var(--color-white);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+        .lease-asset-option.selected {
+          border-color: var(--color-navy);
+          background: var(--color-off-white);
+        }
+        .lease-asset-option input {
+          margin-top: 0.2rem;
+          accent-color: var(--color-navy);
+        }
+        .lease-asset-option__title {
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--color-navy);
+          margin-bottom: 0.25rem;
+        }
+        .lease-asset-option__title i {
+          margin-right: 0.35rem;
+          color: var(--color-gold);
+        }
+        .lease-asset-option__desc {
+          font-size: 0.75rem;
+          color: var(--color-mid-gray);
+        }
+
+        /* Lease Duration Grid */
+        .lease-duration-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 0.6rem;
+          margin-top: 0.25rem;
+        }
+        .lease-duration-option {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.6rem;
+          padding: 0.65rem 0.85rem;
+          border: 1.5px solid var(--color-light-gray);
+          border-radius: var(--radius-sm);
+          background: var(--color-white);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+        .lease-duration-option.selected {
+          border-color: var(--color-navy);
+          background: var(--color-off-white);
+        }
+        .lease-duration-option input {
+          margin-top: 0.2rem;
+          accent-color: var(--color-navy);
+        }
+        .lease-duration-option__label {
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--color-navy);
+        }
+        .lease-duration-option__sub {
+          font-size: 0.7rem;
+          color: var(--color-mid-gray);
+        }
+
+        /* Billing Options */
+        .billing-options {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+          margin-top: 0.25rem;
+        }
+
+        /* Budget Input */
+        .budget-input {
+          position: relative;
+        }
+        .budget-currency {
+          position: absolute;
+          left: 0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--color-mid-gray);
+          pointer-events: none;
+          z-index: 1;
+        }
+        .budget-input .form-input-gov {
+          padding-left: 1.75rem;
+        }
+
+        /* Review Section */
+        .lease-review-intro {
+          color: var(--color-mid-gray);
+          font-size: 0.875rem;
+          margin-bottom: 1.25rem;
+        }
+        .lease-review-section {
+          margin-bottom: 1rem;
+        }
+        .lease-review-section__title {
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--color-gold);
+          margin-bottom: 0.5rem;
+        }
+        .lease-review-items {
+          border: 1px solid var(--color-light-gray);
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+        }
+        .lease-review-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.5rem 1rem;
+          border-bottom: 1px solid var(--color-light-gray);
+          font-size: 0.875rem;
+        }
+        .lease-review-item:last-child {
+          border-bottom: none;
+        }
+        .lease-review-item span {
+          color: var(--color-mid-gray);
+        }
+        .lease-review-item strong {
+          color: var(--color-navy);
+        }
+        .lease-review-disclaimer {
+          margin-top: 1.25rem;
+          font-size: 0.75rem;
+          color: var(--color-mid-gray);
+          line-height: 1.6;
+          padding-top: 1rem;
+          border-top: 1px solid var(--color-light-gray);
+        }
+
+        /* Navigation */
+        .lease-navigation {
+          display: flex;
+          gap: 1rem;
+          align-items: center;
+          margin-top: 0.5rem;
+        }
+        .lease-security-note {
+          text-align: center;
+          margin-top: 1rem;
+          font-size: 0.8rem;
+          color: var(--color-mid-gray);
+        }
+        .lease-security-note i {
+          margin-right: 0.3rem;
+        }
+
+        /* Lease Types Section */
+        .lease-types-section {
+          padding: 5rem 0;
+          background: var(--color-navy);
+          position: relative;
+          overflow: hidden;
+        }
+        .lease-types-section::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: linear-gradient(rgba(201,153,46,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(201,153,46,0.04) 1px, transparent 1px);
+          background-size: 48px 48px;
+          pointer-events: none;
+        }
+        .lease-types-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 1.25rem;
+          position: relative;
+          z-index: 1;
+        }
+        .lease-type-card {
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: var(--radius-md);
+          padding: 1.5rem;
+          background: rgba(255,255,255,0.03);
+          transition: all var(--transition-base);
+        }
+        .lease-type-card:hover {
+          border-color: rgba(255,255,255,0.2);
+          transform: translateY(-2px);
+        }
+        .lease-type-card__tag {
+          font-size: 0.65rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: var(--color-gold);
+          margin-bottom: 0.6rem;
+        }
+        .lease-type-card__title {
+          font-size: 0.9375rem;
+          font-weight: 700;
+          color: var(--color-white);
+          margin-bottom: 0.6rem;
+        }
+        .lease-type-card__desc {
+          font-size: 0.8125rem;
+          color: rgba(255,255,255,0.45);
+          line-height: 1.65;
+          margin: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .lease-card__body {
+            padding: 1rem;
+          }
+          .lease-asset-types {
+            flex-direction: column;
+          }
+          .lease-duration-grid {
+            grid-template-columns: 1fr;
+          }
+          .billing-options {
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+          .lease-navigation {
+            flex-wrap: wrap;
+          }
+          .lease-navigation button {
+            flex: 1;
+          }
+          .lease-types-grid {
+            grid-template-columns: 1fr;
+          }
+        }
       `}</style>
     </>
   );

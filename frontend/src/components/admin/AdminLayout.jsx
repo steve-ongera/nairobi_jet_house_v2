@@ -16,12 +16,11 @@ export default function AdminLayout() {
         mobileOpen={mobileOpen}
         setMobile={setMobile}
       />
+      
       {mobileOpen && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(11,29,58,0.45)', zIndex: 699 }}
-          onClick={() => setMobile(false)}
-        />
+        <div className="mobile-overlay" onClick={() => setMobile(false)} />
       )}
+      
       <main className={`dash-main${collapsed ? ' sidebar-collapsed' : ''}`}>
         <AdminNavbar 
           collapsed={collapsed} 
