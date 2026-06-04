@@ -7,15 +7,55 @@ import { operatorAPI } from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 
 function StatCard({ icon, label, value, color = '', to, sub = '' }) {
+  const getColorStyle = () => {
+    switch(color) {
+      case 'gold': return { borderBottom: '2px solid var(--color-gold)' }
+      case 'navy': return { borderBottom: '2px solid var(--color-navy)' }
+      case 'green': return { borderBottom: '2px solid #22c55e' }
+      case 'amber': return { borderBottom: '2px solid #f59e0b' }
+      default: return {}
+    }
+  }
+
   return (
-    <div className={`stat-card${color ? ' ' + color : ''}`}>
-      <div className="stat-card-icon"><i className={`bi ${icon}`} /></div>
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value ?? '—'}</div>
-      {sub && <div className="text-xs text-muted" style={{ marginTop: '0.25rem' }}>{sub}</div>}
+    <div style={{
+      background: 'var(--color-white)',
+      border: '1px solid var(--color-light-gray)',
+      borderRadius: '10px',
+      padding: '1.25rem',
+      position: 'relative',
+      transition: 'all var(--transition-base)',
+      ...getColorStyle()
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        background: 'rgba(15,45,94,0.08)',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '0.75rem'
+      }}>
+        <i className={`bi ${icon}`} style={{ fontSize: '1.1rem', color: 'var(--color-gold)' }}></i>
+      </div>
+      <div style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--color-navy)' }}>{value ?? '—'}</div>
+      {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', marginTop: '0.25rem' }}>{sub}</div>}
       {to && (
-        <Link to={to} className="stat-link">
-          View <i className="bi bi-chevron-right" />
+        <Link to={to} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          marginTop: '0.75rem',
+          fontSize: '0.7rem',
+          fontWeight: 600,
+          color: 'var(--color-gold)',
+          textDecoration: 'none'
+        }}>
+          View <i className="bi bi-chevron-right" style={{ fontSize: '0.65rem' }}></i>
         </Link>
       )}
     </div>
@@ -23,20 +63,71 @@ function StatCard({ icon, label, value, color = '', to, sub = '' }) {
 }
 
 function ActionCard({ title, subtitle, buttonText, buttonLink, buttonColor = 'navy' }) {
+  const getButtonStyle = () => {
+    switch(buttonColor) {
+      case 'navy':
+        return {
+          background: 'var(--color-navy)',
+          color: 'var(--color-white)',
+          border: 'none'
+        }
+      case 'gold':
+        return {
+          background: 'var(--color-gold)',
+          color: 'var(--color-navy-dark)',
+          border: 'none'
+        }
+      case 'outline-navy':
+        return {
+          background: 'transparent',
+          color: 'var(--color-navy)',
+          border: '1.5px solid var(--color-navy)'
+        }
+      default:
+        return {
+          background: 'var(--color-navy)',
+          color: 'var(--color-white)',
+          border: 'none'
+        }
+    }
+  }
+
   return (
-    <div className="action-card">
-      <div className="action-card-content">
-        <h4 className="action-card-title">{title}</h4>
-        <p className="action-card-subtitle">{subtitle}</p>
+    <div style={{
+      background: 'var(--color-white)',
+      border: '1px solid var(--color-light-gray)',
+      borderRadius: '10px',
+      padding: '1rem 1.25rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '1rem',
+      flexWrap: 'wrap',
+      transition: 'all var(--transition-base)'
+    }}>
+      <div>
+        <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.2rem' }}>{title}</h4>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)', margin: 0 }}>{subtitle}</p>
       </div>
-      <Link to={buttonLink} className={`btn btn-${buttonColor} btn-sm`}>
-        {buttonText} <i className="bi bi-arrow-right" />
+      <Link to={buttonLink} style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        padding: '0.4rem 0.9rem',
+        borderRadius: '6px',
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        textDecoration: 'none',
+        transition: 'all var(--transition-fast)',
+        ...getButtonStyle()
+      }}>
+        {buttonText} <i className="bi bi-arrow-right" style={{ fontSize: '0.7rem' }}></i>
       </Link>
     </div>
   )
 }
 
-export function OperatorDashboardPage() {
+export default function OperatorDashboardPage() {
   const { user } = useAuth()
   const [bids, setBids] = useState([])
   const [bookings, setBookings] = useState([])
@@ -90,9 +181,14 @@ export function OperatorDashboardPage() {
 
   if (loading) {
     return (
-      <div className="table-empty">
-        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-        <p>Loading dashboard...</p>
+      <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+        <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--color-mid-gray)' }}>Loading dashboard...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
@@ -100,20 +196,33 @@ export function OperatorDashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Operator Dashboard</h2>
-          <p>Welcome back, {user?.first_name || user?.company || user?.username || 'Operator'}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Operator Dashboard</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Welcome back, {user?.first_name || user?.company || user?.username || 'Operator'}</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={loadData}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
-          </button>
-        </div>
+        <button onClick={loadData} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.4rem 1rem',
+          background: 'transparent',
+          color: 'var(--color-navy)',
+          border: '1.5px solid var(--color-navy)',
+          borderRadius: '6px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+          <i className="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="stat-grid" style={{ marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <StatCard 
           icon="bi-file-text" 
           label="Open RFQs" 
@@ -149,7 +258,7 @@ export function OperatorDashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="quick-actions" style={{ marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <ActionCard 
           title="Submit New Aircraft"
           subtitle="Add aircraft to your fleet for charter"
@@ -182,22 +291,36 @@ export function OperatorDashboardPage() {
 
       {/* Open RFQs Section */}
       {bids.length > 0 && (
-        <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="settings-card-header">
-            <h4><i className="bi bi-file-text" /> Open RFQs — Action Required</h4>
-            <Link to="/operator/rfq" className="btn btn-ghost btn-sm">View All</Link>
+        <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-file-text" style={{ color: 'var(--color-gold)' }}></i> Open RFQs — Action Required
+            </h4>
+            <Link to="/operator/rfq" style={{ padding: '0.25rem 0.75rem', background: 'transparent', border: 'none', color: 'var(--color-navy)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}>
+              View All <i className="bi bi-arrow-right"></i>
+            </Link>
           </div>
-          <div className="settings-card-body" style={{ padding: 0 }}>
+          <div>
             {bids.slice(0, 5).map(bid => (
-              <div key={bid.id} className="detail-item" style={{ justifyContent: 'space-between' }}>
+              <div key={bid.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)' }}>
                 <div>
-                  <div className="td-name">Booking #{String(bid.booking).slice(0, 8).toUpperCase()}</div>
-                  <div className="td-email">
-                    Status: {bid.status} · Valid until: {formatDate(bid.valid_until)}
-                  </div>
+                  <div style={{ fontWeight: 500, color: 'var(--color-navy)', fontSize: '0.85rem' }}>Booking #{String(bid.booking).slice(0, 8).toUpperCase()}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>Status: {bid.status} · Valid until: {formatDate(bid.valid_until)}</div>
                 </div>
-                <Link to="/operator/rfq" className="btn btn-navy btn-sm">
-                  Respond <i className="bi bi-send" />
+                <Link to="/operator/rfq" style={{
+                  padding: '0.3rem 0.8rem',
+                  background: 'var(--color-navy)',
+                  color: 'var(--color-white)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}>
+                  Respond <i className="bi bi-send" style={{ fontSize: '0.7rem' }}></i>
                 </Link>
               </div>
             ))}
@@ -207,22 +330,36 @@ export function OperatorDashboardPage() {
 
       {/* Pending Bookings Section */}
       {bookings.length > 0 && (
-        <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="settings-card-header">
-            <h4><i className="bi bi-calendar-check" /> Dispatched Bookings — Awaiting Confirmation</h4>
-            <Link to="/operator/bookings" className="btn btn-ghost btn-sm">View All</Link>
+        <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-calendar-check" style={{ color: 'var(--color-gold)' }}></i> Dispatched Bookings — Awaiting Confirmation
+            </h4>
+            <Link to="/operator/bookings" style={{ padding: '0.25rem 0.75rem', background: 'transparent', border: 'none', color: 'var(--color-navy)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}>
+              View All <i className="bi bi-arrow-right"></i>
+            </Link>
           </div>
-          <div className="settings-card-body" style={{ padding: 0 }}>
+          <div>
             {bookings.slice(0, 5).map(bk => (
-              <div key={bk.id} className="detail-item" style={{ justifyContent: 'space-between' }}>
+              <div key={bk.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)' }}>
                 <div>
-                  <div className="td-name">Booking {String(bk.reference).slice(0, 8).toUpperCase()}</div>
-                  <div className="td-email">
-                    Payout: {formatCurrency(bk.operator_payout_usd)} · {bk.departure_date ? formatDate(bk.departure_date) : ''}
-                  </div>
+                  <div style={{ fontWeight: 500, color: 'var(--color-navy)', fontSize: '0.85rem' }}>Booking {String(bk.reference).slice(0, 8).toUpperCase()}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>Payout: {formatCurrency(bk.operator_payout_usd)} · {bk.departure_date ? formatDate(bk.departure_date) : ''}</div>
                 </div>
-                <Link to="/operator/bookings" className="btn btn-navy btn-sm">
-                  Review <i className="bi bi-eye" />
+                <Link to="/operator/bookings" style={{
+                  padding: '0.3rem 0.8rem',
+                  background: 'var(--color-navy)',
+                  color: 'var(--color-white)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}>
+                  Review <i className="bi bi-eye" style={{ fontSize: '0.7rem' }}></i>
                 </Link>
               </div>
             ))}
@@ -232,16 +369,27 @@ export function OperatorDashboardPage() {
 
       {/* Empty State */}
       {bids.length === 0 && bookings.length === 0 && (
-        <div className="empty-state" style={{ marginTop: '2rem' }}>
-          <i className="bi bi-check-circle" style={{ color: 'var(--green)', fontSize: '3rem' }} />
-          <h3>All Caught Up! ✅</h3>
-          <p>No pending actions at the moment. Your dashboard is clean.</p>
+        <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', marginTop: '2rem' }}>
+          <i className="bi bi-check-circle" style={{ color: '#22c55e', fontSize: '3rem' }}></i>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-navy)', marginTop: '1rem', marginBottom: '0.5rem' }}>All Caught Up! ✅</h3>
+          <p style={{ color: 'var(--color-mid-gray)' }}>No pending actions at the moment. Your dashboard is clean.</p>
         </div>
       )}
 
       {/* Helpful Tip */}
-      <div className="alert alert-info" style={{ marginTop: '1.5rem', fontSize: '0.8rem' }}>
-        <i className="bi bi-lightbulb" />
+      <div style={{ 
+        marginTop: '1.5rem', 
+        padding: '0.75rem 1rem', 
+        background: 'rgba(15,92,164,0.08)', 
+        border: '1px solid rgba(15,92,164,0.22)', 
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+        fontSize: '0.8rem',
+        color: 'var(--color-info)'
+      }}>
+        <i className="bi bi-lightbulb" style={{ fontSize: '1rem', color: 'var(--color-info)' }}></i>
         <div>
           <strong>Operator Tip:</strong> Keep your aircraft availability up to date to receive more RFQ requests. 
           Responding quickly to RFQs increases your chances of winning bookings.
@@ -250,5 +398,3 @@ export function OperatorDashboardPage() {
     </div>
   )
 }
-
-export default OperatorDashboardPage
