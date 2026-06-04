@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { authAPI, membershipAPI } from '../../services/api'
 import { useAuth } from '../../hooks/useAuth'
 
-export function MemberProfilePage() {
+export default function MemberProfilePage() {
   const { user, updateUser } = useAuth()
   const [membership, setMembership] = useState(null)
   const [form, setForm] = useState({
@@ -61,36 +61,62 @@ export function MemberProfilePage() {
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>My Profile</h2>
-          <p>Manage your personal information and preferences</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>My Profile</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Manage your personal information and preferences</p>
         </div>
       </div>
 
       {/* Message */}
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+          border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+          borderRadius: '6px',
+          color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Membership Card */}
       {membership && (
-        <div className="membership-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="membership-card-header">
-            <i className="bi bi-star-fill" />
-            <span>{membership.tier || 'Standard'} Membership</span>
+        <div style={{ 
+          marginBottom: '1.5rem', 
+          background: 'linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-light) 100%)',
+          borderRadius: '10px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            padding: '0.75rem 1.25rem',
+            background: 'rgba(0,0,0,0.2)',
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <i className="bi bi-star-fill" style={{ color: 'var(--color-gold)', fontSize: '0.9rem' }}></i>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-gold-light)' }}>
+              {membership.tier || 'Standard'} Membership
+            </span>
           </div>
-          <div className="membership-card-body">
-            <div className="membership-points">
-              <span className="points-label">Points Balance</span>
-              <span className="points-value">{membership.points || 0}</span>
+          <div style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>Points Balance</span>
+              <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-gold)' }}>{membership.points || 0}</span>
             </div>
-            <div className="membership-benefits-list">
-              <strong>Benefits:</strong>
-              <ul>
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem' }}>Benefits:</div>
+              <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', lineHeight: 1.6 }}>
                 <li>✓ Priority customer support</li>
                 <li>✓ Best rate guarantee</li>
                 <li>✓ Flexible booking options</li>
@@ -101,78 +127,110 @@ export function MemberProfilePage() {
       )}
 
       {/* Profile Form */}
-      <div className="settings-card">
-        <div className="settings-card-header">
-          <h4><i className="bi bi-person" /> Personal Information</h4>
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-person" style={{ color: 'var(--color-gold)' }}></i> Personal Information
+          </h4>
         </div>
-        <div className="settings-card-body">
+        <div style={{ padding: '1.5rem' }}>
           <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">First Name</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>First Name</label>
                 <input 
-                  className="form-control" 
                   value={form.first_name} 
                   onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Last Name</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Last Name</label>
                 <input 
-                  className="form-control" 
                   value={form.last_name} 
                   onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Email <span className="req">*</span></label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Email <span style={{ color: 'var(--color-error)' }}>*</span></label>
                 <input 
-                  className="form-control" 
                   type="email" 
                   value={form.email} 
                   onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   required
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Phone</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Phone</label>
                 <input 
-                  className="form-control" 
                   value={form.phone} 
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Company</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Company</label>
                 <input 
-                  className="form-control" 
                   value={form.company} 
                   onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Preferred Aircraft</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Preferred Aircraft</label>
                 <input 
-                  className="form-control" 
                   value={form.preferred_aircraft} 
                   onChange={e => setForm(f => ({ ...f, preferred_aircraft: e.target.value }))}
                   placeholder="e.g., Gulfstream G650"
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group form-full">
-                <label className="form-label">Dietary Restrictions</label>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Dietary Restrictions</label>
                 <textarea 
-                  className="form-control" 
                   rows={2}
                   value={form.dietary_restrictions} 
                   onChange={e => setForm(f => ({ ...f, dietary_restrictions: e.target.value }))}
                   placeholder="Any dietary restrictions or preferences"
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
             </div>
             <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button type="submit" className="btn btn-navy" disabled={saving}>
-                {saving ? <><span className="spinner" /> Saving…</> : <><i className="bi bi-save" /> Save Changes</>}
+              <button type="submit" disabled={saving} style={{
+                padding: '0.6rem 1.2rem',
+                background: 'var(--color-navy)',
+                color: 'var(--color-white)',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                {saving ? (
+                  <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Saving…</>
+                ) : (
+                  <><i className="bi bi-save"></i> Save Changes</>
+                )}
               </button>
             </div>
           </form>
@@ -181,5 +239,3 @@ export function MemberProfilePage() {
     </div>
   )
 }
-
-export default MemberProfilePage
