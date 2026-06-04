@@ -23,7 +23,10 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry) {
       if (refreshing) {
         return new Promise((resolve, reject) => queue.push({ resolve, reject }))
-          .then(token => { original.headers.Authorization = `Bearer ${token}`; return api(original); });
+          .then(token => {
+            original.headers.Authorization = `Bearer ${token}`;
+            return api(original);
+          });
       }
       original._retry = true;
       refreshing = true;
@@ -50,24 +53,84 @@ api.interceptors.response.use(
 );
 
 // ══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetches ALL pages of a paginated DRF endpoint and returns a flat array.
+ * Works whether the endpoint returns:
+ *   - paginated:    { count, next, previous, results: [...] }
+ *   - unpaginated:  [...]
+ *
+ * @param {string} endpoint  - e.g. '/airports/'
+ * @param {object} params    - optional query params for the first request
+ * @returns {Promise<Array>}
+ */
+export async function fetchAllPages(endpoint, params = {}) {
+  const allResults = [];
+
+  // First request — include any caller-supplied params
+  const firstRes = await api.get(endpoint, { params: { page_size: 500, ...params } });
+  const firstData = firstRes.data;
+
+  // Handle both paginated and plain-array responses
+  if (Array.isArray(firstData)) {
+    return firstData;
+  }
+
+  allResults.push(...(firstData.results || []));
+
+  // Follow pagination links until exhausted.
+  // DRF's `next` is an absolute URL like http://localhost:8000/api/airports/?page=2
+  // We must strip everything up to AND INCLUDING the BASE path so we don't
+  // end up with /api/api/airports/ when axios prepends its own baseURL.
+  let nextUrl = firstData.next || null;
+  while (nextUrl) {
+    // Build a regex that strips scheme + host + BASE prefix, leaving only
+    // the path segment that comes after BASE, e.g. "airports/?page=2"
+    // BASE may be "/api" or "http://localhost:8000/api" — handle both.
+    const basePath = BASE.replace(/^https?:\/\/[^/]+/, ''); // e.g. "/api"
+    const escaped  = basePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const stripRe  = new RegExp(`^https?://[^/]+${escaped}`);
+    const relative = nextUrl.replace(stripRe, '');  // e.g. "/airports/?page=2"
+    const res  = await api.get(relative);
+    const data = res.data;
+    allResults.push(...(data.results || []));
+    nextUrl = data.next || null;
+  }
+
+  return allResults;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════════════════════════════════════
 export const authAPI = {
-  register: d => api.post('/auth/register/', d),
-  login:    d => api.post('/auth/login/', d),
-  refresh:  d => api.post('/auth/refresh/', d),
-  profile:  ()  => api.get('/auth/profile/'),
-  updateProfile: d => api.patch('/auth/profile/', d),
+  register:      d  => api.post('/auth/register/', d),
+  login:         d  => api.post('/auth/login/', d),
+  refresh:       d  => api.post('/auth/refresh/', d),
+  profile:       () => api.get('/auth/profile/'),
+  updateProfile: d  => api.patch('/auth/profile/', d),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CATALOG
+// Airports uses fetchAllPages so the combobox always has the full list.
 // ══════════════════════════════════════════════════════════════════════════════
 export const catalogAPI = {
-  airports:  params => api.get('/airports/', { params }),
+  /**
+   * Returns a flat array of ALL airports (handles pagination automatically).
+   * Pass optional params like { search: 'NBO' } to filter server-side.
+   */
+  airports: (params = {}) => fetchAllPages('/airports/', params),
+
+  /** Standard paginated / filtered aircraft list */
   aircraft:  params => api.get('/aircraft/', { params }),
+
+  /** Standard paginated / filtered yacht list */
   yachts:    params => api.get('/yachts/', { params }),
-  // V2 public operator listings
+
+  // ── V2 Operator listings ──────────────────────────────────────────────────
   opAircraft:       params => api.get('/operator-aircraft/', { params }),
   opYachts:         params => api.get('/operator-yachts/', { params }),
   opAircraftDetail: id     => api.get(`/operator-aircraft/${id}/`),
@@ -78,12 +141,15 @@ export const catalogAPI = {
 // BOOKINGS & INQUIRIES
 // ══════════════════════════════════════════════════════════════════════════════
 export const bookingAPI = {
-  create:    d     => api.post('/bookings/', d),
-  track:     ref   => api.get(`/bookings/track/${ref}/`),
-  byEmail:   email => api.get('/bookings/by-email/', { params: { email } }),
+  create:  d     => api.post('/bookings/', d),
+  track:   ref   => api.get(`/bookings/track/${ref}/`),
+  byEmail: email => api.get('/bookings/by-email/', { params: { email } }),
 };
 
-export const charterAPI      = { create: d => api.post('/charters/', d), track: ref => api.get(`/charters/track/${ref}/`) };
+export const charterAPI      = {
+  create: d   => api.post('/charters/', d),
+  track:  ref => api.get(`/charters/track/${ref}/`),
+};
 export const leaseAPI        = { create: d => api.post('/leases/', d) };
 export const flightInqAPI    = { create: d => api.post('/flight-inquiries/', d) };
 export const contactAPI      = { create: d => api.post('/contacts/', d) };
@@ -104,10 +170,10 @@ export const jobsAPI = {
 // MEMBERSHIP
 // ══════════════════════════════════════════════════════════════════════════════
 export const membershipAPI = {
-  tiers:   ()  => api.get('/membership-tiers/'),
-  my:      ()  => api.get('/memberships/my/'),
-  create:  d   => api.post('/memberships/create_membership/', d),
-  list:    ()  => api.get('/memberships/'),
+  tiers:  ()  => api.get('/membership-tiers/'),
+  my:     ()  => api.get('/memberships/my/'),
+  create: d   => api.post('/memberships/create_membership/', d),
+  list:   ()  => api.get('/memberships/'),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -162,22 +228,22 @@ export const operatorAPI = {
   updateAircraft: (id, d) => api.patch(`/my-aircraft/${id}/`, d),
   deleteAircraft: id      => api.delete(`/my-aircraft/${id}/`),
   // Yachts
-  myYachts:       params  => api.get('/my-yachts/', { params }),
-  createYacht:    d       => api.post('/my-yachts/', d),
-  updateYacht:    (id, d) => api.patch(`/my-yachts/${id}/`, d),
+  myYachts:    params  => api.get('/my-yachts/', { params }),
+  createYacht: d       => api.post('/my-yachts/', d),
+  updateYacht: (id, d) => api.patch(`/my-yachts/${id}/`, d),
   // Availability
-  blocks:         params  => api.get('/availability-blocks/', { params }),
-  createBlock:    d       => api.post('/availability-blocks/', d),
-  deleteBlock:    id      => api.delete(`/availability-blocks/${id}/`),
+  blocks:      params  => api.get('/availability-blocks/', { params }),
+  createBlock: d       => api.post('/availability-blocks/', d),
+  deleteBlock: id      => api.delete(`/availability-blocks/${id}/`),
   // RFQ
-  rfqBids:        params  => api.get('/rfq-bids/', { params }),
-  submitBid:      d       => api.post('/rfq-bids/', d),
+  rfqBids:   params => api.get('/rfq-bids/', { params }),
+  submitBid: d      => api.post('/rfq-bids/', d),
   // Bookings
-  opBookings:     params  => api.get('/operator-bookings/', { params }),
-  acceptBooking:  (id, d) => api.post(`/operator-bookings/${id}/accept/`, d),
-  rejectBooking:  (id, d) => api.post(`/operator-bookings/${id}/reject/`, d),
+  opBookings:    params  => api.get('/operator-bookings/', { params }),
+  acceptBooking: (id, d) => api.post(`/operator-bookings/${id}/accept/`, d),
+  rejectBooking: (id, d) => api.post(`/operator-bookings/${id}/reject/`, d),
   // Reviews
-  reviews:        params  => api.get('/operator-reviews/', { params }),
+  reviews: params => api.get('/operator-reviews/', { params }),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -250,7 +316,7 @@ export const adminAPI = {
   opReviews:      id      => api.get(`/admin/operators/${id}/reviews/`),
   opWebhooks:     id      => api.get(`/admin/operators/${id}/webhooks/`),
 
-  // Approve/reject aircraft & yachts
+  // Approve / reject aircraft & yachts
   approveAircraft: id => api.post(`/my-aircraft/${id}/approve/`),
   rejectAircraft:  id => api.post(`/my-aircraft/${id}/reject/`),
   approveYacht:    id => api.post(`/my-yachts/${id}/approve/`),
@@ -283,25 +349,25 @@ export const adminAPI = {
   approveMkt:  id     => api.post(`/marketplace-aircraft/${id}/approve/`),
 
   // ── V2 Air Cargo Bookings ─────────────────────────────────────────────────
-  cargoBookings:       params  => api.get('/admin/cargo-bookings/', { params }),
-  cargoBookingStats:   ()      => api.get('/admin/cargo-bookings/stats/'),
-  getCargoBooking:     id      => api.get(`/admin/cargo-bookings/${id}/`),
-  createCargoBooking:  d       => api.post('/admin/cargo-bookings/', d),
-  updateCargoBooking:  (id, d) => api.patch(`/admin/cargo-bookings/${id}/`, d),
-  deleteCargoBooking:  id      => api.delete(`/admin/cargo-bookings/${id}/`),
-  setCargoPrice:       (id, d) => api.patch(`/admin/cargo-bookings/${id}/price/`, d),
-  updateCargoTracking: (id, d) => api.patch(`/admin/cargo-bookings/${id}/tracking/`, d),
+  cargoBookings:       params        => api.get('/admin/cargo-bookings/', { params }),
+  cargoBookingStats:   ()            => api.get('/admin/cargo-bookings/stats/'),
+  getCargoBooking:     id            => api.get(`/admin/cargo-bookings/${id}/`),
+  createCargoBooking:  d             => api.post('/admin/cargo-bookings/', d),
+  updateCargoBooking:  (id, d)       => api.patch(`/admin/cargo-bookings/${id}/`, d),
+  deleteCargoBooking:  id            => api.delete(`/admin/cargo-bookings/${id}/`),
+  setCargoPrice:       (id, d)       => api.patch(`/admin/cargo-bookings/${id}/price/`, d),
+  updateCargoTracking: (id, d)       => api.patch(`/admin/cargo-bookings/${id}/tracking/`, d),
   convertCargoInquiry: (inquiryId, d) => api.post(`/admin/cargo/${inquiryId}/convert/`, d),
 
   // ── V2 Lease Bookings ─────────────────────────────────────────────────────
-  leaseBookings:       params  => api.get('/admin/lease-bookings/', { params }),
-  leaseBookingStats:   ()      => api.get('/admin/lease-bookings/stats/'),
-  getLeaseBooking:     id      => api.get(`/admin/lease-bookings/${id}/`),
-  createLeaseBooking:  d       => api.post('/admin/lease-bookings/', d),
-  updateLeaseBooking:  (id, d) => api.patch(`/admin/lease-bookings/${id}/`, d),
-  deleteLeaseBooking:  id      => api.delete(`/admin/lease-bookings/${id}/`),
-  setLeasePrice:       (id, d) => api.patch(`/admin/lease-bookings/${id}/price/`, d),
-  signLeaseContract:   (id, d) => api.patch(`/admin/lease-bookings/${id}/contract/`, d),
+  leaseBookings:       params        => api.get('/admin/lease-bookings/', { params }),
+  leaseBookingStats:   ()            => api.get('/admin/lease-bookings/stats/'),
+  getLeaseBooking:     id            => api.get(`/admin/lease-bookings/${id}/`),
+  createLeaseBooking:  d             => api.post('/admin/lease-bookings/', d),
+  updateLeaseBooking:  (id, d)       => api.patch(`/admin/lease-bookings/${id}/`, d),
+  deleteLeaseBooking:  id            => api.delete(`/admin/lease-bookings/${id}/`),
+  setLeasePrice:       (id, d)       => api.patch(`/admin/lease-bookings/${id}/price/`, d),
+  signLeaseContract:   (id, d)       => api.patch(`/admin/lease-bookings/${id}/contract/`, d),
   convertLeaseInquiry: (inquiryId, d) => api.post(`/admin/leases/${inquiryId}/convert/`, d),
 };
 

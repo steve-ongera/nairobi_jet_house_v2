@@ -6,53 +6,60 @@ import PublicNavbar from '../../components/common/PublicNavbar';
 import PublicFooter from '../../components/common/PublicFooter';
 import { bookingAPI, catalogAPI } from '../../services/api';
 
-const CATEGORIES = ['light', 'midsize', 'super_midsize', 'heavy', 'ultra_long', 'vip_airliner', 'turboprop', 'helicopter'];
-const TRIP_TYPES = [['one_way', 'One Way'], ['round_trip', 'Round Trip'], ['multi_leg', 'Multi-Leg']];
-
+const CATEGORIES = [
+  'light', 'midsize', 'super_midsize', 'heavy',
+  'ultra_long', 'vip_airliner', 'turboprop', 'helicopter',
+];
+const TRIP_TYPES = [
+  ['one_way', 'One Way'],
+  ['round_trip', 'Round Trip'],
+  ['multi_leg', 'Multi-Leg'],
+];
 const CATEGORY_NAMES = {
-  'light': 'Light Jets',
-  'midsize': 'Midsize Jets',
-  'super_midsize': 'Super Midsize',
-  'heavy': 'Heavy Jets',
-  'ultra_long': 'Ultra Long Range',
-  'vip_airliner': 'VIP Airliners',
-  'turboprop': 'Turboprops',
-  'helicopter': 'Helicopters'
+  light:         'Light Jets',
+  midsize:       'Midsize Jets',
+  super_midsize: 'Super Midsize',
+  heavy:         'Heavy Jets',
+  ultra_long:    'Ultra Long Range',
+  vip_airliner:  'VIP Airliners',
+  turboprop:     'Turboprops',
+  helicopter:    'Helicopters',
 };
 
-// Guide Data for Sidebar
 const GUIDE_TIPS = [
-  { icon: 'bi-calendar-check', title: 'Plan Ahead', desc: 'Book 2-4 weeks in advance for best availability.' },
-  { icon: 'bi-people', title: 'Group Size', desc: 'Light jets: 4-6 seats | Heavy jets: 10-18 seats.' },
-  { icon: 'bi-globe2', title: 'Global Reach', desc: '187 countries | 2,400+ aircraft worldwide.' },
-  { icon: 'bi-clock-history', title: 'Quick Response', desc: 'Receive your quote within 2-4 hours.' },
+  { icon: 'bi-calendar-check', title: 'Plan Ahead',    desc: 'Book 2–4 weeks in advance for best availability.' },
+  { icon: 'bi-people',         title: 'Group Size',    desc: 'Light jets: 4–6 seats | Heavy jets: 10–18 seats.' },
+  { icon: 'bi-globe2',         title: 'Global Reach',  desc: '187 countries | 2,400+ aircraft worldwide.' },
+  { icon: 'bi-clock-history',  title: 'Quick Response',desc: 'Receive your quote within 2–4 hours.' },
 ];
 
 const AIRCRAFT_GUIDE = [
-  { category: 'Light Jets', seats: '4-6', range: '1,500-2,000 km', bestFor: 'Short business trips' },
-  { category: 'Midsize Jets', seats: '6-8', range: '2,500-3,500 km', bestFor: 'Cross-country flights' },
-  { category: 'Heavy Jets', seats: '10-16', range: '5,000-7,000 km', bestFor: 'International travel' },
-  { category: 'Ultra Long Range', seats: '14-19', range: '11,000+ km', bestFor: 'Intercontinental flights' },
+  { category: 'Light Jets',        seats: '4–6',   range: '1,500–2,000 km', bestFor: 'Short business trips' },
+  { category: 'Midsize Jets',      seats: '6–8',   range: '2,500–3,500 km', bestFor: 'Cross-country flights' },
+  { category: 'Heavy Jets',        seats: '10–16', range: '5,000–7,000 km', bestFor: 'International travel' },
+  { category: 'Ultra Long Range',  seats: '14–19', range: '11,000+ km',     bestFor: 'Intercontinental flights' },
 ];
 
-/* ─── SEO Structured Data ─────────────────────────────────────────────────── */
 const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
   name: 'Book a Private Jet Charter | NairobiJetHouse',
-  description: 'Request a private jet charter quote. Fill out our simple form and receive a personalised quote within 2-4 hours.',
+  description: 'Request a private jet charter quote. Fill out our simple form and receive a personalised quote within 2–4 hours.',
 };
 
-/* ─── Airport Combobox ────────────────────────────────────────────────────── */
-function AirportCombobox({ airports, value, onChange, placeholder, required }) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
+// ── Airport Combobox ──────────────────────────────────────────────────────────
+function AirportCombobox({ airports, airportsLoading, value, onChange, placeholder, required }) {
+  const [query, setQuery]           = useState('');
+  const [open, setOpen]             = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const inputRef = useRef(null);
-  const listRef = useRef(null);
+  const listRef  = useRef(null);
 
-  const selectedAirport = airports.find(a => a.id === value || String(a.id) === String(value));
+  const selectedAirport = airports.find(
+    a => a.id === value || String(a.id) === String(value)
+  );
 
+  // Keep input in sync when value is set externally or cleared
   useEffect(() => {
     if (!value) {
       setQuery('');
@@ -61,32 +68,37 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
     }
   }, [value, selectedAirport]);
 
+  // Client-side filter on the full airport list already in memory
   const filtered = query.length >= 2
-    ? airports.filter(a => {
-        const q = query.toLowerCase();
-        return (
-          a.code?.toLowerCase().includes(q) ||
-          a.name?.toLowerCase().includes(q) ||
-          a.city?.toLowerCase().includes(q)
-        );
-      }).slice(0, 8)
+    ? airports
+        .filter(a => {
+          const q = query.toLowerCase();
+          return (
+            a.code?.toLowerCase().includes(q) ||
+            a.name?.toLowerCase().includes(q) ||
+            a.city?.toLowerCase().includes(q) ||
+            a.country?.toLowerCase().includes(q)
+          );
+        })
+        .slice(0, 10)
     : [];
 
-  const selectAirport = (airport) => {
+  const selectAirport = airport => {
     onChange(airport.id);
     setQuery(`${airport.code} – ${airport.name}, ${airport.city}`);
     setOpen(false);
     setHighlighted(0);
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     setQuery(e.target.value);
     setOpen(true);
     setHighlighted(0);
+    // Clear the selected value whenever the user types something new
     if (value) onChange('');
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = e => {
     if (!open || filtered.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -103,10 +115,12 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
   };
 
   const handleBlur = () => {
+    // Small delay so onMouseDown on a list item fires before the blur closes it
     setTimeout(() => {
       setOpen(false);
+      // If the user typed something but didn't pick an airport, clear both
       if (!value) setQuery('');
-    }, 150);
+    }, 160);
   };
 
   return (
@@ -120,30 +134,42 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
         onKeyDown={handleKeyDown}
         onFocus={() => { if (query.length >= 2) setOpen(true); }}
         onBlur={handleBlur}
-        placeholder={placeholder || 'Type 2+ letters to search…'}
+        placeholder={
+          airportsLoading
+            ? 'Loading airports…'
+            : (placeholder || 'Type 2+ letters to search…')
+        }
+        disabled={airportsLoading}
         required={required}
         autoComplete="off"
       />
+      {/* Hidden input keeps the numeric ID in the form */}
       <input type="hidden" value={value || ''} />
 
+      {/* Loading spinner inside field */}
+      {airportsLoading && (
+        <span style={{
+          position: 'absolute', right: '0.75rem', top: '50%',
+          transform: 'translateY(-50%)',
+          fontSize: '0.75rem', color: 'var(--color-mid-gray)',
+        }}>
+          <i className="bi bi-arrow-repeat" style={{ animation: 'spin 1s linear infinite' }}></i>
+        </span>
+      )}
+
+      {/* Dropdown list */}
       {open && filtered.length > 0 && (
         <ul
           ref={listRef}
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            right: 0,
+            position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
             zIndex: 1000,
             background: 'var(--color-white)',
             border: '1px solid var(--color-light-gray)',
             borderRadius: 'var(--radius-sm)',
             boxShadow: 'var(--shadow-lg)',
-            margin: 0,
-            padding: '0.25rem 0',
-            listStyle: 'none',
-            maxHeight: '260px',
-            overflowY: 'auto',
+            margin: 0, padding: '0.25rem 0', listStyle: 'none',
+            maxHeight: '280px', overflowY: 'auto',
           }}
         >
           {filtered.map((a, i) => (
@@ -152,21 +178,18 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
               onMouseDown={() => selectAirport(a)}
               onMouseEnter={() => setHighlighted(i)}
               style={{
-                padding: '0.6rem 1rem',
-                cursor: 'pointer',
+                padding: '0.6rem 1rem', cursor: 'pointer',
                 background: i === highlighted ? 'var(--color-off-white)' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
               }}
             >
-              <span className="badge-gov" style={{ minWidth: '2.5rem', textAlign: 'center' }}>
+              <span className="badge-gov" style={{ minWidth: '2.8rem', textAlign: 'center' }}>
                 {a.code}
               </span>
               <span style={{ fontSize: '0.875rem', color: 'var(--color-dark-gray)' }}>
                 {a.name}
                 <span style={{ color: 'var(--color-mid-gray)', marginLeft: '0.35rem' }}>
-                  {a.city}
+                  — {a.city}, {a.country}
                 </span>
               </span>
             </li>
@@ -174,20 +197,17 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
         </ul>
       )}
 
-      {open && query.length >= 2 && filtered.length === 0 && (
+      {/* No results hint */}
+      {open && !airportsLoading && query.length >= 2 && filtered.length === 0 && (
         <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          left: 0,
-          right: 0,
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
           zIndex: 1000,
           background: 'var(--color-white)',
           border: '1px solid var(--color-light-gray)',
           borderRadius: 'var(--radius-sm)',
           boxShadow: 'var(--shadow-lg)',
           padding: '0.75rem 1rem',
-          fontSize: '0.875rem',
-          color: 'var(--color-mid-gray)',
+          fontSize: '0.875rem', color: 'var(--color-mid-gray)',
         }}>
           No airports found for "{query}"
         </div>
@@ -196,23 +216,55 @@ function AirportCombobox({ airports, value, onChange, placeholder, required }) {
   );
 }
 
-/* ─── Main Page ───────────────────────────────────────────────────────────── */
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function BookFlightPage() {
-  const [airports, setAirports] = useState([]);
+  const [airports, setAirports]               = useState([]);
+  const [airportsLoading, setAirportsLoading] = useState(true);
+  const [airportsError, setAirportsError]     = useState('');
+
   const [form, setForm] = useState({
     guest_name: '', guest_email: '', guest_phone: '', company: '',
-    trip_type: 'one_way', origin: '', destination: '',
+    trip_type: 'one_way',
+    origin: '', destination: '',
     departure_date: '', departure_time: '', return_date: '',
-    passenger_count: 1, preferred_category: '',
-    special_requests: '', catering_requested: false,
-    ground_transport_requested: false, concierge_requested: false,
+    passenger_count: 1,
+    preferred_category: '',
+    special_requests: '',
+    catering_requested: false,
+    ground_transport_requested: false,
+    concierge_requested: false,
   });
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError]     = useState('');
 
+  // ── Fetch ALL airports once on mount ──────────────────────────────────────
   useEffect(() => {
-    catalogAPI.airports({ limit: 100 }).then(r => setAirports(r.data.results || r.data)).catch(() => {});
+    let cancelled = false;
+
+    const loadAirports = async () => {
+      setAirportsLoading(true);
+      setAirportsError('');
+      try {
+        // catalogAPI.airports now calls fetchAllPages, which follows pagination
+        // and returns a plain array — no .results needed.
+        const data = await catalogAPI.airports();
+        if (!cancelled) {
+          setAirports(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Airport fetch failed:', err.response?.data || err.message);
+          setAirportsError('Could not load airports. You can still type your departure/destination below.');
+        }
+      } finally {
+        if (!cancelled) setAirportsLoading(false);
+      }
+    };
+
+    loadAirports();
+    return () => { cancelled = true; };
   }, []);
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -224,15 +276,27 @@ export default function BookFlightPage() {
     try {
       const payload = { ...form };
       if (form.trip_type !== 'round_trip') delete payload.return_date;
+      // Remove empty time string to avoid backend validation errors
+      if (!payload.departure_time) delete payload.departure_time;
       const { data } = await bookingAPI.create(payload);
       setSuccess(data.booking?.reference);
-    } catch (e) {
-      setError(e.response?.data?.detail || 'Submission failed. Please try again or contact us directly.');
+    } catch (err) {
+      const detail = err.response?.data;
+      if (typeof detail === 'object' && detail !== null) {
+        // Surface field-level DRF validation errors
+        const msgs = Object.entries(detail)
+          .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(' ') : errs}`)
+          .join(' | ');
+        setError(msgs);
+      } else {
+        setError(detail?.detail || 'Submission failed. Please try again or contact us directly.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Success screen ────────────────────────────────────────────────────────
   if (success) {
     return (
       <>
@@ -253,7 +317,9 @@ export default function BookFlightPage() {
               </p>
               <div className="booking-success__ref">
                 <div className="booking-success__ref-label">Reference Number</div>
-                <div className="booking-success__ref-value">{String(success).slice(0, 8).toUpperCase()}</div>
+                <div className="booking-success__ref-value">
+                  {String(success).slice(0, 8).toUpperCase()}
+                </div>
               </div>
               <div className="booking-success__actions">
                 <Link to="/track" className="btn-primary-gov">
@@ -267,73 +333,17 @@ export default function BookFlightPage() {
           </div>
         </section>
         <PublicFooter />
-
-        <style>{`
-          .booking-success {
-            text-align: center;
-            max-width: 500px;
-            margin: 0 auto;
-          }
-          .booking-success__icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(26,127,90,0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-          }
-          .booking-success__icon i {
-            font-size: 2.5rem;
-            color: var(--color-success);
-          }
-          .booking-success__ref {
-            background: var(--color-off-white);
-            border: 1px solid var(--color-light-gray);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            margin-bottom: 2rem;
-          }
-          .booking-success__ref-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: var(--color-gold);
-            margin-bottom: 0.25rem;
-          }
-          .booking-success__ref-value {
-            font-family: monospace;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--color-navy);
-          }
-          .booking-success__actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-          }
-          @media (max-width: 480px) {
-            .booking-success__actions {
-              flex-direction: column;
-            }
-            .booking-success__actions a {
-              width: 100%;
-              justify-content: center;
-            }
-          }
-        `}</style>
+        <SuccessStyles />
       </>
     );
   }
 
+  // ── Main form ─────────────────────────────────────────────────────────────
   return (
     <>
       <Helmet>
         <title>Book a Private Jet | NairobiJetHouse - Charter Request</title>
-        <meta name="description" content="Request a private jet charter quote. Fill out our simple form and receive a personalised quote within 2-4 hours. Worldwide private aviation." />
+        <meta name="description" content="Request a private jet charter quote. Fill out our simple form and receive a personalised quote within 2–4 hours. Worldwide private aviation." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.nairobijethouse.com/book-flight" />
         <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
@@ -343,10 +353,9 @@ export default function BookFlightPage() {
 
       {/* Page Header */}
       <div className="page-header" style={{
-        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%), url(https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=1600&q=80)',
+        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center 40%',
-        backgroundBlend: 'overlay',
       }}>
         <div className="container page-header__inner">
           <span className="section-label">
@@ -357,21 +366,40 @@ export default function BookFlightPage() {
         </div>
       </div>
 
-      {/* Form Section with Sidebar */}
+      {/* Form + Sidebar */}
       <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
         <div className="container">
+
+          {/* Airport load error — non-blocking banner */}
+          {airportsError && (
+            <div className="alert-warn" style={{
+              marginBottom: '1.5rem', display: 'flex',
+              alignItems: 'center', gap: '0.6rem',
+              background: '#fffbeb', border: '1px solid #f59e0b',
+              borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem',
+              fontSize: '0.875rem', color: '#92400e',
+            }}>
+              <i className="bi bi-exclamation-triangle"></i>
+              <span>{airportsError}</span>
+            </div>
+          )}
+
           <div className="booking-layout">
-            
-            {/* Left Column - Form */}
+
+            {/* ── Left: Form ── */}
             <div className="booking-form-col">
               {error && (
-                <div className="alert-error" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div className="alert-error" style={{
+                  marginBottom: '1.5rem',
+                  display: 'flex', alignItems: 'center', gap: '0.6rem',
+                }}>
                   <i className="bi bi-exclamation-triangle"></i>
                   <span>{error}</span>
                 </div>
               )}
 
               <form onSubmit={submit}>
+
                 {/* Contact Information */}
                 <div className="booking-card" style={{ marginBottom: '1.5rem' }}>
                   <div className="booking-card__header">
@@ -380,7 +408,9 @@ export default function BookFlightPage() {
                   <div className="booking-card__body">
                     <div className="form-row">
                       <div className="form-group">
-                        <label className="form-label-gov">Full Name <span className="required">*</span></label>
+                        <label className="form-label-gov">
+                          Full Name <span className="required">*</span>
+                        </label>
                         <input
                           className="form-input-gov"
                           value={form.guest_name}
@@ -390,7 +420,9 @@ export default function BookFlightPage() {
                         />
                       </div>
                       <div className="form-group">
-                        <label className="form-label-gov">Email <span className="required">*</span></label>
+                        <label className="form-label-gov">
+                          Email <span className="required">*</span>
+                        </label>
                         <input
                           type="email"
                           className="form-input-gov"
@@ -428,6 +460,7 @@ export default function BookFlightPage() {
                     <i className="bi bi-airplane"></i> Flight Details
                   </div>
                   <div className="booking-card__body">
+                    {/* Trip type tabs */}
                     <div className="tabs-gov" style={{ marginBottom: '1.5rem' }}>
                       {TRIP_TYPES.map(([v, l]) => (
                         <button
@@ -442,17 +475,22 @@ export default function BookFlightPage() {
                     </div>
 
                     <div className="form-row">
+                      {/* Origin */}
                       <div className="form-group">
-                        <label className="form-label-gov">From <span className="required">*</span></label>
-                        {airports.length ? (
+                        <label className="form-label-gov">
+                          From <span className="required">*</span>
+                        </label>
+                        {airports.length > 0 || airportsLoading ? (
                           <AirportCombobox
                             airports={airports}
+                            airportsLoading={airportsLoading}
                             value={form.origin}
                             onChange={v => set('origin', v)}
                             placeholder="Type city or airport code…"
                             required
                           />
                         ) : (
+                          /* Fallback plain text if airports completely failed to load */
                           <input
                             className="form-input-gov"
                             placeholder="Origin airport / city"
@@ -462,11 +500,16 @@ export default function BookFlightPage() {
                           />
                         )}
                       </div>
+
+                      {/* Destination */}
                       <div className="form-group">
-                        <label className="form-label-gov">To <span className="required">*</span></label>
-                        {airports.length ? (
+                        <label className="form-label-gov">
+                          To <span className="required">*</span>
+                        </label>
+                        {airports.length > 0 || airportsLoading ? (
                           <AirportCombobox
                             airports={airports}
+                            airportsLoading={airportsLoading}
                             value={form.destination}
                             onChange={v => set('destination', v)}
                             placeholder="Type city or airport code…"
@@ -482,8 +525,12 @@ export default function BookFlightPage() {
                           />
                         )}
                       </div>
+
+                      {/* Departure date */}
                       <div className="form-group">
-                        <label className="form-label-gov">Departure Date <span className="required">*</span></label>
+                        <label className="form-label-gov">
+                          Departure Date <span className="required">*</span>
+                        </label>
                         <input
                           type="date"
                           className="form-input-gov"
@@ -493,6 +540,8 @@ export default function BookFlightPage() {
                           required
                         />
                       </div>
+
+                      {/* Departure time */}
                       <div className="form-group">
                         <label className="form-label-gov">Departure Time</label>
                         <input
@@ -502,9 +551,13 @@ export default function BookFlightPage() {
                           onChange={e => set('departure_time', e.target.value)}
                         />
                       </div>
+
+                      {/* Return date — only for round trips */}
                       {form.trip_type === 'round_trip' && (
                         <div className="form-group">
-                          <label className="form-label-gov">Return Date <span className="required">*</span></label>
+                          <label className="form-label-gov">
+                            Return Date <span className="required">*</span>
+                          </label>
                           <input
                             type="date"
                             className="form-input-gov"
@@ -515,21 +568,26 @@ export default function BookFlightPage() {
                           />
                         </div>
                       )}
+
+                      {/* Passengers */}
                       <div className="form-group">
-                        <label className="form-label-gov">Passengers <span className="required">*</span></label>
+                        <label className="form-label-gov">
+                          Passengers <span className="required">*</span>
+                        </label>
                         <input
                           type="number"
                           min={1}
                           max={200}
                           className="form-input-gov"
                           value={form.passenger_count}
-                          onChange={e => set('passenger_count', parseInt(e.target.value))}
+                          onChange={e => set('passenger_count', parseInt(e.target.value) || 1)}
                           required
                         />
                         <div className="form-hint">Maximum 200 passengers per aircraft</div>
                       </div>
                     </div>
 
+                    {/* Aircraft category */}
                     <div className="form-group" style={{ marginTop: '1rem' }}>
                       <label className="form-label-gov">Preferred Aircraft Category</label>
                       <select
@@ -554,9 +612,9 @@ export default function BookFlightPage() {
                   <div className="booking-card__body">
                     <div className="checkbox-group">
                       {[
-                        ['catering_requested', 'bi-cup-hot', 'In-Flight Catering'],
-                        ['ground_transport_requested', 'bi-car-front', 'Ground Transport'],
-                        ['concierge_requested', 'bi-headset', 'Concierge Service'],
+                        ['catering_requested',          'bi-cup-hot',   'In-Flight Catering'],
+                        ['ground_transport_requested',  'bi-car-front', 'Ground Transport'],
+                        ['concierge_requested',         'bi-headset',   'Concierge Service'],
                       ].map(([k, icon, label]) => (
                         <label key={k} className="checkbox-label">
                           <input
@@ -592,13 +650,18 @@ export default function BookFlightPage() {
                   </div>
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit */}
                 <div style={{ marginTop: '2rem' }}>
-                  <button type="submit" className="btn-primary-gov btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
+                  <button
+                    type="submit"
+                    className="btn-primary-gov btn-lg"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    disabled={loading}
+                  >
                     {loading ? (
                       <>
                         <div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>
-                        &nbsp; Submitting Request...
+                        &nbsp; Submitting Request…
                       </>
                     ) : (
                       <>
@@ -606,14 +669,17 @@ export default function BookFlightPage() {
                       </>
                     )}
                   </button>
-                  <p className="text-center" style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)' }}>
-                    <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 2-4 hours.
+                  <p className="text-center" style={{
+                    marginTop: '1rem', fontSize: '0.8rem',
+                    color: 'var(--color-mid-gray)',
+                  }}>
+                    <i className="bi bi-shield-check"></i> Your information is secure. We'll respond within 2–4 hours.
                   </p>
                 </div>
               </form>
             </div>
 
-            {/* Right Column - Sidebar with Guide Information */}
+            {/* ── Right: Sidebar ── */}
             <div className="booking-sidebar">
               {/* Quick Tips */}
               <div className="booking-sidebar-card">
@@ -654,17 +720,25 @@ export default function BookFlightPage() {
                 </div>
               </div>
 
-              {/* Contact Info */}
+              {/* Need Help */}
               <div className="booking-sidebar-card">
                 <div className="booking-sidebar-card__header">
                   <i className="bi bi-headset"></i> Need Help?
                 </div>
                 <div className="booking-sidebar-card__body">
                   <p>Our concierge team is available 24/7 to assist with your booking.</p>
-                  <a href="tel:+254780729617" className="btn-outline-gov btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}>
+                  <a
+                    href="tel:+254724878136"
+                    className="btn-outline-gov btn-sm"
+                    style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
+                  >
                     <i className="bi bi-telephone"></i> +254 724 878 136
                   </a>
-                  <a href="mailto:info@nairobijethouse.com" className="btn-outline-gov btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}>
+                  <a
+                    href="mailto:info@nairobijethouse.com"
+                    className="btn-outline-gov btn-sm"
+                    style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
+                  >
                     <i className="bi bi-envelope"></i> info@nairobijethouse.com
                   </a>
                 </div>
@@ -676,222 +750,145 @@ export default function BookFlightPage() {
       </section>
 
       <PublicFooter />
-
-      <style>{`
-        /* Booking Layout - Two Columns */
-        .booking-layout {
-          display: grid;
-          grid-template-columns: 1fr 320px;
-          gap: 2rem;
-          align-items: start;
-        }
-        
-        .booking-form-col {
-          min-width: 0;
-        }
-        
-        .booking-sidebar {
-          position: sticky;
-          top: 100px;
-        }
-        
-        /* Booking Cards */
-        .booking-card {
-          background: var(--color-white);
-          border: 1px solid var(--color-light-gray);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-        }
-        
-        .booking-card__header {
-          background: var(--color-navy);
-          color: var(--color-white);
-          padding: 1rem 1.5rem;
-          font-family: var(--font-label);
-          font-size: 0.85rem;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        
-        .booking-card__header i {
-          color: var(--color-gold);
-          font-size: 1rem;
-        }
-        
-        .booking-card__body {
-          padding: 1.5rem;
-        }
-        
-        /* Sidebar Cards */
-        .booking-sidebar-card {
-          background: var(--color-white);
-          border: 1px solid var(--color-light-gray);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          margin-bottom: 1.5rem;
-        }
-        
-        .booking-sidebar-card__header {
-          background: var(--color-navy);
-          color: var(--color-white);
-          padding: 0.85rem 1.25rem;
-          font-family: var(--font-label);
-          font-size: 0.8rem;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        
-        .booking-sidebar-card__header i {
-          color: var(--color-gold);
-          font-size: 0.9rem;
-        }
-        
-        .booking-sidebar-card__body {
-          padding: 1.25rem;
-        }
-        
-        /* Quick Tip Items */
-        .booking-tip-item {
-          display: flex;
-          gap: 0.75rem;
-          margin-bottom: 1rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid var(--color-light-gray);
-        }
-        
-        .booking-tip-item:last-child {
-          margin-bottom: 0;
-          padding-bottom: 0;
-          border-bottom: none;
-        }
-        
-        .booking-tip-item i {
-          font-size: 1.2rem;
-          color: var(--color-gold);
-          flex-shrink: 0;
-        }
-        
-        .booking-tip-item strong {
-          display: block;
-          font-size: 0.85rem;
-          color: var(--color-navy);
-          margin-bottom: 0.2rem;
-        }
-        
-        .booking-tip-item p {
-          font-size: 0.75rem;
-          color: var(--color-mid-gray);
-          margin: 0;
-          line-height: 1.4;
-        }
-        
-        /* Aircraft Sidebar Items */
-        .aircraft-sidebar-item {
-          margin-bottom: 1rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid var(--color-light-gray);
-        }
-        
-        .aircraft-sidebar-item:last-child {
-          margin-bottom: 0;
-          padding-bottom: 0;
-          border-bottom: none;
-        }
-        
-        .aircraft-sidebar-info strong {
-          display: block;
-          font-size: 0.85rem;
-          color: var(--color-navy);
-          margin-bottom: 0.25rem;
-        }
-        
-        .aircraft-sidebar-specs {
-          display: flex;
-          gap: 0.75rem;
-          margin-bottom: 0.25rem;
-        }
-        
-        .aircraft-sidebar-specs span {
-          font-size: 0.7rem;
-          color: var(--color-mid-gray);
-          display: flex;
-          align-items: center;
-          gap: 0.2rem;
-        }
-        
-        .aircraft-sidebar-specs i {
-          color: var(--color-gold);
-          font-size: 0.65rem;
-        }
-        
-        .aircraft-sidebar-info p {
-          font-size: 0.7rem;
-          color: var(--color-dark-gray);
-          margin: 0;
-        }
-        
-        /* Checkbox Group */
-        .checkbox-group {
-          display: flex;
-          gap: 1.5rem;
-          flex-wrap: wrap;
-        }
-        
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          cursor: pointer;
-          font-size: 0.875rem;
-          color: var(--color-dark-gray);
-        }
-        
-        .checkbox-label input[type="checkbox"] {
-          width: 17px;
-          height: 17px;
-          accent-color: var(--color-navy);
-          cursor: pointer;
-        }
-        
-        /* Responsive */
-        @media (max-width: 1024px) {
-          .booking-layout {
-            grid-template-columns: 1fr;
-          }
-          
-          .booking-sidebar {
-            position: static;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-          }
-          
-          .booking-sidebar-card {
-            margin-bottom: 0;
-          }
-        }
-        
-        @media (max-width: 768px) {
-          .booking-card__body {
-            padding: 1rem;
-          }
-          
-          .booking-sidebar {
-            grid-template-columns: 1fr;
-          }
-          
-          .checkbox-group {
-            flex-direction: column;
-            gap: 0.75rem;
-          }
-        }
-      `}</style>
+      <PageStyles />
     </>
+  );
+}
+
+// ── Extracted style blocks ────────────────────────────────────────────────────
+function SuccessStyles() {
+  return (
+    <style>{`
+      .booking-success { text-align: center; max-width: 500px; margin: 0 auto; }
+      .booking-success__icon {
+        width: 80px; height: 80px;
+        background: rgba(26,127,90,0.1); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.5rem;
+      }
+      .booking-success__icon i { font-size: 2.5rem; color: var(--color-success); }
+      .booking-success__ref {
+        background: var(--color-off-white);
+        border: 1px solid var(--color-light-gray);
+        border-radius: var(--radius-md);
+        padding: 1rem; margin-bottom: 2rem;
+      }
+      .booking-success__ref-label {
+        font-size: 0.7rem; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        color: var(--color-gold); margin-bottom: 0.25rem;
+      }
+      .booking-success__ref-value {
+        font-family: monospace; font-size: 1.1rem;
+        font-weight: 700; color: var(--color-navy);
+      }
+      .booking-success__actions {
+        display: flex; gap: 1rem;
+        justify-content: center; flex-wrap: wrap;
+      }
+      @media (max-width: 480px) {
+        .booking-success__actions { flex-direction: column; }
+        .booking-success__actions a { width: 100%; justify-content: center; }
+      }
+    `}</style>
+  );
+}
+
+function PageStyles() {
+  return (
+    <style>{`
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Layout */
+      .booking-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 2rem;
+        align-items: start;
+      }
+      .booking-form-col { min-width: 0; }
+      .booking-sidebar  { position: sticky; top: 100px; }
+
+      /* Cards */
+      .booking-card {
+        background: var(--color-white);
+        border: 1px solid var(--color-light-gray);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+      .booking-card__header {
+        background: var(--color-navy);
+        color: var(--color-white);
+        padding: 1rem 1.5rem;
+        font-family: var(--font-label);
+        font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 0.5rem;
+      }
+      .booking-card__header i { color: var(--color-gold); font-size: 1rem; }
+      .booking-card__body { padding: 1.5rem; }
+
+      /* Sidebar cards */
+      .booking-sidebar-card {
+        background: var(--color-white);
+        border: 1px solid var(--color-light-gray);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+      }
+      .booking-sidebar-card__header {
+        background: var(--color-navy); color: var(--color-white);
+        padding: 0.85rem 1.25rem;
+        font-family: var(--font-label);
+        font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 0.5rem;
+      }
+      .booking-sidebar-card__header i { color: var(--color-gold); font-size: 0.9rem; }
+      .booking-sidebar-card__body { padding: 1.25rem; }
+
+      /* Tips */
+      .booking-tip-item {
+        display: flex; gap: 0.75rem;
+        margin-bottom: 1rem; padding-bottom: 1rem;
+        border-bottom: 1px solid var(--color-light-gray);
+      }
+      .booking-tip-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+      .booking-tip-item i { font-size: 1.2rem; color: var(--color-gold); flex-shrink: 0; }
+      .booking-tip-item strong { display: block; font-size: 0.85rem; color: var(--color-navy); margin-bottom: 0.2rem; }
+      .booking-tip-item p { font-size: 0.75rem; color: var(--color-mid-gray); margin: 0; line-height: 1.4; }
+
+      /* Aircraft guide */
+      .aircraft-sidebar-item {
+        margin-bottom: 1rem; padding-bottom: 1rem;
+        border-bottom: 1px solid var(--color-light-gray);
+      }
+      .aircraft-sidebar-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+      .aircraft-sidebar-info strong { display: block; font-size: 0.85rem; color: var(--color-navy); margin-bottom: 0.25rem; }
+      .aircraft-sidebar-specs { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
+      .aircraft-sidebar-specs span { font-size: 0.7rem; color: var(--color-mid-gray); display: flex; align-items: center; gap: 0.2rem; }
+      .aircraft-sidebar-specs i  { color: var(--color-gold); font-size: 0.65rem; }
+      .aircraft-sidebar-info p   { font-size: 0.7rem; color: var(--color-dark-gray); margin: 0; }
+
+      /* Checkboxes */
+      .checkbox-group { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+      .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem; color: var(--color-dark-gray); }
+      .checkbox-label input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--color-navy); cursor: pointer; }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .booking-layout { grid-template-columns: 1fr; }
+        .booking-sidebar {
+          position: static;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+        }
+        .booking-sidebar-card { margin-bottom: 0; }
+      }
+      @media (max-width: 768px) {
+        .booking-card__body { padding: 1rem; }
+        .booking-sidebar { grid-template-columns: 1fr; }
+        .checkbox-group { flex-direction: column; gap: 0.75rem; }
+      }
+    `}</style>
   );
 }
