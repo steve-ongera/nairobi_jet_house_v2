@@ -1,13 +1,7 @@
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { adminAPI } from '../../services/api'
 
 // ── npm install jspdf html2canvas ──────────────────────────────────────────────
-// Import at top of file (these are the only new dependencies)
-// import jsPDF from 'jspdf'
-// import html2canvas from 'html2canvas'
-// We do dynamic imports inside the function so code-splitting works fine.
 
 const STATUS_OPTIONS = ['inquiry', 'rfq_sent', 'quoted', 'confirmed', 'in_flight', 'completed', 'cancelled']
 const STATUS_COLOR = {
@@ -91,7 +85,7 @@ function Modal({ open, onClose, title, children, size = 'lg' }) {
   )
 }
 
-// deterministic QR-like cell generator for inline SVG in HTML string
+// ── Deterministic QR-like SVG cells ──────────────────────────────────────────
 function generateQRCells(value) {
   const cells = 19
   const cellSize = Math.floor(84 / cells)
@@ -112,20 +106,188 @@ function generateQRCells(value) {
   return svg
 }
 
+// ── Route Map SVG ─────────────────────────────────────────────────────────────
+// Renders a mini globe-style route map: two airport pins connected by a curved
+// dashed flight arc with a small aircraft icon at the midpoint.
+// originCode / destCode are IATA codes for labelling.
+// The "globe" is a simple SVG circle with latitude/longitude grid lines.
+function buildRouteMapSVG(originCode, originCity, destCode, destCity) {
+  const W = 740, H = 180
+  // Pin positions — left third for origin, right third for dest
+  const ox = 160, oy = 95
+  const dx = W - 160, dy = 95
+  // Bezier control point: arc up above midpoint
+  const mx = W / 2, my = 28
+  // Midpoint along cubic bezier at t=0.5 (approx)
+  const bx = W / 2
+  const by = (oy + dy) / 2 - 28   // just above midline
+
+  return `
+<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">
+  <defs>
+    <radialGradient id="globeGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#dde8f5"/>
+      <stop offset="100%" stop-color="#b8cfe8"/>
+    </radialGradient>
+    <radialGradient id="globeGrad2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#dde8f5"/>
+      <stop offset="100%" stop-color="#b8cfe8"/>
+    </radialGradient>
+    <clipPath id="globeClip1">
+      <circle cx="${ox}" cy="${oy}" r="38"/>
+    </clipPath>
+    <clipPath id="globeClip2">
+      <circle cx="${dx}" cy="${dy}" r="38"/>
+    </clipPath>
+    <filter id="pinShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f2d5e" flood-opacity="0.22"/>
+    </filter>
+    <filter id="planeShadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#0f2d5e" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrowHead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#c9a84c" opacity="0.7"/>
+    </marker>
+  </defs>
+
+  <!-- ── Background track line (full width subtle) ── -->
+  <line x1="${ox}" y1="${oy}" x2="${dx}" y2="${dy}"
+    stroke="#d0dce8" stroke-width="1" stroke-dasharray="4 6" opacity="0.5"/>
+
+  <!-- ── ORIGIN GLOBE ── -->
+  <!-- Globe circle -->
+  <circle cx="${ox}" cy="${oy}" r="38" fill="url(#globeGrad)" stroke="#7fa8cf" stroke-width="1.2"/>
+  <!-- Globe grid lines clipped inside globe -->
+  <g clip-path="url(#globeClip1)">
+    <!-- Latitude lines -->
+    <ellipse cx="${ox}" cy="${oy}" rx="38" ry="14" fill="none" stroke="#8ab0d0" stroke-width="0.6" opacity="0.7"/>
+    <ellipse cx="${ox}" cy="${oy - 14}" rx="36" ry="10" fill="none" stroke="#8ab0d0" stroke-width="0.5" opacity="0.5"/>
+    <ellipse cx="${ox}" cy="${oy + 14}" rx="36" ry="10" fill="none" stroke="#8ab0d0" stroke-width="0.5" opacity="0.5"/>
+    <!-- Longitude lines -->
+    <ellipse cx="${ox}" cy="${oy}" rx="14" ry="38" fill="none" stroke="#8ab0d0" stroke-width="0.6" opacity="0.7"/>
+    <ellipse cx="${ox}" cy="${oy}" rx="28" ry="38" fill="none" stroke="#8ab0d0" stroke-width="0.5" opacity="0.4"/>
+    <!-- Continent blobs (abstract) -->
+    <ellipse cx="${ox - 8}" cy="${oy - 6}" rx="10" ry="7" fill="#a8c5a0" opacity="0.55"/>
+    <ellipse cx="${ox + 10}" cy="${oy + 5}" rx="8" ry="5" fill="#a8c5a0" opacity="0.45"/>
+    <ellipse cx="${ox - 2}" cy="${oy + 12}" rx="6" ry="4" fill="#a8c5a0" opacity="0.35"/>
+  </g>
+  <!-- Globe border highlight -->
+  <circle cx="${ox}" cy="${oy}" r="38" fill="none" stroke="white" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- ── ORIGIN PIN ── -->
+  <g filter="url(#pinShadow)">
+    <!-- Pin body -->
+    <path d="M${ox},${oy - 6} m-9,0 a9,9 0 1,1 18,0 a9,9 0 0,1 -9,13 Z"
+      fill="#0f2d5e" opacity="0.95"/>
+    <!-- Pin inner dot -->
+    <circle cx="${ox}" cy="${oy - 6}" r="3.5" fill="white"/>
+    <!-- Pin glow -->
+    <circle cx="${ox}" cy="${oy - 6}" r="5" fill="none" stroke="white" stroke-width="1" opacity="0.4"/>
+  </g>
+  <!-- Origin pulse rings -->
+  <circle cx="${ox}" cy="${oy - 6}" r="12" fill="none" stroke="#0f2d5e" stroke-width="1" opacity="0.18"/>
+  <circle cx="${ox}" cy="${oy - 6}" r="17" fill="none" stroke="#0f2d5e" stroke-width="0.7" opacity="0.1"/>
+
+  <!-- Origin label -->
+  <text x="${ox}" y="${oy + 48}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="15" font-weight="700" fill="#0f2d5e">${originCode || 'NBO'}</text>
+  <text x="${ox}" y="${oy + 62}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="9.5" fill="#6b82a0">${(originCity || '').slice(0, 18)}</text>
+
+  <!-- ── DESTINATION GLOBE ── -->
+  <circle cx="${dx}" cy="${dy}" r="38" fill="url(#globeGrad2)" stroke="#7fa8cf" stroke-width="1.2"/>
+  <g clip-path="url(#globeClip2)">
+    <ellipse cx="${dx}" cy="${dy}" rx="38" ry="14" fill="none" stroke="#8ab0d0" stroke-width="0.6" opacity="0.7"/>
+    <ellipse cx="${dx}" cy="${dy - 14}" rx="36" ry="10" fill="none" stroke="#8ab0d0" stroke-width="0.5" opacity="0.5"/>
+    <ellipse cx="${dx}" cy="${dy + 14}" rx="36" ry="10" fill="none" stroke="#8ab0d0" stroke-width="0.5" opacity="0.5"/>
+    <ellipse cx="${dx}" cy="${dy}" rx="14" ry="38" fill="none" stroke="#8ab0d0" stroke-width="0.6" opacity="0.7"/>
+    <ellipse cx="${dx}" cy="${dy}" rx="28" ry="38" fill="none" stroke="#8ab0d0" stroke-width="0.5" opacity="0.4"/>
+    <ellipse cx="${dx + 6}" cy="${dy - 8}" rx="9" ry="6" fill="#a8c5a0" opacity="0.55"/>
+    <ellipse cx="${dx - 10}" cy="${dy + 4}" rx="7" ry="5" fill="#a8c5a0" opacity="0.45"/>
+    <ellipse cx="${dx + 2}" cy="${dy + 14}" rx="5" ry="3.5" fill="#a8c5a0" opacity="0.35"/>
+  </g>
+  <circle cx="${dx}" cy="${dy}" r="38" fill="none" stroke="white" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- ── DESTINATION PIN ── -->
+  <g filter="url(#pinShadow)">
+    <path d="M${dx},${dy - 6} m-9,0 a9,9 0 1,1 18,0 a9,9 0 0,1 -9,13 Z"
+      fill="#c9a84c" opacity="0.97"/>
+    <circle cx="${dx}" cy="${dy - 6}" r="3.5" fill="white"/>
+    <circle cx="${dx}" cy="${dy - 6}" r="5" fill="none" stroke="white" stroke-width="1" opacity="0.4"/>
+  </g>
+  <circle cx="${dx}" cy="${dy - 6}" r="12" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.22"/>
+  <circle cx="${dx}" cy="${dy - 6}" r="17" fill="none" stroke="#c9a84c" stroke-width="0.7" opacity="0.12"/>
+
+  <!-- Destination label -->
+  <text x="${dx}" y="${dy + 48}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="15" font-weight="700" fill="#0f2d5e">${destCode || 'DWC'}</text>
+  <text x="${dx}" y="${dy + 62}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="9.5" fill="#6b82a0">${(destCity || '').slice(0, 18)}</text>
+
+  <!-- ── FLIGHT ARC ── -->
+  <!-- Shadow arc -->
+  <path d="M${ox + 8},${oy - 12} Q${mx},${my - 8} ${dx - 8},${dy - 12}"
+    fill="none" stroke="#0f2d5e" stroke-width="2.5" stroke-dasharray="7 5"
+    opacity="0.08" stroke-linecap="round"/>
+  <!-- Main dashed arc -->
+  <path d="M${ox + 8},${oy - 12} Q${mx},${my - 8} ${dx - 8},${dy - 12}"
+    fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="7 5"
+    opacity="0.85" stroke-linecap="round"
+    marker-end="url(#arrowHead)"/>
+
+  <!-- ── AIRCRAFT ICON at arc midpoint ── -->
+  <!-- Midpoint of quadratic bezier at t=0.5: (ox/4 + mx/2 + dx/4), same for y -->
+  <g transform="translate(${(ox + 2 * mx + dx) / 4 - 12}, ${(oy - 12 + 2 * (my - 8) + dy - 12) / 4 - 12}) rotate(0)"
+    filter="url(#planeShadow)">
+    <!-- Aircraft silhouette facing right -->
+    <g transform="translate(12,12) rotate(-15) scale(1.15)">
+      <!-- Fuselage -->
+      <ellipse cx="0" cy="0" rx="11" ry="3" fill="#0f2d5e"/>
+      <!-- Wings -->
+      <path d="M-2,-2 L-8,-9 L2,-9 L4,-2 Z" fill="#0f2d5e" opacity="0.9"/>
+      <path d="M-2,2 L-6,8 L2,8 L4,2 Z" fill="#0f2d5e" opacity="0.7"/>
+      <!-- Tail -->
+      <path d="M-9,-1 L-13,-5 L-10,-1 Z" fill="#0f2d5e" opacity="0.8"/>
+      <!-- Nose highlight -->
+      <ellipse cx="8" cy="0" rx="3" ry="1.5" fill="#c9a84c" opacity="0.9"/>
+      <!-- Window row -->
+      <rect x="-1" y="-1.2" width="2" height="1.2" rx="0.6" fill="white" opacity="0.7"/>
+      <rect x="2" y="-1.2" width="2" height="1.2" rx="0.6" fill="white" opacity="0.7"/>
+      <rect x="5" y="-1.2" width="2" height="1.2" rx="0.6" fill="white" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- ── DISTANCE LABEL in arc centre ── -->
+  <rect x="${mx - 38}" y="${my - 30}" width="76" height="18" rx="9"
+    fill="#0f2d5e" opacity="0.82"/>
+  <text x="${mx}" y="${my - 17}" text-anchor="middle"
+    font-family="'DM Sans',sans-serif" font-size="10" font-weight="600" fill="#c9a84c"
+    letter-spacing="0.5">DIRECT FLIGHT</text>
+
+</svg>`
+}
+
 // ── Invoice HTML Generator ────────────────────────────────────────────────────
+// CHANGES vs previous version:
+//   1. Logo: <img src="/NJH-LOGO.png"> instead of text-only name
+//   2. Stamp: <img src="/NJH-STAMP.png"> overlaid on signature block
+//   3. Route map: inline SVG globe + arc inserted between itinerary sections
+//   4. Image error handling: onError hides the img if file not found
 function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetails) {
-  const fmt = (v) => v ? `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
-  const origin = booking.origin_detail?.code || booking.origin || '—'
-  const dest = booking.destination_detail?.code || booking.destination || '—'
+  const fmt = (v) => v
+    ? `$${Number(v).toLocaleString('en-US', { minimumFractionizedDigits: 2, maximumFractionDigits: 2, minimumFractionDigits: 2 })}`
+    : '—'
+
+  const origin     = booking.origin_detail?.code || booking.origin || '—'
+  const dest       = booking.destination_detail?.code || booking.destination || '—'
   const originCity = booking.origin_detail?.city || ''
-  const destCity = booking.destination_detail?.city || ''
+  const destCity   = booking.destination_detail?.city || ''
   const commission = booking.commission_usd
     ? Number(booking.commission_usd)
     : booking.quoted_price_usd && booking.commission_pct
       ? (Number(booking.quoted_price_usd) * Number(booking.commission_pct) / 100)
       : 0
-  const subtotal = Number(booking.quoted_price_usd || 0)
-  const ref = String(booking.reference || booking.id)
+  const subtotal  = Number(booking.quoted_price_usd || 0)
+  const ref       = String(booking.reference || booking.id)
+
+  // Route map SVG — inline so html2canvas captures it
+  const routeMap = buildRouteMapSVG(origin, originCity, dest, destCity)
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -137,10 +299,11 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
   body{font-family:'DM Sans',sans-serif;background:#f4f1eb;color:#1a1a1a;font-size:13px}
   .page{max-width:820px;margin:0 auto;background:#fff;position:relative;overflow:hidden}
   .top-bar{height:6px;background:linear-gradient(90deg,#0f2d5e 0%,#c9a84c 50%,#0f2d5e 100%)}
-  .header{padding:32px 40px 24px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e5e0d5}
-  .logo-section{}
-  .logo-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:#0f2d5e;letter-spacing:0.5px}
-  .logo-tagline{font-size:10px;color:#c9a84c;letter-spacing:2px;text-transform:uppercase;margin-top:2px;font-weight:600}
+  .header{padding:28px 40px 22px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e5e0d5}
+  /* ── LOGO image — falls back gracefully if file missing ── */
+  .logo-img{height:56px;width:auto;max-width:200px;object-fit:contain;display:block}
+  .logo-fallback{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#0f2d5e;letter-spacing:0.5px}
+  .logo-tagline{font-size:10px;color:#c9a84c;letter-spacing:2px;text-transform:uppercase;margin-top:4px;font-weight:600}
   .logo-sub{font-size:10px;color:#888;margin-top:6px;max-width:260px;line-height:1.5}
   .header-right{text-align:right}
   .inv-number{font-family:'Playfair Display',serif;font-size:18px;color:#0f2d5e;font-weight:700}
@@ -151,8 +314,8 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
     font-family:'Playfair Display',serif;font-size:90px;font-weight:700;
     color:rgba(15,45,94,0.04);pointer-events:none;white-space:nowrap;z-index:0;letter-spacing:8px
   }
-  .content{padding:28px 40px;position:relative;z-index:1}
-  .bill-qr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+  .content{padding:24px 40px;position:relative;z-index:1}
+  .bill-qr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
   .bill-to h3{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#c9a84c;font-weight:600;margin-bottom:10px}
   .bill-to .client-name{font-family:'Playfair Display',serif;font-size:20px;color:#0f2d5e;font-weight:700;border-bottom:2px solid #c9a84c;padding-bottom:4px;margin-bottom:10px;display:inline-block}
   .bill-box{border:1px solid #e0d9cc;border-radius:6px;padding:12px 16px;min-width:240px;background:#faf8f4}
@@ -163,6 +326,16 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
   .qr-section .ref-text{font-family:monospace;font-size:8px;color:#0f2d5e;margin-top:2px}
   .section-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#0f2d5e;font-weight:700;
     padding:8px 0;border-bottom:2px solid #0f2d5e;margin-bottom:12px}
+  /* ── Route map wrapper ── */
+  .route-map-wrap{
+    border:1px solid #dce8f0;border-radius:10px;overflow:hidden;
+    margin-bottom:20px;background:linear-gradient(135deg,#eef4fb 0%,#f4f8fc 100%);
+    padding:16px 20px 8px
+  }
+  .route-map-label{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#0f2d5e;
+    font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px
+  }
   table{width:100%;border-collapse:collapse;margin-bottom:20px}
   thead tr{background:#0f2d5e}
   thead th{color:#fff;padding:9px 12px;text-align:left;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
@@ -188,10 +361,18 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
   .terms h4{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#0f2d5e;font-weight:700;margin-bottom:8px}
   .terms ol{padding-left:16px}
   .terms ol li{font-size:10.5px;color:#555;line-height:1.7;margin-bottom:2px}
+  /* ── Signature block with stamp overlay ── */
   .sig-section{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:24px}
+  .sig-box{position:relative}
   .sig-box h4{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:16px;font-weight:600}
   .sig-line{border-bottom:1px solid #333;margin-bottom:6px;height:40px}
   .sig-box p{font-size:10px;color:#888}
+  /* NJH stamp image — positioned bottom-right of the NJH sig box */
+  .stamp-img{
+    position:absolute;bottom:-8px;right:0;
+    width:90px;height:90px;object-fit:contain;
+    opacity:0.82;pointer-events:none
+  }
   .footer{background:#0f2d5e;color:#fff;padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
   .footer-left{font-size:10px;line-height:1.8;color:rgba(255,255,255,0.7)}
   .footer-right{font-size:14px;font-weight:700;color:#c9a84c;letter-spacing:0.5px}
@@ -203,9 +384,19 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
 <div class="page">
   <div class="watermark">CONFIDENTIAL</div>
   <div class="top-bar"></div>
+
+  <!-- ══ HEADER with logo image ══ -->
   <div class="header">
     <div class="logo-section">
-      <div class="logo-name">&#9992; Nairobi Jet House</div>
+      <!-- Primary: PNG logo from /public/NJH-LOGO.png -->
+      <img
+        class="logo-img"
+        src="/NJH-LOGO.png"
+        alt="Nairobi Jet House"
+        onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='block'"
+      />
+      <!-- Fallback text if image fails to load -->
+      <div id="logo-fallback" class="logo-fallback" style="display:none">&#9992; Nairobi Jet House</div>
       <div class="logo-tagline">Private Aviation &amp; Luxury Charter</div>
       <div class="logo-sub">${NJH.address}<br>${NJH.phone} &nbsp;|&nbsp; ${NJH.email}</div>
     </div>
@@ -218,7 +409,9 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
       </div>
     </div>
   </div>
+
   <div class="content">
+    <!-- ══ BILL TO + QR ══ -->
     <div class="bill-qr">
       <div class="bill-to">
         <h3>Bill To</h3>
@@ -238,9 +431,23 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
           </svg>
         </div>
         <div class="qr-label">Scan to Verify</div>
-        <div class="ref-text">${ref.slice(0,16)}…</div>
+        <div class="ref-text">${ref.slice(0, 16)}…</div>
       </div>
     </div>
+
+    <!-- ══ ROUTE MAP ══ -->
+    <div class="route-map-wrap">
+      <div class="route-map-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="#0f2d5e" stroke-width="1.5"/>
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#0f2d5e" stroke-width="1.2"/>
+        </svg>
+        Flight Route
+      </div>
+      ${routeMap}
+    </div>
+
+    <!-- ══ ITINERARY TABLE ══ -->
     <div class="section-title">Flight Itinerary</div>
     <table>
       <thead>
@@ -266,6 +473,8 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
         </tr>` : ''}
       </tbody>
     </table>
+
+    <!-- ══ AIRCRAFT TABLE ══ -->
     <div class="section-title">Aircraft Details &amp; Charter Costs</div>
     <table>
       <thead>
@@ -280,13 +489,15 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
           <td>${booking.aircraft_detail?.registration_number || 'TBC'}</td>
           <td>${booking.aircraft_detail?.category_display || 'Private Jet'}</td>
           <td>${booking.passenger_count || 1} Pax</td>
-          <td style="text-transform:capitalize">${(booking.trip_type || 'one_way').replace(/_/g,' ')}</td>
+          <td style="text-transform:capitalize">${(booking.trip_type || 'one_way').replace(/_/g, ' ')}</td>
           <td class="td-gold" style="font-weight:700">${fmt(booking.quoted_price_usd)}</td>
         </tr>
         ${booking.catering_requested ? `<tr><td colspan="5">Catering &amp; Cabin Service</td><td class="td-gold">Included</td></tr>` : ''}
         ${booking.ground_transport_requested ? `<tr><td colspan="5">Ground Transportation</td><td class="td-gold">Included</td></tr>` : ''}
       </tbody>
     </table>
+
+    <!-- ══ COST SUMMARY ══ -->
     <div class="cost-wrap">
       <div class="cost-table">
         <div class="cost-row sub">
@@ -307,6 +518,8 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
         </div>
       </div>
     </div>
+
+    <!-- ══ PAYMENT DETAILS ══ -->
     <div class="two-col">
       <div class="info-box">
         <h4>Bank Transfer (USD)</h4>
@@ -325,10 +538,13 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
         <div>Cancellation &lt;48h: <strong>50% penalty</strong></div>
       </div>
     </div>
+
     ${extraNotes ? `<div class="info-box" style="margin-bottom:20px">
       <h4>Additional Notes</h4>
       <div style="font-size:12px;line-height:1.7;color:#444">${extraNotes}</div>
     </div>` : ''}
+
+    <!-- ══ TERMS ══ -->
     <div class="terms">
       <h4>Terms &amp; Conditions</h4>
       <ol>
@@ -344,13 +560,25 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
         <li>This document is <strong>CONFIDENTIAL</strong> and intended solely for the named client.</li>
       </ol>
     </div>
+
+    <!-- ══ SIGNATURE BLOCK with NJH-STAMP.png overlay ══ -->
     <div class="sig-section">
+      <!-- NJH side — stamp image overlaid bottom-right -->
       <div class="sig-box">
         <h4>For: Nairobi Jet House (Authorized)</h4>
         <div class="sig-line"></div>
         <p>Name: ________________________________</p>
         <p style="margin-top:6px">Position: Operations Director</p>
+        <!-- Stamp image from /public/NJH-STAMP.png — rotated slightly like a real stamp -->
+        <img
+          class="stamp-img"
+          src="/NJH-STAMP.png"
+          alt="NJH Official Stamp"
+          style="transform:rotate(-8deg)"
+          onerror="this.style.display='none'"
+        />
       </div>
+      <!-- Client side -->
       <div class="sig-box">
         <h4>Client Acceptance</h4>
         <div class="sig-line"></div>
@@ -359,6 +587,8 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
       </div>
     </div>
   </div>
+
+  <!-- ══ FOOTER ══ -->
   <div class="footer">
     <div class="footer-left">
       &#128205; ${NJH.address}<br>
@@ -372,11 +602,11 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
 </html>`
 }
 
-// ── PDF Generation Helper ─────────────────────────────────────────────────────
-// Renders invoice HTML into an off-screen iframe, captures with html2canvas,
-// then converts to PDF with jsPDF.  mode = 'download' | 'preview'
+// ── PDF Generation ────────────────────────────────────────────────────────────
+// IMPORTANT: html2canvas runs inside a hidden iframe that is served from the
+// same origin as the app. Images in /public (NJH-LOGO.png, NJH-STAMP.png) are
+// therefore same-origin and will be captured without CORS issues.
 async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
-  // Dynamic imports — only loaded when needed (keeps initial bundle lean)
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import('jspdf'),
     import('html2canvas'),
@@ -388,18 +618,18 @@ async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
     invoiceForm.invoice_date,
     invoiceForm.extra_notes,
     {
-      account: invoiceForm.bank_account,
+      account:  invoiceForm.bank_account,
       bankName: invoiceForm.bank_name,
-      swift: invoiceForm.bank_swift,
-      branch: invoiceForm.bank_branch,
+      swift:    invoiceForm.bank_swift,
+      branch:   invoiceForm.bank_branch,
     }
   )
 
-  // Create a hidden, fixed-width iframe for accurate rendering
+  // Hidden fixed-width iframe for accurate rendering
   const iframe = document.createElement('iframe')
   iframe.style.cssText = `
     position:fixed; top:-9999px; left:-9999px;
-    width:900px; height:1200px; border:none; visibility:hidden;
+    width:900px; height:1400px; border:none; visibility:hidden;
   `
   document.body.appendChild(iframe)
 
@@ -408,37 +638,47 @@ async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
     iframe.srcdoc = html
   })
 
-  // Give fonts a moment to load
-  await new Promise(r => setTimeout(r, 600))
+  // Wait for Google Fonts + images (logo, stamp) to load inside iframe
+  // We wait for all <img> elements to settle before capturing
+  await new Promise(r => setTimeout(r, 900))
+
+  // Extra wait: ensure images inside iframe are loaded
+  await new Promise(resolve => {
+    const imgs = Array.from(iframe.contentDocument.querySelectorAll('img'))
+    if (!imgs.length) { resolve(); return }
+    let loaded = 0
+    const done = () => { if (++loaded === imgs.length) resolve() }
+    imgs.forEach(img => {
+      if (img.complete) { done() }
+      else { img.onload = done; img.onerror = done }
+    })
+    // Fallback timeout
+    setTimeout(resolve, 1500)
+  })
 
   const invoiceEl = iframe.contentDocument.querySelector('.page')
 
   const canvas = await html2canvas(invoiceEl, {
-    scale: 2,               // 2× for crisp PDF
-    useCORS: true,
-    allowTaint: true,
+    scale:           2,
+    useCORS:         true,
+    allowTaint:      true,
     backgroundColor: '#ffffff',
-    logging: false,
-    windowWidth: 900,
+    logging:         false,
+    windowWidth:     900,
+    // Tell html2canvas to use the iframe's document origin for image loading
+    proxy:           undefined,
   })
 
   document.body.removeChild(iframe)
 
   const imgData = canvas.toDataURL('image/jpeg', 0.97)
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  })
+  const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-  const pdfW = pdf.internal.pageSize.getWidth()   // 210 mm
-  const pdfH = pdf.internal.pageSize.getHeight()  // 297 mm
-  const imgW = canvas.width
-  const imgH = canvas.height
-  const ratio = pdfW / imgW
-  const scaledH = imgH * ratio
+  const pdfW    = pdf.internal.pageSize.getWidth()   // 210 mm
+  const pdfH    = pdf.internal.pageSize.getHeight()  // 297 mm
+  const ratio   = pdfW / canvas.width
+  const scaledH = canvas.height * ratio
 
-  // Multi-page support if invoice is taller than one A4 page
   let yOffset = 0
   while (yOffset < scaledH) {
     if (yOffset > 0) pdf.addPage()
@@ -451,51 +691,49 @@ async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
   if (mode === 'download') {
     pdf.save(filename)
   } else {
-    // Preview — open in new browser tab
     const blob = pdf.output('blob')
-    const url = URL.createObjectURL(blob)
+    const url  = URL.createObjectURL(blob)
     window.open(url, '_blank')
-    // Clean up after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 30000)
   }
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
+// ══ Main Component ════════════════════════════════════════════════════════════
 export default function AdminFlightBookingsPage() {
-  const [bookings, setBookings] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('')
-  const [selected, setSelected] = useState(null)
-  const [modal, setModal] = useState(null)
+  const [bookings, setBookings]         = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [search, setSearch]             = useState('')
+  const [status, setStatus]             = useState('')
+  const [selected, setSelected]         = useState(null)
+  const [modal, setModal]               = useState(null)
 
   // Price form
-  const [priceForm, setPriceForm] = useState({
+  const [priceForm, setPriceForm]       = useState({
     quoted_price_usd: '', operator_cost_usd: '', commission_pct: '15',
     status: 'quoted', send_email: true, email_message: ''
   })
   const [priceLoading, setPriceLoading] = useState(false)
-  const [priceErr, setPriceErr] = useState('')
+  const [priceErr, setPriceErr]         = useState('')
 
   // RFQ form
-  const [rfqIds, setRfqIds] = useState('')
-  const [rfqLoading, setRfqLoading] = useState(false)
-  const [rfqErr, setRfqErr] = useState('')
+  const [rfqIds, setRfqIds]             = useState('')
+  const [rfqLoading, setRfqLoading]     = useState(false)
+  const [rfqErr, setRfqErr]             = useState('')
 
   // Invoice form
-  const [invoiceForm, setInvoiceForm] = useState({
+  const [invoiceForm, setInvoiceForm]   = useState({
     invoice_no: '', invoice_date: new Date().toISOString().slice(0, 10),
     extra_notes: '', send_email: true, email_subject: '', email_body: '',
     bank_account: NJH.bank.account, bank_name: NJH.bank.name,
     bank_swift: NJH.bank.swift, bank_branch: NJH.bank.branch
   })
   const [invoiceLoading, setInvoiceLoading] = useState(false)
-  const [invoiceErr, setInvoiceErr] = useState('')
-  const [invoiceSent, setInvoiceSent] = useState(false)
+  const [invoiceErr, setInvoiceErr]         = useState('')
+  const [invoiceSent, setInvoiceSent]       = useState(false)
 
-  // ── NEW: PDF generation loading states ──
-  const [pdfLoading, setPdfLoading] = useState(false)   // covers both preview & download
-  const [pdfMode, setPdfMode] = useState(null)          // 'preview' | 'download'
+  // PDF generation states
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfMode, setPdfMode]       = useState(null)   // 'preview' | 'download'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -551,28 +789,26 @@ export default function AdminFlightBookingsPage() {
     } finally { setRfqLoading(false) }
   }
 
-  // ── Invoice handlers ──
   const openInvoice = (b) => {
     setSelected(b)
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    const ref = String(b.reference || b.id).slice(0, 6).toUpperCase()
+    const ref     = String(b.reference || b.id).slice(0, 6).toUpperCase()
     setInvoiceForm({
-      invoice_no: `${ref}-${dateStr}`,
-      invoice_date: new Date().toISOString().slice(0, 10),
-      extra_notes: '',
-      send_email: true,
+      invoice_no:    `${ref}-${dateStr}`,
+      invoice_date:  new Date().toISOString().slice(0, 10),
+      extra_notes:   '',
+      send_email:    true,
       email_subject: `Flight Charter Invoice — NJH-${ref} | Nairobi Jet House`,
-      email_body: `Dear ${b.guest_name || 'Valued Client'},\n\nPlease find attached your flight charter invoice from Nairobi Jet House.\n\nInvoice No: NJH-${ref}\nRoute: ${b.origin_detail?.code || b.origin || '—'} → ${b.destination_detail?.code || b.destination || '—'}\nDate: ${b.departure_date || 'TBA'}\nAmount: $${Number(b.quoted_price_usd || 0).toLocaleString()}\n\nPayment is due within 5 business days. For any queries, contact us at ${NJH.email}.\n\nWarm regards,\nNairobi Jet House Operations`,
-      bank_account: NJH.bank.account,
-      bank_name: NJH.bank.name,
-      bank_swift: NJH.bank.swift,
-      bank_branch: NJH.bank.branch,
+      email_body:    `Dear ${b.guest_name || 'Valued Client'},\n\nPlease find attached your flight charter invoice from Nairobi Jet House.\n\nInvoice No: NJH-${ref}\nRoute: ${b.origin_detail?.code || b.origin || '—'} → ${b.destination_detail?.code || b.destination || '—'}\nDate: ${b.departure_date || 'TBA'}\nAmount: $${Number(b.quoted_price_usd || 0).toLocaleString()}\n\nPayment is due within 5 business days. For any queries, contact us at ${NJH.email}.\n\nWarm regards,\nNairobi Jet House Operations`,
+      bank_account:  NJH.bank.account,
+      bank_name:     NJH.bank.name,
+      bank_swift:    NJH.bank.swift,
+      bank_branch:   NJH.bank.branch,
     })
     setInvoiceErr(''); setInvoiceSent(false); setPdfLoading(false); setPdfMode(null)
     setModal('invoice')
   }
 
-  // ── NEW: PDF preview (opens in new tab) ──
   const handlePreviewPDF = async () => {
     setPdfLoading(true); setPdfMode('preview'); setInvoiceErr('')
     try {
@@ -583,7 +819,6 @@ export default function AdminFlightBookingsPage() {
     } finally { setPdfLoading(false); setPdfMode(null) }
   }
 
-  // ── NEW: PDF download ──
   const handleDownloadPDF = async () => {
     setPdfLoading(true); setPdfMode('download'); setInvoiceErr('')
     try {
@@ -605,12 +840,12 @@ export default function AdminFlightBookingsPage() {
           { account: invoiceForm.bank_account, bankName: invoiceForm.bank_name, swift: invoiceForm.bank_swift, branch: invoiceForm.bank_branch }
         )
         await adminAPI.sendEmail({
-          to_email: selected.guest_email,
-          to_name: selected.guest_name || '',
-          subject: invoiceForm.email_subject,
-          body: invoiceForm.email_body + '\n\n--- HTML Invoice attached below ---\n\n' + html,
+          to_email:     selected.guest_email,
+          to_name:      selected.guest_name || '',
+          subject:      invoiceForm.email_subject,
+          body:         invoiceForm.email_body + '\n\n--- HTML Invoice attached below ---\n\n' + html,
           inquiry_type: 'flight_booking',
-          related_id: selected.id,
+          related_id:   selected.id,
         })
       }
       setInvoiceSent(true)
@@ -628,7 +863,7 @@ export default function AdminFlightBookingsPage() {
       borderRadius: '6px', fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit', ...extra
     },
     onFocus: e => e.currentTarget.style.borderColor = 'var(--color-navy)',
-    onBlur: e => e.currentTarget.style.borderColor = 'var(--color-light-gray)',
+    onBlur:  e => e.currentTarget.style.borderColor = 'var(--color-light-gray)',
   })
 
   const label = (text, required) => (
@@ -637,7 +872,6 @@ export default function AdminFlightBookingsPage() {
     </label>
   )
 
-  // ── Spinner helper ─────────────────────────────────────────────────────────
   const Spinner = ({ size = 16, color = '#fff' }) => (
     <span style={{
       width: size, height: size,
@@ -660,7 +894,8 @@ export default function AdminFlightBookingsPage() {
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Flight Bookings</h2>
           <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Manage all flight booking requests, RFQs and invoices</p>
         </div>
-        <button onClick={load} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+        <button onClick={load}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
           <i className="bi bi-arrow-clockwise" /> Refresh
@@ -673,7 +908,8 @@ export default function AdminFlightBookingsPage() {
           <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Search</label>
           <div style={{ position: 'relative' }}>
             <i className="bi bi-search" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-mid-gray)', fontSize: '0.9rem' }} />
-            <input style={{ width: '100%', padding: '0.6rem 0.75rem 0.6rem 2rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+            <input
+              style={{ width: '100%', padding: '0.6rem 0.75rem 0.6rem 2rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
               placeholder="Name, email, reference…" value={search} onChange={e => setSearch(e.target.value)}
               onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
               onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'} />
@@ -681,7 +917,8 @@ export default function AdminFlightBookingsPage() {
         </div>
         <div style={{ minWidth: '160px' }}>
           <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Status</label>
-          <select style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', outline: 'none', cursor: 'pointer' }}
+          <select
+            style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', outline: 'none', cursor: 'pointer' }}
             value={status} onChange={e => setStatus(e.target.value)}
             onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
             onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}>
@@ -781,9 +1018,7 @@ export default function AdminFlightBookingsPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          INVOICE MODAL
-      ═══════════════════════════════════════════════════════════════════════ */}
+      {/* ══ INVOICE MODAL ══════════════════════════════════════════════════════ */}
       <Modal open={modal === 'invoice'} onClose={() => setModal(null)} size="xl"
         title={<><i className="bi bi-file-earmark-pdf" style={{ color: '#c9a84c' }}></i> Generate PDF Invoice — {selected?.guest_name}</>}>
         {selected && (
@@ -792,19 +1027,18 @@ export default function AdminFlightBookingsPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '8px', marginBottom: '1.25rem' }}>
               <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#c9a84c', fontSize: '1.1rem' }} />
               <div style={{ fontSize: '0.8rem', color: '#8a6d00' }}>
-                <strong>Nairobi Jet House</strong> — Professional A4 PDF with QR code &amp; CONFIDENTIAL watermark.
-                Preview opens the PDF in a new tab; Download saves it directly.
+                Invoice includes your <strong>NJH-LOGO.png</strong> + <strong>NJH-STAMP.png</strong> from <code>/public</code>
+                and a route map with globe markers and flight arc.
               </div>
             </div>
 
-            {/* PDF generation overlay */}
             {pdfLoading && (
               <div style={{ marginBottom: '1rem', padding: '0.85rem 1rem', background: 'rgba(15,45,94,0.06)', border: '1px solid rgba(15,45,94,0.18)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', color: 'var(--color-navy)' }}>
                 <Spinner size={18} color="var(--color-navy)" />
                 <span>
                   {pdfMode === 'preview' ? 'Rendering PDF preview…' : 'Generating PDF for download…'}
                   <span style={{ color: 'var(--color-mid-gray)', marginLeft: '0.5rem', fontSize: '0.78rem' }}>
-                    (fonts &amp; layout are being captured — this takes a few seconds)
+                    Loading logo, stamp &amp; route map — usually 2–4 seconds
                   </span>
                 </span>
               </div>
@@ -833,7 +1067,7 @@ export default function AdminFlightBookingsPage() {
                 </div>
               </div>
 
-              {/* Booking summary read-only */}
+              {/* Booking summary */}
               <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(15,45,94,0.04)', border: '1px solid rgba(15,45,94,0.12)', borderRadius: '6px' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-navy)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>Booking Summary</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.5rem', fontSize: '0.8rem' }}>
@@ -904,7 +1138,6 @@ export default function AdminFlightBookingsPage() {
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                {/* LEFT: Preview + Download PDF */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button type="button" onClick={handlePreviewPDF} disabled={pdfLoading}
                     style={{
@@ -937,7 +1170,6 @@ export default function AdminFlightBookingsPage() {
                   </button>
                 </div>
 
-                {/* RIGHT: Cancel + Send Email */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button type="button" onClick={() => setModal(null)}
                     style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
@@ -1011,17 +1243,17 @@ export default function AdminFlightBookingsPage() {
         {selected && (
           <div>
             {[
-              ['Reference', selected.reference || selected.id],
-              ['Guest', `${selected.guest_name || '—'} — ${selected.guest_email || '—'}`],
-              ['Phone', selected.guest_phone || '—'],
-              ['Route', `${selected.origin_detail?.code || selected.origin} → ${selected.destination_detail?.code || selected.destination}`],
-              ['Date & Time', `${selected.departure_date || '—'}${selected.departure_time ? ` at ${selected.departure_time}` : ''}`],
-              ['Passengers', selected.passenger_count || 1],
-              ['Trip Type', `${(selected.trip_type || 'one_way').replace(/_/g, ' ')}${selected.return_date ? ` (Return: ${selected.return_date})` : ''}`],
-              ['Catering', selected.catering_requested ? 'Yes' : 'No'],
-              ['Ground Transport', selected.ground_transport_requested ? 'Yes' : 'No'],
-              ['Special Requests', selected.special_requests || '—'],
-              ['Submitted', new Date(selected.created_at).toLocaleString()],
+              ['Reference',       selected.reference || selected.id],
+              ['Guest',           `${selected.guest_name || '—'} — ${selected.guest_email || '—'}`],
+              ['Phone',           selected.guest_phone || '—'],
+              ['Route',           `${selected.origin_detail?.code || selected.origin} → ${selected.destination_detail?.code || selected.destination}`],
+              ['Date & Time',     `${selected.departure_date || '—'}${selected.departure_time ? ` at ${selected.departure_time}` : ''}`],
+              ['Passengers',      selected.passenger_count || 1],
+              ['Trip Type',       `${(selected.trip_type || 'one_way').replace(/_/g, ' ')}${selected.return_date ? ` (Return: ${selected.return_date})` : ''}`],
+              ['Catering',        selected.catering_requested ? 'Yes' : 'No'],
+              ['Ground Transport',selected.ground_transport_requested ? 'Yes' : 'No'],
+              ['Special Requests',selected.special_requests || '—'],
+              ['Submitted',       new Date(selected.created_at).toLocaleString()],
             ].map(([k, v]) => (
               <div key={k} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '0.75rem', padding: '0.5rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
                 <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{k}</div>
