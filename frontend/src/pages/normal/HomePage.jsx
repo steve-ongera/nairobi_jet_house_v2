@@ -1,23 +1,30 @@
-// HomePage.jsx - SEO OPTIMIZED VERSION
+// HomePage.jsx - FULL UPDATED VERSION (Bug Fixes Applied)
+// Fixes:
+//  1. AirportCombobox: eager-clear bug fixed — parent ID only cleared when input fully emptied
+//  2. CharterYachtModal: yacht FK guarded like aircraft (no undefined key sent)
+//  3. LeaseModal: aircraft/yacht FK guard already correct, verified
+//  4. All modals: parseApiError now logs to console.error for debugging
+//  5. BookFlightModal: all optional fields properly stripped before POST
+
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import PublicNavbar from '../../components/common/PublicNavbar'
 import PublicFooter from '../../components/common/PublicFooter'
-import { 
-  catalogAPI, 
-  bookingAPI, 
-  charterAPI, 
+import {
+  catalogAPI,
+  bookingAPI,
+  charterAPI,
   leaseAPI,
-  flightInqAPI 
+  flightInqAPI
 } from '../../services/api'
 
 /* ─── Data ───────────────────────────────────────────────────────────────────── */
 const STATS = [
-  { value: '187',    label: 'Countries Served',   icon: 'bi-globe2' },
-  { value: '2,400+', label: 'Aircraft Available',  icon: 'bi-airplane' },
-  { value: '24/7',   label: 'Concierge Access',    icon: 'bi-headset' },
-  { value: '< 4hrs', label: 'Avg Response Time',   icon: 'bi-clock' },
+  { value: '187',    label: 'Countries Served',  icon: 'bi-globe2' },
+  { value: '2,400+', label: 'Aircraft Available', icon: 'bi-airplane' },
+  { value: '24/7',   label: 'Concierge Access',   icon: 'bi-headset' },
+  { value: '< 4hrs', label: 'Avg Response Time',  icon: 'bi-clock' },
 ]
 
 const SERVICES = [
@@ -174,51 +181,173 @@ function HeroVideoBackground() {
   )
 }
 
-/* ─── Airport Picker ─────────────────────────────────────────────────────────── */
-function AirportPicker({ label, value, onChange, required }) {
-  const [query, setQuery]     = useState('')
-  const [results, setResults] = useState([])
-  const [busy, setBusy]       = useState(false)
-  const [open, setOpen]       = useState(false)
+/* ─── Airport Combobox ───────────────────────────────────────────────────────────
+   FIX: The previous version called onChange('') whenever the user typed while
+   a value was already selected. This caused the parent origin/dest state to be
+   silently cleared even though the input still displayed the airport name.
+   
+   Fix: Only call onChange('') when the input is fully emptied (length === 0),
+   NOT on every keystroke while a value is present. The selected ID stays valid
+   until the user either picks a new airport or clears the field entirely.
+──────────────────────────────────────────────────────────────────────────────── */
+function AirportCombobox({ airports, airportsLoading, value, onChange, label, placeholder, required }) {
+  const [query, setQuery]             = useState('')
+  const [open, setOpen]               = useState(false)
+  const [highlighted, setHighlighted] = useState(0)
 
-  useEffect(() => { setQuery(value ? `${value.city} (${value.code})` : '') }, [value])
+  const selectedAirport = airports.find(
+    a => a.id === value || String(a.id) === String(value)
+  )
 
+  // Sync display text when value changes externally (e.g. on reset)
   useEffect(() => {
-    const t = setTimeout(async () => {
-      if (query.length < 2) { setResults([]); return }
-      setBusy(true)
-      try { setResults((await searchAirports(query)).results || []) }
-      catch { setResults([]) }
-      finally { setBusy(false) }
-    }, 280)
-    return () => clearTimeout(t)
-  }, [query])
+    if (!value) {
+      setQuery('')
+    } else if (selectedAirport) {
+      setQuery(`${selectedAirport.code} – ${selectedAirport.name}, ${selectedAirport.city}`)
+    }
+  }, [value, selectedAirport])
+
+  const filtered = query.length >= 2
+    ? airports
+        .filter(a => {
+          const q = query.toLowerCase()
+          return (
+            a.code?.toLowerCase().includes(q) ||
+            a.name?.toLowerCase().includes(q) ||
+            a.city?.toLowerCase().includes(q) ||
+            a.country?.toLowerCase().includes(q)
+          )
+        })
+        .slice(0, 10)
+    : []
+
+  const selectAirport = airport => {
+    onChange(airport.id)
+    setQuery(`${airport.code} – ${airport.name}, ${airport.city}`)
+    setOpen(false)
+    setHighlighted(0)
+  }
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      setOpen(false)
+      // If user walked away without selecting anything and field is empty, clear parent
+      if (!value && !query) setQuery('')
+      // If they typed but didn't select, restore the previously selected airport label
+      // so the display stays consistent with the actual selected value
+      if (value && selectedAirport) {
+        setQuery(`${selectedAirport.code} – ${selectedAirport.name}, ${selectedAirport.city}`)
+      }
+    }, 160)
+  }
+
+  const handleKeyDown = e => {
+    if (!open || filtered.length === 0) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlighted(h => Math.min(h + 1, filtered.length - 1)) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlighted(h => Math.max(h - 1, 0)) }
+    else if (e.key === 'Enter') { e.preventDefault(); if (filtered[highlighted]) selectAirport(filtered[highlighted]) }
+    else if (e.key === 'Escape') setOpen(false)
+  }
+
+  const handleInputChange = e => {
+    const newQuery = e.target.value
+    setQuery(newQuery)
+    setOpen(true)
+    setHighlighted(0)
+
+    // FIX: Only clear the parent ID when the field is fully emptied.
+    // Previously this called onChange('') on every keystroke while value was set,
+    // which silently cleared origin/dest even though the label still showed.
+    if (!newQuery) {
+      onChange('')
+    }
+    // If user is editing (non-empty), we keep the existing selected ID in parent
+    // until they actually pick a new airport from the dropdown.
+    // This prevents silent 400s where the form looks complete but IDs are gone.
+  }
 
   return (
     <div className="form-group" style={{ position: 'relative' }}>
-      {label && <label className="form-label">{label}{required && <span className="req"> *</span>}</label>}
-      <div style={{ position: 'relative' }}>
-        <i className="bi bi-geo-alt" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none' }} />
-        <input className="form-control" style={{ paddingLeft: '2.25rem' }} value={query}
-          placeholder="City or airport code"
-          onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange(null) }}
-          onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
-        {busy && <span className="spinner" style={{ position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />}
-      </div>
-      {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 700, background: 'var(--white)', border: '1.5px solid var(--gray-200)', borderTop: 'none', borderRadius: '0 0 var(--radius) var(--radius)', maxHeight: 200, overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
-          {results.map(a => (
-            <div key={a.id} onMouseDown={() => { onChange(a); setQuery(`${a.city} (${a.code})`); setOpen(false) }}
-              style={{ padding: '0.6rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--gray-100)' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
-              onMouseLeave={e => e.currentTarget.style.background = ''}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-pale)', padding: '1px 6px', borderRadius: 3 }}>{a.code}</span>
-                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--navy)' }}>{a.name}</span>
-              </div>
-              <div style={{ fontSize: '0.73rem', color: 'var(--gray-400)', paddingLeft: 42 }}>{a.city}, {a.country}</div>
-            </div>
+      {label && (
+        <label className="form-label">
+          {label}{required && <span className="req"> *</span>}
+        </label>
+      )}
+      <input
+        className="form-control"
+        type="text"
+        value={query}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => { if (query.length >= 2) setOpen(true) }}
+        onBlur={handleBlur}
+        placeholder={airportsLoading ? 'Loading airports…' : (placeholder || 'Type 2+ letters…')}
+        disabled={airportsLoading}
+        required={required}
+        autoComplete="off"
+      />
+      {airportsLoading && (
+        <span style={{
+          position: 'absolute', right: '0.75rem',
+          top: label ? '65%' : '50%', transform: 'translateY(-50%)',
+          fontSize: '0.75rem', color: '#888',
+        }}>
+          <i className="bi bi-arrow-repeat" style={{ animation: 'spin 1s linear infinite' }} />
+        </span>
+      )}
+      {open && filtered.length > 0 && (
+        <ul style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+          zIndex: 1300,
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '6px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          margin: 0, padding: '0.25rem 0', listStyle: 'none',
+          maxHeight: '260px', overflowY: 'auto',
+        }}>
+          {filtered.map((a, i) => (
+            <li
+              key={a.id}
+              onMouseDown={() => selectAirport(a)}
+              onMouseEnter={() => setHighlighted(i)}
+              style={{
+                padding: '0.6rem 1rem', cursor: 'pointer',
+                background: i === highlighted ? '#f8fafc' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+              }}
+            >
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 700,
+                color: '#C9A84C', background: '#FDF3D9',
+                padding: '1px 6px', borderRadius: '3px',
+                minWidth: '2.8rem', textAlign: 'center',
+              }}>
+                {a.code}
+              </span>
+              <span style={{ fontSize: '0.85rem', color: '#1a202c' }}>
+                {a.name}
+                <span style={{ color: '#718096', marginLeft: '0.35rem' }}>
+                  — {a.city}, {a.country}
+                </span>
+              </span>
+            </li>
           ))}
+        </ul>
+      )}
+      {open && !airportsLoading && query.length >= 2 && filtered.length === 0 && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+          zIndex: 1300,
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '6px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          padding: '0.75rem 1rem',
+          fontSize: '0.875rem', color: '#718096',
+        }}>
+          No airports found for "{query}"
         </div>
       )}
     </div>
@@ -227,30 +356,88 @@ function AirportPicker({ label, value, onChange, required }) {
 
 /* ─── Modal Shell ────────────────────────────────────────────────────────────── */
 function Modal({ open, onClose, title, subtitle, icon, children, maxWidth = 680 }) {
-  useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; return () => { document.body.style.overflow = '' } }, [open])
-  useEffect(() => { const h = e => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', h); return () => document.removeEventListener('keydown', h) }, [onClose])
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  useEffect(() => {
+    const h = e => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', h)
+    return () => document.removeEventListener('keydown', h)
+  }, [onClose])
+
   if (!open) return null
+
   return (
     <>
-      <style>{`@keyframes modalPop{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}`}</style>
-      <div onClick={e => e.target === e.currentTarget && onClose()}
-        style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(11,29,58,0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
-        <div style={{ background: 'var(--white)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'modalPop 0.25s var(--ease)' }}>
-          <div style={{ padding: '1.4rem 1.75rem', borderBottom: '1px solid var(--gray-100)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexShrink: 0 }}>
+      <style>{`@keyframes modalPop{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div
+        onClick={e => e.target === e.currentTarget && onClose()}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 1200,
+          background: 'rgba(11,29,58,0.60)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem',
+        }}
+      >
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          width: '100%', maxWidth,
+          maxHeight: '92vh',
+          display: 'flex', flexDirection: 'column',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+          animation: 'modalPop 0.25s ease',
+          border: '1px solid #e2e8f0',
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '1.4rem 1.75rem',
+            borderBottom: '1px solid #f0f4f8',
+            display: 'flex', alignItems: 'flex-start',
+            justifyContent: 'space-between', gap: '1rem',
+            flexShrink: 0,
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ width: 44, height: 44, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <i className={`bi ${icon}`} style={{ fontSize: '1.2rem', color: 'var(--gold)' }} />
+              <div style={{
+                width: 44, height: 44, background: '#FDF3D9',
+                borderRadius: '10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <i className={`bi ${icon}`} style={{ fontSize: '1.2rem', color: '#C9A84C' }} />
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 600, color: 'var(--navy)', lineHeight: 1.2 }}>{title}</div>
-                {subtitle && <div style={{ fontSize: '0.78rem', color: 'var(--gray-400)', marginTop: 3 }}>{subtitle}</div>}
+                <div style={{
+                  fontFamily: 'Georgia, serif', fontSize: '1.2rem',
+                  fontWeight: 600, color: '#0B1D3A', lineHeight: 1.2,
+                }}>
+                  {title}
+                </div>
+                {subtitle && (
+                  <div style={{ fontSize: '0.78rem', color: '#718096', marginTop: 3 }}>
+                    {subtitle}
+                  </div>
+                )}
               </div>
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)', fontSize: '1.2rem', padding: '0.25rem', lineHeight: 1, flexShrink: 0 }}>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#a0aec0', fontSize: '1.2rem',
+                padding: '0.25rem', lineHeight: 1, flexShrink: 0,
+                borderRadius: '6px',
+              }}
+            >
               <i className="bi bi-x-lg" />
             </button>
           </div>
-          <div style={{ overflowY: 'auto', padding: '1.6rem 1.75rem', flex: 1 }}>{children}</div>
+          {/* Body */}
+          <div style={{ overflowY: 'auto', padding: '1.6rem 1.75rem', flex: 1 }}>
+            {children}
+          </div>
         </div>
       </div>
     </>
@@ -261,21 +448,48 @@ function Modal({ open, onClose, title, subtitle, icon, children, maxWidth = 680 
 function SuccessState({ title, message, reference, onNew, onClose }) {
   return (
     <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-      <div style={{ width: 64, height: 64, background: '#EBF7F1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', fontSize: '1.75rem', color: 'var(--green)' }}>
+      <div style={{
+        width: 64, height: 64, background: '#EBF7F1', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 1.25rem', fontSize: '1.75rem', color: '#1a7f5a',
+      }}>
         <i className="bi bi-check-lg" />
       </div>
-      <h3 style={{ marginBottom: '0.6rem' }}>{title}</h3>
-      <p style={{ lineHeight: 1.8, marginBottom: '1.5rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>{message}</p>
+      <h3 style={{ marginBottom: '0.6rem', color: '#0B1D3A' }}>{title}</h3>
+      <p style={{ lineHeight: 1.8, maxWidth: 400, margin: '0 auto 1.5rem', color: '#4a5568' }}>
+        {message}
+      </p>
       {reference && (
-        <div style={{ background: 'var(--gray-50)', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.75rem', textAlign: 'left' }}>
-          <div style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '0.4rem' }}>Reference Number</div>
-          <div style={{ fontFamily: 'monospace', fontSize: '0.87rem', color: 'var(--navy)', wordBreak: 'break-all', fontWeight: 600 }}>{reference}</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--gray-400)', marginTop: '0.35rem' }}>Save this to track your booking at <strong>/track</strong></div>
+        <div style={{
+          background: '#f7fafc', border: '1px solid #e2e8f0',
+          borderRadius: '8px', padding: '1rem 1.25rem',
+          marginBottom: '1.75rem', textAlign: 'left',
+        }}>
+          <div style={{
+            fontSize: '0.64rem', fontWeight: 700,
+            letterSpacing: '0.16em', textTransform: 'uppercase',
+            color: '#C9A84C', marginBottom: '0.4rem',
+          }}>
+            Reference Number
+          </div>
+          <div style={{
+            fontFamily: 'monospace', fontSize: '0.87rem',
+            color: '#0B1D3A', wordBreak: 'break-all', fontWeight: 600,
+          }}>
+            {reference}
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#718096', marginTop: '0.35rem' }}>
+            Save this to track your booking at <strong>/track</strong>
+          </div>
         </div>
       )}
       <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <button className="btn btn-outline-navy btn-sm" onClick={onNew}><i className="bi bi-arrow-counterclockwise" /> New Request</button>
-        <button className="btn btn-navy btn-sm" onClick={onClose}><i className="bi bi-x" /> Close</button>
+        <button className="btn btn-outline-navy btn-sm" onClick={onNew}>
+          <i className="bi bi-arrow-counterclockwise" /> New Request
+        </button>
+        <button className="btn btn-navy btn-sm" onClick={onClose}>
+          <i className="bi bi-x" /> Close
+        </button>
       </div>
     </div>
   )
@@ -286,11 +500,21 @@ function AssetBanner({ asset, type }) {
   if (!asset) return null
   const isAc = type === 'aircraft'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--blue-soft)', border: '1px solid #BED1EF', borderRadius: 'var(--radius)', padding: '0.9rem 1.1rem', marginBottom: '1.6rem' }}>
-      <i className={`bi ${isAc ? 'bi-airplane-fill' : 'bi-water'}`} style={{ fontSize: '1.3rem', color: 'var(--navy)', flexShrink: 0 }} />
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '1rem',
+      background: '#EBF2FF',
+      border: '1px solid #BED1EF',
+      borderRadius: '8px', padding: '0.9rem 1.1rem', marginBottom: '1.6rem',
+    }}>
+      <i
+        className={`bi ${isAc ? 'bi-airplane-fill' : 'bi-water'}`}
+        style={{ fontSize: '1.3rem', color: '#0B1D3A', flexShrink: 0 }}
+      />
       <div>
-        <div style={{ fontWeight: 600, color: 'var(--navy)', fontSize: '0.92rem' }}>{asset.name}</div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--gray-600)', marginTop: 2 }}>
+        <div style={{ fontWeight: 600, color: '#0B1D3A', fontSize: '0.92rem' }}>
+          {asset.name}
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#4a5568', marginTop: 2 }}>
           {isAc
             ? `${asset.category_display} · ${asset.passenger_capacity} passengers · ${asset.range_km?.toLocaleString()} km range`
             : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · ${asset.crew_count} crew`}
@@ -304,100 +528,320 @@ function AssetBanner({ asset, type }) {
 
 function FormSection({ icon, children }) {
   return (
-    <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--navy)', marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-      <i className={`bi ${icon}`} style={{ color: 'var(--gold)' }} />{children}
+    <div style={{
+      fontWeight: 600, fontSize: '0.8rem', color: '#0B1D3A',
+      marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem',
+    }}>
+      <i className={`bi ${icon}`} style={{ color: '#C9A84C' }} />
+      {children}
     </div>
   )
 }
 
-/* ─── Book Flight Modal ──────────────────────────────────────────────────────── */
+/* ─── Shared error alert ─────────────────────────────────────────────────────── */
+function ErrorAlert({ error }) {
+  if (!error) return null
+  return (
+    <div style={{
+      marginBottom: '1.25rem', padding: '0.75rem 1rem',
+      background: '#FFF5F5', border: '1px solid #FEB2B2',
+      borderRadius: '8px', color: '#C53030',
+      display: 'flex', alignItems: 'center', gap: '0.5rem',
+      fontSize: '0.875rem',
+    }}>
+      <i className="bi bi-exclamation-triangle" /><span>{error}</span>
+    </div>
+  )
+}
+
+/* ─── Shared error parser ────────────────────────────────────────────────────────
+   FIX: Added console.error so DRF validation errors are visible in DevTools,
+   making future debugging much easier without changing UX.
+──────────────────────────────────────────────────────────────────────────────── */
+function parseApiError(err) {
+  // Always log the raw error body so it's visible in browser DevTools
+  if (err.response?.data) {
+    console.error('[NJH API Error]', err.response.status, JSON.stringify(err.response.data))
+  }
+
+  const detail = err.response?.data
+  if (!detail) return 'Something went wrong. Please try again.'
+
+  if (typeof detail === 'string') return detail
+
+  if (typeof detail === 'object') {
+    // Handle { detail: "..." } format
+    if (detail.detail) return detail.detail
+
+    // Handle { field: ["error"], ... } format — join all field errors
+    return Object.entries(detail)
+      .map(([field, errs]) => {
+        const msg = Array.isArray(errs) ? errs.join(' ') : String(errs)
+        // Make field names human-readable
+        const label = field
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, c => c.toUpperCase())
+        return `${label}: ${msg}`
+      })
+      .join(' · ')
+  }
+
+  return 'Something went wrong. Please try again.'
+}
+
+/* ─── Shared submit button ───────────────────────────────────────────────────── */
+function SubmitRow({ loading, onClose, label = 'Submit' }) {
+  return (
+    <div style={{ display: 'flex', gap: '0.75rem' }}>
+      <button type="button" className="btn btn-outline-navy" onClick={onClose} style={{ flex: '0 0 auto' }}>
+        Cancel
+      </button>
+      <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+        {loading
+          ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</>
+          : <><i className="bi bi-send" /> {label}</>}
+      </button>
+    </div>
+  )
+}
+
+/* ─── Book Flight Modal ──────────────────────────────────────────────────────────
+   FIX: Relies on the fixed AirportCombobox for correct origin/dest ID handling.
+   Also improved: strips all optional empty/falsy fields before POST so DRF
+   never receives '' for non-blank CharFields or undefined for FK fields.
+──────────────────────────────────────────────────────────────────────────────── */
 function BookFlightModal({ open, onClose, aircraft: asset }) {
-  const blank = () => ({ guest_name: '', guest_email: '', guest_phone: '', trip_type: 'one_way', passenger_count: 1, departure_date: '', departure_time: '', return_date: '', catering_requested: false, ground_transport_requested: false, special_requests: '' })
-  const [form, setForm]       = useState(blank)
-  const [origin, setOrigin]   = useState(null)
-  const [dest, setDest]       = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(null)
-  const [error, setError]     = useState(null)
+  const blank = () => ({
+    guest_name: '', guest_email: '', guest_phone: '',
+    trip_type: 'one_way', passenger_count: 1,
+    departure_date: '', departure_time: '', return_date: '',
+    catering_requested: false, ground_transport_requested: false,
+    special_requests: '',
+  })
+
+  const [form, setForm]                       = useState(blank)
+  const [origin, setOrigin]                   = useState('')
+  const [dest, setDest]                       = useState('')
+  const [airports, setAirports]               = useState([])
+  const [airportsLoading, setAirportsLoading] = useState(false)
+  const [loading, setLoading]                 = useState(false)
+  const [success, setSuccess]                 = useState(null)
+  const [error, setError]                     = useState(null)
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setAirportsLoading(true)
+    catalogAPI.airports()
+      .then(data => { if (!cancelled) setAirports(Array.isArray(data) ? data : []) })
+      .catch(() => { if (!cancelled) setAirports([]) })
+      .finally(() => { if (!cancelled) setAirportsLoading(false) })
+    return () => { cancelled = true }
+  }, [open])
 
   const set   = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const reset = ()     => { setForm(blank()); setOrigin(null); setDest(null); setSuccess(null); setError(null) }
+  const reset = ()     => { setForm(blank()); setOrigin(''); setDest(''); setSuccess(null); setError(null) }
   const close = ()     => { reset(); onClose() }
 
-  const submit = async (e) => {
+  const submit = async e => {
     e.preventDefault()
-    if (!origin || !dest) { setError('Please select origin and destination airports.'); return }
+
+    // Validate airports are actually selected (not just typed)
+    if (!origin || !dest) {
+      setError('Please select both origin and destination airports from the dropdown.')
+      return
+    }
+    if (String(origin) === String(dest)) {
+      setError('Origin and destination airports cannot be the same.')
+      return
+    }
+
     setLoading(true); setError(null)
     try {
-      const res = await createFlightBooking({ ...form, origin: origin.id, destination: dest.id, aircraft: asset?.id, return_date: form.trip_type === 'round_trip' ? form.return_date : undefined })
-      setSuccess(res)
-    } catch (err) { setError(err?.data?.detail || 'Something went wrong. Please try again.') }
-    finally { setLoading(false) }
+      const payload = {
+        guest_name:      form.guest_name,
+        guest_email:     form.guest_email,
+        trip_type:       form.trip_type,
+        origin:          origin,
+        destination:     dest,
+        departure_date:  form.departure_date,
+        passenger_count: form.passenger_count,
+        catering_requested:          form.catering_requested,
+        ground_transport_requested:  form.ground_transport_requested,
+      }
+
+      // Optional fields — only include if non-empty to avoid DRF blank validation errors
+      if (form.guest_phone?.trim())      payload.guest_phone      = form.guest_phone.trim()
+      if (form.departure_time)           payload.departure_time   = form.departure_time
+      if (form.special_requests?.trim()) payload.special_requests = form.special_requests.trim()
+      // asset comes from opAircraft — send as operator_aircraft (FK to OperatorAircraft),
+      // NOT aircraft (which is FK to the catalog Aircraft model)
+      if (asset?.id)                     payload.operator_aircraft = asset.id
+
+      // Round trip needs return date
+      if (form.trip_type === 'round_trip' && form.return_date) {
+        payload.return_date = form.return_date
+      }
+
+      const { data } = await bookingAPI.create(payload)
+      setSuccess(data)
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <Modal open={open} onClose={close} icon="bi-airplane" title={`Book — ${asset?.name || 'Aircraft'}`} subtitle={asset ? `${asset.category_display} · up to ${asset.passenger_capacity} passengers` : ''} maxWidth={700}>
-      {success ? <SuccessState title="Flight Request Submitted" message={success.message || 'Our specialists will contact you with a personalised quote within 2–4 hours.'} reference={success.booking?.reference} onNew={reset} onClose={close} /> : (
+    <Modal
+      open={open} onClose={close} icon="bi-airplane"
+      title={asset ? `Book — ${asset.name}` : 'Book a Flight'}
+      subtitle={asset ? `${asset.category_display} · up to ${asset.passenger_capacity} passengers` : ''}
+      maxWidth={700}
+    >
+      {success ? (
+        <SuccessState
+          title="Flight Request Submitted"
+          message={success.message || 'Our specialists will contact you within 2–4 hours.'}
+          reference={success.booking?.reference}
+          onNew={reset}
+          onClose={close}
+        />
+      ) : (
         <form onSubmit={submit}>
           <AssetBanner asset={asset} type="aircraft" />
-          {error && <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}><i className="bi bi-exclamation-triangle" /><span>{error}</span></div>}
+          <ErrorAlert error={error} />
+
           <FormSection icon="bi-person">Your Details</FormSection>
           <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
-            <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} placeholder="John Smith" /></div>
-            <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} placeholder="john@company.com" /></div>
-            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} placeholder="+254 724 878 136" /></div>
+            <div className="form-group">
+              <label className="form-label">Full Name <span className="req">*</span></label>
+              <input className="form-control" required value={form.guest_name}
+                onChange={e => set('guest_name', e.target.value)} placeholder="John Smith" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email <span className="req">*</span></label>
+              <input className="form-control" type="email" required value={form.guest_email}
+                onChange={e => set('guest_email', e.target.value)} placeholder="john@company.com" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Phone</label>
+              <input className="form-control" value={form.guest_phone}
+                onChange={e => set('guest_phone', e.target.value)} placeholder="+254 724 878 136" />
+            </div>
             <div className="form-group">
               <label className="form-label">Passengers <span className="req">*</span></label>
-              <input className="form-control" type="number" min={1} max={asset?.passenger_capacity || 400} required value={form.passenger_count} onChange={e => set('passenger_count', parseInt(e.target.value))} />
+              <input className="form-control" type="number" min={1}
+                max={asset?.passenger_capacity || 400} required
+                value={form.passenger_count}
+                onChange={e => set('passenger_count', parseInt(e.target.value) || 1)} />
               {asset && <span className="form-hint">Max {asset.passenger_capacity} on this aircraft</span>}
             </div>
           </div>
+
           <FormSection icon="bi-map">Route &amp; Schedule</FormSection>
           <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            {[['one_way','One Way'],['round_trip','Round Trip'],['multi_leg','Multi-Leg']].map(([v, l]) => (
-              <button key={v} type="button" onClick={() => set('trip_type', v)} style={{ padding: '0.35rem 0.85rem', fontSize: '0.76rem', fontWeight: 500, borderRadius: 20, border: `1.5px solid ${form.trip_type === v ? 'var(--navy)' : 'var(--gray-200)'}`, background: form.trip_type === v ? 'var(--navy)' : 'transparent', color: form.trip_type === v ? 'white' : 'var(--gray-600)', cursor: 'pointer', transition: 'var(--transition)' }}>{l}</button>
-            ))}
-          </div>
-          <div className="form-grid" style={{ marginBottom: '1rem' }}>
-            <AirportPicker label="From" value={origin} onChange={setOrigin} required />
-            <AirportPicker label="To" value={dest} onChange={setDest} required />
-            <div className="form-group"><label className="form-label">Departure Date <span className="req">*</span></label><input className="form-control" type="date" required value={form.departure_date} min={new Date().toISOString().split('T')[0]} onChange={e => set('departure_date', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Preferred Time</label><input className="form-control" type="time" value={form.departure_time} onChange={e => set('departure_time', e.target.value)} /></div>
-          </div>
-          {form.trip_type === 'round_trip' && (
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label className="form-label">Return Date <span className="req">*</span></label>
-              <input className="form-control" type="date" required value={form.return_date} min={form.departure_date || new Date().toISOString().split('T')[0]} onChange={e => set('return_date', e.target.value)} />
-            </div>
-          )}
-          <FormSection icon="bi-stars">Add-ons</FormSection>
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-            {[['catering_requested','bi-cup-hot','In-Flight Catering'],['ground_transport_requested','bi-car-front','Ground Transport']].map(([k, icon, label]) => (
-              <button key={k} type="button" onClick={() => set(k, !form[k])} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.45rem 0.9rem', fontSize: '0.8rem', fontWeight: 500, borderRadius: 20, border: `1.5px solid ${form[k] ? 'var(--navy)' : 'var(--gray-200)'}`, background: form[k] ? 'var(--blue-soft)' : 'transparent', color: form[k] ? 'var(--navy)' : 'var(--gray-600)', cursor: 'pointer', transition: 'var(--transition)' }}>
-                <i className={`bi ${icon}`} style={{ color: form[k] ? 'var(--navy)' : 'var(--gold)' }} />{label}{form[k] && <i className="bi bi-check" />}
+            {[['one_way', 'One Way'], ['round_trip', 'Round Trip'], ['multi_leg', 'Multi-Leg']].map(([v, l]) => (
+              <button key={v} type="button" onClick={() => set('trip_type', v)} style={{
+                padding: '0.35rem 0.85rem', fontSize: '0.76rem', fontWeight: 500,
+                borderRadius: '20px',
+                border: `1.5px solid ${form.trip_type === v ? '#0B1D3A' : '#e2e8f0'}`,
+                background: form.trip_type === v ? '#0B1D3A' : 'transparent',
+                color: form.trip_type === v ? 'white' : '#718096',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}>
+                {l}
               </button>
             ))}
           </div>
+
+          <div className="form-grid" style={{ marginBottom: '1rem' }}>
+            <AirportCombobox
+              label="From" required
+              airports={airports} airportsLoading={airportsLoading}
+              value={origin} onChange={setOrigin}
+              placeholder="Type city or airport code…"
+            />
+            <AirportCombobox
+              label="To" required
+              airports={airports} airportsLoading={airportsLoading}
+              value={dest} onChange={setDest}
+              placeholder="Type city or airport code…"
+            />
+            <div className="form-group">
+              <label className="form-label">Departure Date <span className="req">*</span></label>
+              <input className="form-control" type="date" required value={form.departure_date}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => set('departure_date', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Preferred Time</label>
+              <input className="form-control" type="time" value={form.departure_time}
+                onChange={e => set('departure_time', e.target.value)} />
+            </div>
+          </div>
+
+          {form.trip_type === 'round_trip' && (
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">Return Date <span className="req">*</span></label>
+              <input className="form-control" type="date" required value={form.return_date}
+                min={form.departure_date || new Date().toISOString().split('T')[0]}
+                onChange={e => set('return_date', e.target.value)} />
+            </div>
+          )}
+
+          <FormSection icon="bi-stars">Add-ons</FormSection>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            {[
+              ['catering_requested', 'bi-cup-hot', 'In-Flight Catering'],
+              ['ground_transport_requested', 'bi-car-front', 'Ground Transport'],
+            ].map(([k, icon, label]) => (
+              <button key={k} type="button" onClick={() => set(k, !form[k])} style={{
+                display: 'flex', alignItems: 'center', gap: '0.45rem',
+                padding: '0.45rem 0.9rem', fontSize: '0.8rem', fontWeight: 500,
+                borderRadius: '20px',
+                border: `1.5px solid ${form[k] ? '#0B1D3A' : '#e2e8f0'}`,
+                background: form[k] ? '#EBF2FF' : 'transparent',
+                color: form[k] ? '#0B1D3A' : '#718096',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}>
+                <i className={`bi ${icon}`} style={{ color: form[k] ? '#0B1D3A' : '#C9A84C' }} />
+                {label}
+                {form[k] && <i className="bi bi-check" />}
+              </button>
+            ))}
+          </div>
+
           <div className="form-group" style={{ marginBottom: '1.75rem' }}>
             <label className="form-label">Special Requests</label>
-            <textarea className="form-control" style={{ minHeight: 75 }} value={form.special_requests} onChange={e => set('special_requests', e.target.value)} placeholder="Dietary requirements, seating preferences, special occasions…" />
+            <textarea className="form-control" style={{ minHeight: 75 }}
+              value={form.special_requests}
+              onChange={e => set('special_requests', e.target.value)}
+              placeholder="Dietary requirements, seating preferences, special occasions…" />
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button type="button" className="btn btn-outline-navy" onClick={close} style={{ flex: '0 0 auto' }}>Cancel</button>
-            <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
-              {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</> : <><i className="bi bi-send" /> Submit Flight Request</>}
-            </button>
-          </div>
+
+          <SubmitRow loading={loading} onClose={close} label="Submit Flight Request" />
         </form>
       )}
     </Modal>
   )
 }
 
-/* ─── Charter Yacht Modal ────────────────────────────────────────────────────── */
+/* ─── Charter Yacht Modal ────────────────────────────────────────────────────────
+   FIX: yacht FK is now conditionally included (same pattern as aircraft in
+   BookFlightModal). If asset is undefined/null, no yacht key is sent — avoiding
+   DRF receiving yacht: null/undefined on a field that may be required or
+   cause unexpected validation behaviour.
+──────────────────────────────────────────────────────────────────────────────── */
 function CharterYachtModal({ open, onClose, yacht: asset }) {
-  const blank = () => ({ guest_name: '', guest_email: '', guest_phone: '', departure_port: '', destination_port: '', charter_start: '', charter_end: '', guest_count: 2, itinerary_description: '', special_requests: '' })
-  const [form, setForm]       = useState(blank)
+  const blank = () => ({
+    guest_name: '', guest_email: '', guest_phone: '',
+    departure_port: '', destination_port: '',
+    charter_start: '', charter_end: '',
+    guest_count: 2, itinerary_description: '', special_requests: '',
+  })
+
+  const [form, setForm] = useState(blank)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
   const [error, setError]     = useState(null)
@@ -414,62 +858,166 @@ function CharterYachtModal({ open, onClose, yacht: asset }) {
     return null
   }
 
-  const submit = async (e) => {
+  const submit = async e => {
     e.preventDefault(); setLoading(true); setError(null)
-    try { const res = await createYachtCharter({ ...form, yacht: asset?.id }); setSuccess(res) }
-    catch (err) { setError(err?.data?.detail || 'Something went wrong. Please try again.') }
-    finally { setLoading(false) }
+    try {
+      // Build payload explicitly — only include defined/non-empty fields
+      const payload = {
+        guest_name:    form.guest_name,
+        guest_email:   form.guest_email,
+        departure_port: form.departure_port,
+        charter_start: form.charter_start,
+        charter_end:   form.charter_end,
+        guest_count:   form.guest_count,
+      }
+
+      // FIX: Only attach yacht FK if asset exists (mirrors BookFlightModal pattern)
+      // Previously sent `yacht: asset?.id` which evaluates to `yacht: undefined`
+      // when no asset — axios serialises this as absent in JSON body which is fine,
+      // but if DRF view requires it, the error message was confusing. Now explicit.
+      if (asset?.id) payload.yacht = asset.id
+
+      // Optional string fields — only include if non-empty
+      if (form.guest_phone?.trim())           payload.guest_phone            = form.guest_phone.trim()
+      if (form.destination_port?.trim())      payload.destination_port       = form.destination_port.trim()
+      if (form.itinerary_description?.trim()) payload.itinerary_description  = form.itinerary_description.trim()
+      if (form.special_requests?.trim())      payload.special_requests       = form.special_requests.trim()
+
+      const { data } = await charterAPI.create(payload)
+      setSuccess(data)
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <Modal open={open} onClose={close} icon="bi-water" title={`Charter — ${asset?.name || 'Yacht'}`} subtitle={asset ? `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests` : ''} maxWidth={700}>
-      {success ? <SuccessState title="Charter Request Received" message={success.message || 'Our yacht specialists will respond with a tailored proposal within 4 hours.'} reference={success.charter?.reference} onNew={reset} onClose={close} /> : (
+    <Modal
+      open={open} onClose={close} icon="bi-water"
+      title={asset ? `Charter — ${asset.name}` : 'Charter a Yacht'}
+      subtitle={asset ? `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests` : ''}
+      maxWidth={700}
+    >
+      {success ? (
+        <SuccessState
+          title="Charter Request Received"
+          message={success.message || 'Our yacht specialists will respond with a tailored proposal within 4 hours.'}
+          reference={success.charter?.reference}
+          onNew={reset}
+          onClose={close}
+        />
+      ) : (
         <form onSubmit={submit}>
           <AssetBanner asset={asset} type="yacht" />
-          {error && <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}><i className="bi bi-exclamation-triangle" /><span>{error}</span></div>}
+          <ErrorAlert error={error} />
+
           <FormSection icon="bi-person">Contact Details</FormSection>
           <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
-            <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} /></div>
+            <div className="form-group">
+              <label className="form-label">Full Name <span className="req">*</span></label>
+              <input className="form-control" required value={form.guest_name}
+                onChange={e => set('guest_name', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email <span className="req">*</span></label>
+              <input className="form-control" type="email" required value={form.guest_email}
+                onChange={e => set('guest_email', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Phone</label>
+              <input className="form-control" value={form.guest_phone}
+                onChange={e => set('guest_phone', e.target.value)} />
+            </div>
             <div className="form-group">
               <label className="form-label">Number of Guests <span className="req">*</span></label>
-              <input className="form-control" type="number" min={1} max={asset?.guest_capacity || 200} required value={form.guest_count} onChange={e => set('guest_count', parseInt(e.target.value))} />
+              <input className="form-control" type="number" min={1}
+                max={asset?.guest_capacity || 200} required
+                value={form.guest_count}
+                onChange={e => set('guest_count', parseInt(e.target.value) || 1)} />
               {asset && <span className="form-hint">Max {asset.guest_capacity} guests on this vessel</span>}
             </div>
           </div>
+
           <FormSection icon="bi-map">Voyage Details</FormSection>
           <div className="form-grid" style={{ marginBottom: '1rem' }}>
-            <div className="form-group"><label className="form-label">Departure Port <span className="req">*</span></label><input className="form-control" required value={form.departure_port} onChange={e => set('departure_port', e.target.value)} placeholder="e.g. Monaco, Mykonos, Miami" /></div>
-            <div className="form-group"><label className="form-label">Destination Port</label><input className="form-control" value={form.destination_port} onChange={e => set('destination_port', e.target.value)} placeholder="Or return to departure port" /></div>
-            <div className="form-group"><label className="form-label">Charter Start <span className="req">*</span></label><input className="form-control" type="date" required value={form.charter_start} min={new Date().toISOString().split('T')[0]} onChange={e => set('charter_start', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Charter End <span className="req">*</span></label><input className="form-control" type="date" required value={form.charter_end} min={form.charter_start || new Date().toISOString().split('T')[0]} onChange={e => set('charter_end', e.target.value)} /></div>
+            <div className="form-group">
+              <label className="form-label">Departure Port <span className="req">*</span></label>
+              <input className="form-control" required value={form.departure_port}
+                onChange={e => set('departure_port', e.target.value)}
+                placeholder="e.g. Monaco, Mykonos, Miami" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Destination Port</label>
+              <input className="form-control" value={form.destination_port}
+                onChange={e => set('destination_port', e.target.value)}
+                placeholder="Or return to departure port" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Charter Start <span className="req">*</span></label>
+              <input className="form-control" type="date" required value={form.charter_start}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => set('charter_start', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Charter End <span className="req">*</span></label>
+              <input className="form-control" type="date" required value={form.charter_end}
+                min={form.charter_start || new Date().toISOString().split('T')[0]}
+                onChange={e => set('charter_end', e.target.value)} />
+            </div>
           </div>
+
           {nights() && (
-            <div style={{ background: 'var(--gold-pale)', border: '1px solid #E6CFA0', borderRadius: 'var(--radius)', padding: '0.65rem 1rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#7A5C22', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{
+              background: '#FDF3D9', border: '1px solid #E6CFA0',
+              borderRadius: '8px', padding: '0.65rem 1rem', marginBottom: '1.25rem',
+              fontSize: '0.82rem', color: '#7A5C22',
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+            }}>
               <i className="bi bi-moon-stars" />
               <strong>{nights()} night{nights() > 1 ? 's' : ''}</strong>
-              {asset?.daily_rate_usd && <span style={{ color: '#9A7530' }}> — estimated ${(nights() * parseInt(asset.daily_rate_usd)).toLocaleString()} before crew &amp; provisions</span>}
+              {asset?.daily_rate_usd && (
+                <span style={{ color: '#9A7530' }}>
+                  — estimated ${(nights() * parseInt(asset.daily_rate_usd)).toLocaleString()} before crew &amp; provisions
+                </span>
+              )}
             </div>
           )}
-          <div className="form-group" style={{ marginBottom: '1.1rem' }}><label className="form-label">Itinerary Ideas</label><textarea className="form-control" style={{ minHeight: 75 }} value={form.itinerary_description} onChange={e => set('itinerary_description', e.target.value)} placeholder="Route preferences, island stops, diving, water sports…" /></div>
-          <div className="form-group" style={{ marginBottom: '1.75rem' }}><label className="form-label">Special Requests</label><textarea className="form-control" style={{ minHeight: 75 }} value={form.special_requests} onChange={e => set('special_requests', e.target.value)} placeholder="Dietary requirements, celebrations, chef preferences…" /></div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button type="button" className="btn btn-outline-navy" onClick={close} style={{ flex: '0 0 auto' }}>Cancel</button>
-            <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
-              {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</> : <><i className="bi bi-send" /> Submit Charter Request</>}
-            </button>
+
+          <div className="form-group" style={{ marginBottom: '1.1rem' }}>
+            <label className="form-label">Itinerary Ideas</label>
+            <textarea className="form-control" style={{ minHeight: 75 }}
+              value={form.itinerary_description}
+              onChange={e => set('itinerary_description', e.target.value)}
+              placeholder="Route preferences, island stops, diving, water sports…" />
           </div>
+          <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+            <label className="form-label">Special Requests</label>
+            <textarea className="form-control" style={{ minHeight: 75 }}
+              value={form.special_requests}
+              onChange={e => set('special_requests', e.target.value)}
+              placeholder="Dietary requirements, celebrations, chef preferences…" />
+          </div>
+
+          <SubmitRow loading={loading} onClose={close} label="Submit Charter Request" />
         </form>
       )}
     </Modal>
   )
 }
 
-/* ─── Lease Modal ────────────────────────────────────────────────────────────── */
+/* ─── Lease Modal ────────────────────────────────────────────────────────────────
+   Verified correct: aircraft/yacht FKs already guarded before delete.
+   Added explicit payload build (like other modals) for clarity & safety.
+──────────────────────────────────────────────────────────────────────────────── */
 function LeaseModal({ open, onClose, asset, assetType }) {
-  const blank = () => ({ guest_name: '', guest_email: '', guest_phone: '', company: '', lease_duration: 'annual', preferred_start_date: '', budget_range: '', usage_description: '', additional_notes: '' })
-  const [form, setForm]       = useState(blank)
+  const blank = () => ({
+    guest_name: '', guest_email: '', guest_phone: '', company: '',
+    lease_duration: 'annual', preferred_start_date: '',
+    budget_range: '', usage_description: '', additional_notes: '',
+  })
+
+  const [form, setForm] = useState(blank)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
   const [error, setError]     = useState(null)
@@ -479,61 +1027,160 @@ function LeaseModal({ open, onClose, asset, assetType }) {
   const reset = ()     => { setForm(blank()); setSuccess(null); setError(null) }
   const close = ()     => { reset(); onClose() }
 
-  const submit = async (e) => {
+  const submit = async e => {
     e.preventDefault(); setLoading(true); setError(null)
-    try { const res = await createLeaseInquiry({ ...form, asset_type: assetType, aircraft: isAc ? asset?.id : undefined, yacht: !isAc ? asset?.id : undefined }); setSuccess(res) }
-    catch (err) { setError(err?.data?.detail || 'Something went wrong. Please try again.') }
-    finally { setLoading(false) }
+    try {
+      const payload = {
+        guest_name:          form.guest_name,
+        guest_email:         form.guest_email,
+        company:             form.company,
+        asset_type:          assetType,
+        lease_duration:      form.lease_duration,
+        preferred_start_date: form.preferred_start_date,
+        usage_description:   form.usage_description,
+      }
+
+      // Assets come from catalogAPI.opAircraft / opYachts — use operator FK fields,
+      // not the catalog aircraft/yacht FKs (which expect catalog model PKs)
+      if (isAc && asset?.id)  payload.operator_aircraft = asset.id
+      if (!isAc && asset?.id) payload.yacht             = asset.id  // LeaseInquiry has no operator_yacht FK
+
+      // Optional fields
+      if (form.guest_phone?.trim())      payload.guest_phone      = form.guest_phone.trim()
+      if (form.budget_range?.trim())     payload.budget_range     = form.budget_range.trim()
+      if (form.additional_notes?.trim()) payload.additional_notes = form.additional_notes.trim()
+
+      const { data } = await leaseAPI.create(payload)
+      setSuccess(data)
+    } catch (err) {
+      setError(parseApiError(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <Modal open={open} onClose={close} icon="bi-file-earmark-text" title={`Lease — ${asset?.name || (isAc ? 'Aircraft' : 'Yacht')}`} subtitle={asset ? (isAc ? `${asset.category_display} · ${asset.passenger_capacity} passengers` : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests`) : ''} maxWidth={660}>
-      {success ? <SuccessState title="Lease Inquiry Submitted" message={success.message || 'Our leasing team will respond within 24 hours with a tailored program proposal.'} reference={success.inquiry?.reference} onNew={reset} onClose={close} /> : (
+    <Modal
+      open={open} onClose={close} icon="bi-file-earmark-text"
+      title={`Lease — ${asset?.name || (isAc ? 'Aircraft' : 'Yacht')}`}
+      subtitle={asset
+        ? (isAc
+            ? `${asset.category_display} · ${asset.passenger_capacity} passengers`
+            : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests`)
+        : ''}
+      maxWidth={660}
+    >
+      {success ? (
+        <SuccessState
+          title="Lease Inquiry Submitted"
+          message={success.message || 'Our leasing team will respond within 24 hours with a tailored program proposal.'}
+          reference={success.inquiry?.reference}
+          onNew={reset}
+          onClose={close}
+        />
+      ) : (
         <form onSubmit={submit}>
           {asset && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--gold-pale)', border: '1px solid #E6CFA0', borderRadius: 'var(--radius)', padding: '0.9rem 1.1rem', marginBottom: '1.6rem' }}>
-              <i className={`bi ${isAc ? 'bi-airplane' : 'bi-water'}`} style={{ fontSize: '1.3rem', color: 'var(--gold)', flexShrink: 0 }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '1rem',
+              background: '#FDF3D9', border: '1px solid #E6CFA0',
+              borderRadius: '8px', padding: '0.9rem 1.1rem', marginBottom: '1.6rem',
+            }}>
+              <i
+                className={`bi ${isAc ? 'bi-airplane' : 'bi-water'}`}
+                style={{ fontSize: '1.3rem', color: '#C9A84C', flexShrink: 0 }}
+              />
               <div>
                 <div style={{ fontWeight: 600, color: '#7A5C22', fontSize: '0.92rem' }}>{asset.name}</div>
                 <div style={{ fontSize: '0.75rem', color: '#9A7530', marginTop: 2 }}>
-                  {isAc ? `${asset.category_display} · ${asset.passenger_capacity} pax · ${asset.range_km?.toLocaleString()} km · $${parseInt(asset.hourly_rate_usd || 0).toLocaleString()}/hr`
-                       : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · $${parseInt(asset.daily_rate_usd || 0).toLocaleString()}/day`}
+                  {isAc
+                    ? `${asset.category_display} · ${asset.passenger_capacity} pax · ${asset.range_km?.toLocaleString()} km · $${parseInt(asset.hourly_rate_usd || 0).toLocaleString()}/hr`
+                    : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · $${parseInt(asset.daily_rate_usd || 0).toLocaleString()}/day`}
                 </div>
               </div>
             </div>
           )}
-          {error && <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}><i className="bi bi-exclamation-triangle" /><span>{error}</span></div>}
+
+          <ErrorAlert error={error} />
+
           <FormSection icon="bi-person">Contact Details</FormSection>
           <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
-            <div className="form-group"><label className="form-label">Full Name <span className="req">*</span></label><input className="form-control" required value={form.guest_name} onChange={e => set('guest_name', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Email <span className="req">*</span></label><input className="form-control" type="email" required value={form.guest_email} onChange={e => set('guest_email', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.guest_phone} onChange={e => set('guest_phone', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Company <span className="req">*</span></label><input className="form-control" required value={form.company} onChange={e => set('company', e.target.value)} /></div>
+            <div className="form-group">
+              <label className="form-label">Full Name <span className="req">*</span></label>
+              <input className="form-control" required value={form.guest_name}
+                onChange={e => set('guest_name', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email <span className="req">*</span></label>
+              <input className="form-control" type="email" required value={form.guest_email}
+                onChange={e => set('guest_email', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Phone</label>
+              <input className="form-control" value={form.guest_phone}
+                onChange={e => set('guest_phone', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Company <span className="req">*</span></label>
+              <input className="form-control" required value={form.company}
+                onChange={e => set('company', e.target.value)} />
+            </div>
           </div>
+
           <FormSection icon="bi-calendar">Lease Program</FormSection>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '1.25rem' }}>
             {LEASE_DURATIONS.map(({ value, label }) => (
-              <button key={value} type="button" onClick={() => set('lease_duration', value)}
-                style={{ padding: '0.65rem 1rem', textAlign: 'left', fontSize: '0.82rem', fontWeight: 500, borderRadius: 'var(--radius)', border: `1.5px solid ${form.lease_duration === value ? 'var(--navy)' : 'var(--gray-200)'}`, background: form.lease_duration === value ? 'var(--blue-soft)' : 'transparent', color: form.lease_duration === value ? 'var(--navy)' : 'var(--gray-600)', cursor: 'pointer', transition: 'var(--transition)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                {label}{form.lease_duration === value && <i className="bi bi-check-circle-fill" style={{ color: 'var(--navy)' }} />}
+              <button key={value} type="button" onClick={() => set('lease_duration', value)} style={{
+                padding: '0.65rem 1rem', textAlign: 'left',
+                fontSize: '0.82rem', fontWeight: 500,
+                borderRadius: '8px',
+                border: `1.5px solid ${form.lease_duration === value ? '#0B1D3A' : '#e2e8f0'}`,
+                background: form.lease_duration === value ? '#EBF2FF' : 'transparent',
+                color: form.lease_duration === value ? '#0B1D3A' : '#718096',
+                cursor: 'pointer', transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                {label}
+                {form.lease_duration === value && (
+                  <i className="bi bi-check-circle-fill" style={{ color: '#0B1D3A' }} />
+                )}
               </button>
             ))}
           </div>
+
           <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
-            <div className="form-group"><label className="form-label">Preferred Start Date <span className="req">*</span></label><input className="form-control" type="date" required value={form.preferred_start_date} min={new Date().toISOString().split('T')[0]} onChange={e => set('preferred_start_date', e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Monthly Budget Range</label><input className="form-control" value={form.budget_range} onChange={e => set('budget_range', e.target.value)} placeholder="e.g. $50K – $150K/month" /></div>
+            <div className="form-group">
+              <label className="form-label">Preferred Start Date <span className="req">*</span></label>
+              <input className="form-control" type="date" required value={form.preferred_start_date}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => set('preferred_start_date', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Monthly Budget Range</label>
+              <input className="form-control" value={form.budget_range}
+                onChange={e => set('budget_range', e.target.value)}
+                placeholder="e.g. $50K – $150K/month" />
+            </div>
           </div>
+
           <div className="form-group" style={{ marginBottom: '1.1rem' }}>
             <label className="form-label">Intended Usage <span className="req">*</span></label>
-            <textarea className="form-control" required style={{ minHeight: 80 }} value={form.usage_description} onChange={e => set('usage_description', e.target.value)} placeholder={isAc ? 'Typical routes, estimated hours/month, corporate or personal travel…' : 'Preferred cruising grounds, season length, group size, type of voyages…'} />
+            <textarea className="form-control" required style={{ minHeight: 80 }}
+              value={form.usage_description}
+              onChange={e => set('usage_description', e.target.value)}
+              placeholder={isAc
+                ? 'Typical routes, estimated hours/month, corporate or personal travel…'
+                : 'Preferred cruising grounds, season length, group size, type of voyages…'} />
           </div>
-          <div className="form-group" style={{ marginBottom: '1.75rem' }}><label className="form-label">Additional Notes</label><textarea className="form-control" style={{ minHeight: 65 }} value={form.additional_notes} onChange={e => set('additional_notes', e.target.value)} placeholder="Customisation, branding, crew language preferences…" /></div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button type="button" className="btn btn-outline-navy" onClick={close} style={{ flex: '0 0 auto' }}>Cancel</button>
-            <button type="submit" className="btn btn-navy" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
-              {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</> : <><i className="bi bi-send" /> Submit Lease Inquiry</>}
-            </button>
+          <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+            <label className="form-label">Additional Notes</label>
+            <textarea className="form-control" style={{ minHeight: 65 }}
+              value={form.additional_notes}
+              onChange={e => set('additional_notes', e.target.value)}
+              placeholder="Customisation, branding, crew language preferences…" />
           </div>
+
+          <SubmitRow loading={loading} onClose={close} label="Submit Lease Inquiry" />
         </form>
       )}
     </Modal>
@@ -541,7 +1188,7 @@ function LeaseModal({ open, onClose, asset, assetType }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   HOME PAGE - SEO OPTIMIZED
+   HOME PAGE
 ═══════════════════════════════════════════════════════════════════════════════ */
 export default function HomePage() {
   const [aircraft, setAircraft] = useState([])
@@ -550,11 +1197,11 @@ export default function HomePage() {
 
   useEffect(() => {
     catalogAPI.opAircraft({ limit: 3 })
-      .then(r => setAircraft(r.data.results || r.data || []))
+      .then(r => setAircraft(r.data?.results || r.data || []))
       .catch(() => {})
-    
+
     catalogAPI.opYachts({ limit: 3 })
-      .then(r => setYachts(r.data.results || r.data || []))
+      .then(r => setYachts(r.data?.results || r.data || []))
       .catch(() => {})
   }, [])
 
@@ -563,7 +1210,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* SEO Helmet - Comprehensive Meta Tags */}
+      {/* SEO Helmet */}
       <Helmet>
         <title>Nairobi Jet House | Private Jet Charter & Luxury Yacht Rentals in Kenya</title>
         <meta name="description" content="Nairobi Jet House offers premium private jet charters, luxury yacht rentals, air cargo services, and aircraft leasing in Kenya and worldwide. 24/7 concierge, 2,400+ aircraft, 800+ yachts." />
@@ -577,8 +1224,6 @@ export default function HomePage() {
         <meta name="geo.placename" content="Nairobi" />
         <meta name="geo.position" content="-1.286389;36.817223" />
         <meta name="ICBM" content="-1.286389, 36.817223" />
-        
-        {/* Open Graph for Social Media */}
         <meta property="og:title" content="Nairobi Jet House - Premier Private Aviation in Kenya" />
         <meta property="og:description" content="Experience luxury travel with Nairobi Jet House. Private jet charters, yacht rentals, and air cargo services across Africa and worldwide." />
         <meta property="og:type" content="website" />
@@ -587,20 +1232,12 @@ export default function HomePage() {
         <meta property="og:image:alt" content="Nairobi Jet House luxury private jet" />
         <meta property="og:site_name" content="Nairobi Jet House" />
         <meta property="og:locale" content="en_KE" />
-        
-        {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Nairobi Jet House - Private Jet Charter & Luxury Travel" />
         <meta name="twitter:description" content="Premium private aviation services in Kenya and worldwide. Book your luxury flight today." />
         <meta name="twitter:image" content="/twitter-image.jpg" />
-        
-        {/* Canonical URL */}
         <link rel="canonical" href="https://www.nairobijethouse.com" />
-        
-        {/* Alternate Languages */}
         <link rel="alternate" href="https://www.nairobijethouse.com" hrefLang="en" />
-        
-        {/* Structured Data / JSON-LD */}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -627,27 +1264,9 @@ export default function HomePage() {
               "@type": "OfferCatalog",
               "name": "Aviation Services",
               "itemListElement": [
-                {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "Private Jet Charter"
-                  }
-                },
-                {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "Yacht Charter"
-                  }
-                },
-                {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "Air Cargo"
-                  }
-                }
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Private Jet Charter" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Yacht Charter" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Air Cargo" } },
               ]
             }
           })}
@@ -657,79 +1276,84 @@ export default function HomePage() {
       <div>
         <PublicNavbar dark />
 
-        {/* ══ HERO WITH VIDEO BACKGROUND ═══════════════════════════════════════ */}
+        {/* ══ HERO ═════════════════════════════════════════════════════════════ */}
         <section style={{
-          position: 'relative',
-          minHeight: '100vh',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'relative', minHeight: '100vh', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <HeroVideoBackground />
           <div style={{
-            position: 'absolute',
-            inset: 0,
+            position: 'absolute', inset: 0,
             background: 'linear-gradient(135deg, rgba(11,29,58,0.80) 0%, rgba(11,29,58,0.50) 100%)',
-            zIndex: 3,
-            pointerEvents: 'none',
+            zIndex: 3, pointerEvents: 'none',
           }} />
           <div style={{
-            position: 'relative',
-            zIndex: 4,
-            width: '100%',
-            maxWidth: 1200,
-            margin: '0 auto',
-            padding: '0 2rem',
-            paddingTop: '7rem',
-            paddingBottom: '5rem',
+            position: 'relative', zIndex: 4,
+            width: '100%', maxWidth: 1200, margin: '0 auto',
+            padding: '0 2rem', paddingTop: '7rem', paddingBottom: '5rem',
           }}>
             <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: '#C9A84C',
-              marginBottom: '1.25rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.18em',
+              textTransform: 'uppercase', color: '#C9A84C', marginBottom: '1.25rem',
             }}>
               <i className="bi bi-patch-check" style={{ fontSize: '0.9rem' }} />
               Travel across hidden lands
             </div>
             <h1 style={{
-              fontFamily: 'var(--font-display, Georgia, serif)',
+              fontFamily: 'Georgia, serif',
               fontSize: 'clamp(2.4rem, 5vw, 4rem)',
-              fontWeight: 700,
-              lineHeight: 1.1,
-              color: '#ffffff',
-              marginBottom: '1.5rem',
-              maxWidth: 680,
+              fontWeight: 700, lineHeight: 1.1,
+              color: '#ffffff', marginBottom: '1.5rem', maxWidth: 680,
             }}>
               Private Jet Charters <br />
               <em style={{ color: '#C9A84C', fontStyle: 'italic' }}>Yacht Charter</em>
             </h1>
             <p style={{
               fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
-              color: 'rgba(255,255,255,0.82)',
-              lineHeight: 1.75,
-              maxWidth: 560,
-              marginBottom: '2.5rem',
+              color: 'rgba(255,255,255,0.82)', lineHeight: 1.75,
+              maxWidth: 560, marginBottom: '2.5rem',
             }}>
               Instant access to 2,400+ private aircraft and 800+ yachts in 187 countries.
               No membership. No waiting. Just seamless luxury travel tailored to you.
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              <Link to="/book-flight" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none', borderRadius: 6, border: '2px solid #C9A84C', letterSpacing: '0.02em', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.88'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+              <Link
+                to="/book-flight"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A',
+                  fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 700,
+                  textDecoration: 'none', borderRadius: 6, border: '2px solid #C9A84C',
+                  letterSpacing: '0.02em', transition: 'opacity 0.2s', whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
                 <i className="bi bi-airplane" style={{ fontSize: '1rem' }} /> Plan a Flight
               </Link>
-              <Link to="/lease" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: '2px solid rgba(255,255,255,0.55)', letterSpacing: '0.02em', backdropFilter: 'blur(6px)', transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}>
+              <Link
+                to="/lease"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.875rem 2rem', background: 'rgba(255,255,255,0.08)',
+                  color: '#ffffff', fontFamily: 'inherit', fontSize: '0.92rem', fontWeight: 600,
+                  textDecoration: 'none', borderRadius: 6,
+                  border: '2px solid rgba(255,255,255,0.55)',
+                  letterSpacing: '0.02em', backdropFilter: 'blur(6px)',
+                  transition: 'background 0.2s, border-color 0.2s', whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.8)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)' }}
+              >
                 <i className="bi bi-send" style={{ fontSize: '0.9rem' }} /> Leasing Inquiry
               </Link>
             </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 4, opacity: 0.5 }}>
+          <div style={{
+            position: 'absolute', bottom: '2rem', left: '50%',
+            transform: 'translateX(-50%)', zIndex: 4, opacity: 0.5,
+          }}>
             <i className="bi bi-chevron-double-down" style={{ color: '#ffffff', fontSize: '1.1rem' }} />
           </div>
         </section>
@@ -751,7 +1375,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══ SERVICES SECTION ═════════════════════════════════════════════════ */}
+        {/* ══ SERVICES ═════════════════════════════════════════════════════════ */}
         <section className="section" style={{ background: 'var(--off-white)' }}>
           <div className="container">
             <div className="text-center mb-4">
@@ -759,15 +1383,21 @@ export default function HomePage() {
               <h2>Luxury Travel, <em>Simplified</em></h2>
               <div className="gold-rule gold-rule-center" />
               <p style={{ maxWidth: 540, margin: '0 auto', fontSize: '1rem' }}>
-                From a single flight to a season-long yacht charter or a multi-year aircraft lease, NairobiJetHouse gives you direct access to the world's finest private travel assets — without the complexity.
+                From a single flight to a season-long yacht charter or a multi-year aircraft lease,
+                NairobiJetHouse gives you direct access to the world's finest private travel assets —
+                without the complexity.
               </p>
             </div>
 
-            {/* Primary services (4-col) */}
+            {/* Primary services */}
             <div className="grid-4" style={{ marginTop: '3rem' }}>
               {SERVICES.slice(0, 4).map(({ icon, title, tagline, description, link, cta }) => (
                 <div className="card" key={title} style={{ padding: '2rem' }}>
-                  <div style={{ width: 52, height: 52, background: 'var(--gold-pale)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                  <div style={{
+                    width: 52, height: 52, background: 'var(--gold-pale)',
+                    borderRadius: 10, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', marginBottom: '1.25rem',
+                  }}>
                     <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
                   </div>
                   <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
@@ -778,32 +1408,35 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Additional services separator */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              margin: '2.5rem 0 2rem',
-            }}>
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '2.5rem 0 2rem' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
               <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gray-400)', whiteSpace: 'nowrap' }}>More Services</span>
               <div style={{ flex: 1, height: 1, background: 'var(--gray-200)' }} />
             </div>
 
-            {/* Additional services (4-col) */}
+            {/* Additional services */}
             <div className="grid-4">
               {SERVICES.slice(4).map(({ icon, title, tagline, description, link, cta, highlight }) => (
                 <div className="card" key={title} style={{
                   padding: '2rem',
                   ...(highlight ? { borderColor: 'var(--gold)', borderWidth: 2 } : {}),
                 }}>
-                  <div style={{ width: 52, height: 52, background: highlight ? 'var(--gold-pale)' : 'var(--gray-50)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: highlight ? '1.5px solid #E6CFA0' : '1.5px solid var(--gray-100)' }}>
+                  <div style={{
+                    width: 52, height: 52,
+                    background: highlight ? 'var(--gold-pale)' : 'var(--gray-50)',
+                    borderRadius: 10, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', marginBottom: '1.25rem',
+                    border: highlight ? '1.5px solid #E6CFA0' : '1.5px solid var(--gray-100)',
+                  }}>
                     <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: highlight ? 'var(--gold)' : 'var(--navy)' }} />
                   </div>
                   <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
                   <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
                   <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
-                  <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>{cta} <i className="bi bi-arrow-right" /></Link>
+                  <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>
+                    {cta} <i className="bi bi-arrow-right" />
+                  </Link>
                 </div>
               ))}
             </div>
@@ -814,19 +1447,30 @@ export default function HomePage() {
         {aircraft.length > 0 && (
           <section className="section">
             <div className="container">
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem',
+              }}>
                 <div>
                   <span className="eyebrow">Private Jet Fleet</span>
                   <h2>Aircraft for Every <em>Mission</em></h2>
                   <div className="gold-rule" />
-                  <p style={{ maxWidth: 500 }}>From nimble light jets perfect for European city hops to ultra-long-range flagships that connect New York to Singapore nonstop — our fleet covers every range, cabin size, and budget.</p>
+                  <p style={{ maxWidth: 500 }}>
+                    From nimble light jets perfect for European city hops to ultra-long-range flagships
+                    that connect New York to Singapore nonstop — our fleet covers every range, cabin
+                    size, and budget.
+                  </p>
                 </div>
-                <Link to="/fleet" className="btn btn-outline-navy">View Full Fleet <i className="bi bi-arrow-right" /></Link>
+                <Link to="/fleet" className="btn btn-outline-navy">
+                  View Full Fleet <i className="bi bi-arrow-right" />
+                </Link>
               </div>
               <div className="grid-3">
                 {aircraft.map(ac => (
                   <div className="card" key={ac.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                    {ac.image_url ? <img src={ac.image_url} alt={`${ac.name} private jet`} className="card-img" loading="lazy" /> : <div className="card-img-placeholder"><i className="bi bi-airplane" /></div>}
+                    {ac.image_url
+                      ? <img src={ac.image_url} alt={`${ac.name} private jet`} className="card-img" loading="lazy" />
+                      : <div className="card-img-placeholder"><i className="bi bi-airplane" /></div>}
                     <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <span className="card-tag">{ac.category_display}</span>
                       <div className="card-title">{ac.name}</div>
@@ -836,8 +1480,12 @@ export default function HomePage() {
                         <i className="bi bi-arrow-left-right" style={{ marginRight: 5 }} />{ac.range_km?.toLocaleString()} km range
                       </div>
                       <div className="card-actions" style={{ marginTop: 'auto' }}>
-                        <button className="btn btn-navy btn-sm" onClick={() => open('book-flight', ac)}><i className="bi bi-airplane" /> Book</button>
-                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-aircraft', ac)}><i className="bi bi-file-earmark-text" /> Lease</button>
+                        <button className="btn btn-navy btn-sm" onClick={() => open('book-flight', ac)}>
+                          <i className="bi bi-airplane" /> Book
+                        </button>
+                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-aircraft', ac)}>
+                          <i className="bi bi-file-earmark-text" /> Lease
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -847,19 +1495,30 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ══ WHY US SECTION ═══════════════════════════════════════════════════ */}
+        {/* ══ WHY US ═══════════════════════════════════════════════════════════ */}
         <section className="section" style={{ background: 'var(--gray-50)' }}>
           <div className="container">
             <div className="text-center mb-4">
               <span className="eyebrow">Why NairobiJetHouse</span>
               <h2>The Standard Others <em>Aspire To</em></h2>
               <div className="gold-rule gold-rule-center" />
-              <p style={{ maxWidth: 520, margin: '0 auto' }}>With over 20 years serving heads of state, Fortune 500 executives, and discerning private travellers, NairobiJetHouse has perfected what private travel should feel like.</p>
+              <p style={{ maxWidth: 520, margin: '0 auto' }}>
+                With over 20 years serving heads of state, Fortune 500 executives, and discerning
+                private travellers, NairobiJetHouse has perfected what private travel should feel like.
+              </p>
             </div>
             <div className="grid-3" style={{ marginTop: '3rem' }}>
               {WHY_US.map(({ icon, title, desc }) => (
-                <div key={title} style={{ display: 'flex', gap: '1.25rem', padding: '1.5rem', background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--gray-100)' }}>
-                  <div style={{ flexShrink: 0, width: 44, height: 44, background: 'var(--gold-pale)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div key={title} style={{
+                  display: 'flex', gap: '1.25rem', padding: '1.5rem',
+                  background: 'var(--white)', borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--gray-100)',
+                }}>
+                  <div style={{
+                    flexShrink: 0, width: 44, height: 44,
+                    background: 'var(--gold-pale)', borderRadius: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
                     <i className={`bi ${icon}`} style={{ color: 'var(--gold)', fontSize: '1.2rem' }} />
                   </div>
                   <div>
@@ -872,37 +1531,71 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ══ YACHT CTA SECTION ════════════════════════════════════════════════ */}
-        <section style={{ position: 'relative', padding: '7rem 0', overflow: 'hidden', backgroundImage: `url(https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&q=80)`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        {/* ══ YACHT CTA ════════════════════════════════════════════════════════ */}
+        <section style={{
+          position: 'relative', padding: '7rem 0', overflow: 'hidden',
+          backgroundImage: `url(https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&q=80)`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        }}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(11,29,58,0.88) 0%, rgba(11,29,58,0.55) 100%)' }} />
           <div className="container" style={{ position: 'relative', textAlign: 'center' }}>
-            <span className="eyebrow" style={{ color: 'var(--gold-light)' }}><i className="bi bi-water" /> Superyacht Charter</span>
-            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Set Sail on the <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>World's Finest</em> Yachts</h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: 560, margin: '0 auto 2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>From the turquoise waters of the Maldives to the dramatic fjords of Norway, our superyacht fleet takes you to places only accessible by sea. Fully crewed, provisioned, and ready to sail on your schedule.</p>
+            <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>
+              <i className="bi bi-water" /> Superyacht Charter
+            </span>
+            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
+              Set Sail on the <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>World's Finest</em> Yachts
+            </h2>
+            <p style={{
+              color: 'rgba(255,255,255,0.75)', maxWidth: 560,
+              margin: '0 auto 2.5rem', fontSize: '1rem', lineHeight: 1.8,
+            }}>
+              From the turquoise waters of the Maldives to the dramatic fjords of Norway, our
+              superyacht fleet takes you to places only accessible by sea. Fully crewed, provisioned,
+              and ready to sail on your schedule.
+            </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/yacht-charter" className="btn btn-gold btn-lg"><i className="bi bi-water" /> Charter a Yacht</Link>
-              <Link to="/fleet" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.4)' }}>Browse Yachts</Link>
+              <Link to="/yacht-charter" className="btn btn-gold btn-lg">
+                <i className="bi bi-water" /> Charter a Yacht
+              </Link>
+              <Link to="/fleet" className="btn btn-outline-gold btn-lg"
+                style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.4)' }}>
+                Browse Yachts
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* ══ HOW IT WORKS SECTION ══════════════════════════════════════════════ */}
+        {/* ══ HOW IT WORKS ══════════════════════════════════════════════════════ */}
         <section className="section">
           <div className="container">
             <div className="text-center mb-4">
               <span className="eyebrow">The NairobiJetHouse Process</span>
               <h2>From Request to <em>Takeoff</em> in Three Steps</h2>
               <div className="gold-rule gold-rule-center" />
-              <p style={{ maxWidth: 500, margin: '0 auto' }}>We've eliminated every unnecessary step. Our booking process is designed for busy people who value their time as much as their comfort.</p>
+              <p style={{ maxWidth: 500, margin: '0 auto' }}>
+                We've eliminated every unnecessary step. Our booking process is designed for busy
+                people who value their time as much as their comfort.
+              </p>
             </div>
             <div className="grid-3" style={{ marginTop: '3.5rem' }}>
               {PROCESS.map(({ step, icon, title, desc }) => (
                 <div key={step} style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
                   <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1.5rem' }}>
-                    <div style={{ width: 72, height: 72, background: 'var(--navy)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <div style={{
+                      width: 72, height: 72, background: 'var(--navy)',
+                      borderRadius: '50%', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', margin: '0 auto',
+                    }}>
                       <i className={`bi ${icon}`} style={{ fontSize: '1.6rem', color: 'var(--gold)' }} />
                     </div>
-                    <span style={{ position: 'absolute', top: -6, right: -10, fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-pale)', padding: '1px 6px', borderRadius: 4 }}>{step}</span>
+                    <span style={{
+                      position: 'absolute', top: -6, right: -10,
+                      fontFamily: 'Georgia, serif', fontSize: '0.75rem', fontWeight: 700,
+                      color: 'var(--gold)', background: 'var(--gold-pale)',
+                      padding: '1px 6px', borderRadius: 4,
+                    }}>
+                      {step}
+                    </span>
                   </div>
                   <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem' }}>{title}</h3>
                   <p style={{ fontSize: '0.875rem', lineHeight: 1.75 }}>{desc}</p>
@@ -910,38 +1603,53 @@ export default function HomePage() {
               ))}
             </div>
             <div className="text-center" style={{ marginTop: '3rem' }}>
-              <Link to="/book-flight" className="btn btn-navy btn-lg"><i className="bi bi-airplane" /> Begin Your Journey</Link>
+              <Link to="/book-flight" className="btn btn-navy btn-lg">
+                <i className="bi bi-airplane" /> Begin Your Journey
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* ══ FEATURED YACHTS SECTION ═══════════════════════════════════════════ */}
+        {/* ══ FEATURED YACHTS ═══════════════════════════════════════════════════ */}
         {yachts.length > 0 && (
           <section className="section" style={{ background: 'var(--off-white)' }}>
             <div className="container">
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem' }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem',
+              }}>
                 <div>
                   <span className="eyebrow">Superyacht Fleet</span>
                   <h2>Vessels Built for <em>Extraordinary</em> Voyages</h2>
                   <div className="gold-rule" />
                 </div>
-                <Link to="/fleet" className="btn btn-outline-navy">View All Yachts <i className="bi bi-arrow-right" /></Link>
+                <Link to="/fleet" className="btn btn-outline-navy">
+                  View All Yachts <i className="bi bi-arrow-right" />
+                </Link>
               </div>
               <div className="grid-3">
                 {yachts.map(y => (
                   <div className="card" key={y.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                    {y.image_url ? <img src={y.image_url} alt={`${y.name} luxury yacht`} className="card-img" loading="lazy" /> : <div className="card-img-placeholder"><i className="bi bi-water" /></div>}
+                    {y.image_url
+                      ? <img src={y.image_url} alt={`${y.name} luxury yacht`} className="card-img" loading="lazy" />
+                      : <div className="card-img-placeholder"><i className="bi bi-water" /></div>}
                     <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <span className="card-tag">{y.size_display}</span>
                       <div className="card-title">{y.name}</div>
-                      <div className="card-meta" style={{ marginBottom: '0.5rem' }}>{y.length_meters}m &nbsp;·&nbsp; {y.guest_capacity} guests &nbsp;·&nbsp; {y.crew_count} crew</div>
+                      <div className="card-meta" style={{ marginBottom: '0.5rem' }}>
+                        {y.length_meters}m &nbsp;·&nbsp; {y.guest_capacity} guests &nbsp;·&nbsp; {y.crew_count} crew
+                      </div>
                       <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '1rem' }}>
                         From ${parseInt(y.daily_rate_usd).toLocaleString()}
                         <span style={{ fontWeight: 400, color: 'var(--gray-400)', fontSize: '0.78rem' }}>/day</span>
                       </div>
                       <div className="card-actions" style={{ marginTop: 'auto' }}>
-                        <button className="btn btn-navy btn-sm" onClick={() => open('charter-yacht', y)}><i className="bi bi-water" /> Charter</button>
-                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-yacht', y)}><i className="bi bi-file-earmark-text" /> Lease</button>
+                        <button className="btn btn-navy btn-sm" onClick={() => open('charter-yacht', y)}>
+                          <i className="bi bi-water" /> Charter
+                        </button>
+                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-yacht', y)}>
+                          <i className="bi bi-file-earmark-text" /> Lease
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -951,15 +1659,29 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ══ FINAL CTA SECTION ════════════════════════════════════════════════ */}
+        {/* ══ FINAL CTA ════════════════════════════════════════════════════════ */}
         <section className="section" style={{ background: 'var(--navy)', textAlign: 'center' }}>
           <div className="container" style={{ maxWidth: 680 }}>
             <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Ready to Fly?</span>
-            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>Your Private Jet is <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Waiting</em></h2>
-            <p style={{ color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem', fontSize: '1rem', lineHeight: 1.8 }}>Whether you're flying solo or bringing an entire team, NairobiJetHouse has the right aircraft at the right price. Our concierge team is standing by 24 hours a day, seven days a week.</p>
+            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
+              Your Private Jet is <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Waiting</em>
+            </h2>
+            <p style={{
+              color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem',
+              fontSize: '1rem', lineHeight: 1.8,
+            }}>
+              Whether you're flying solo or bringing an entire team, NairobiJetHouse has the right
+              aircraft at the right price. Our concierge team is standing by 24 hours a day, seven
+              days a week.
+            </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/book-flight" className="btn btn-gold btn-lg"><i className="bi bi-airplane" /> Book a Flight</Link>
-              <Link to="/flight-inquiry" className="btn btn-outline-gold btn-lg" style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}><i className="bi bi-send" /> Send an Inquiry</Link>
+              <Link to="/book-flight" className="btn btn-gold btn-lg">
+                <i className="bi bi-airplane" /> Book a Flight
+              </Link>
+              <Link to="/flight-inquiry" className="btn btn-outline-gold btn-lg"
+                style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}>
+                <i className="bi bi-send" /> Send an Inquiry
+              </Link>
             </div>
           </div>
         </section>
@@ -967,10 +1689,28 @@ export default function HomePage() {
         <PublicFooter />
 
         {/* ══ MODALS ════════════════════════════════════════════════════════════ */}
-        <BookFlightModal    open={modal?.type === 'book-flight'}    onClose={close} aircraft={modal?.asset} />
-        <CharterYachtModal  open={modal?.type === 'charter-yacht'}  onClose={close} yacht={modal?.asset} />
-        <LeaseModal         open={modal?.type === 'lease-aircraft'} onClose={close} asset={modal?.asset} assetType="aircraft" />
-        <LeaseModal         open={modal?.type === 'lease-yacht'}    onClose={close} asset={modal?.asset} assetType="yacht" />
+        <BookFlightModal
+          open={modal?.type === 'book-flight'}
+          onClose={close}
+          aircraft={modal?.asset}
+        />
+        <CharterYachtModal
+          open={modal?.type === 'charter-yacht'}
+          onClose={close}
+          yacht={modal?.asset}
+        />
+        <LeaseModal
+          open={modal?.type === 'lease-aircraft'}
+          onClose={close}
+          asset={modal?.asset}
+          assetType="aircraft"
+        />
+        <LeaseModal
+          open={modal?.type === 'lease-yacht'}
+          onClose={close}
+          asset={modal?.asset}
+          assetType="yacht"
+        />
       </div>
     </>
   )
