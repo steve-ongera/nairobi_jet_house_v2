@@ -4,36 +4,100 @@
 import { useState, useEffect, useCallback } from 'react'
 import { operatorAPI } from '../../services/api'
 
-function Badge({ s, type = 'status' }) {
-  const STATUS_COLOR = {
-    sent: 'amber',
-    accepted: 'green',
-    rejected: 'red',
-    in_service: 'navy',
-    completed: 'gray',
-    disputed: 'red'
-  }
-  const colorClass = STATUS_COLOR[s] || 'gray'
-  const displayText = s?.replace(/_/g, ' ') || '—'
-  return <span className={`badge badge-${colorClass}`}>{displayText}</span>
+const STATUS_COLOR = {
+  sent: '#f59e0b',
+  accepted: '#22c55e',
+  rejected: '#ef4444',
+  in_service: '#0f2d5e',
+  completed: '#64748b',
+  disputed: '#ef4444'
+}
+
+const STATUS_LABEL = {
+  sent: 'Sent',
+  accepted: 'Accepted',
+  rejected: 'Rejected',
+  in_service: 'In Service',
+  completed: 'Completed',
+  disputed: 'Disputed'
+}
+
+function Badge({ status }) {
+  const color = STATUS_COLOR[status] || '#64748b'
+  const label = STATUS_LABEL[status] || status?.replace(/_/g, ' ') || '—'
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '0.2rem 0.6rem',
+      background: `${color}15`,
+      color: color,
+      border: `1px solid ${color}30`,
+      borderRadius: '6px',
+      fontSize: '0.7rem',
+      fontWeight: 600,
+      textTransform: 'capitalize'
+    }}>
+      {label}
+    </span>
+  )
 }
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
+  
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <div className="modal-title">{title}</div>
-          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(5, 20, 43, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--color-white)',
+        borderRadius: '10px',
+        width: '100%',
+        maxWidth: '520px',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid var(--color-light-gray)'
+        }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            color: 'var(--color-mid-gray)',
+            padding: '0.25rem'
+          }}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+          {children}
+        </div>
       </div>
     </div>
   )
 }
 
-export function OperatorBookingsPage() {
+export default function OperatorBookingsPage() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(null)
@@ -127,66 +191,94 @@ export function OperatorBookingsPage() {
 
   if (loading) {
     return (
-      <div className="table-empty">
-        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-        <p>Loading bookings...</p>
+      <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+        <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--color-mid-gray)' }}>Loading bookings...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Operator Bookings</h2>
-          <p>Manage and track your charter bookings</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Operator Bookings</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Manage and track your charter bookings</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={load}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
-          </button>
-        </div>
+        <button onClick={load} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.4rem 1rem',
+          background: 'transparent',
+          color: 'var(--color-navy)',
+          border: '1.5px solid var(--color-navy)',
+          borderRadius: '6px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+          <i className="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </div>
 
       {/* Message Alert */}
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+          border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+          borderRadius: '6px',
+          color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div className="operator-stats">
-        <div className="operator-stat-card">
-          <div className="operator-stat-number">{stats.total}</div>
-          <div className="operator-stat-label">Total Bookings</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.total}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total Bookings</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--amber)' }}>{stats.pending}</div>
-          <div className="operator-stat-label">Pending Action</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f59e0b' }}>{stats.pending}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Pending Action</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--green)' }}>{stats.accepted}</div>
-          <div className="operator-stat-label">Accepted</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#22c55e' }}>{stats.accepted}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Accepted</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--gray-500)' }}>{stats.completed}</div>
-          <div className="operator-stat-label">Completed</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#64748b' }}>{stats.completed}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Completed</div>
         </div>
       </div>
 
       {/* Earnings Summary */}
-      <div className="payout-summary" style={{ marginBottom: '1.5rem' }}>
-        <div className="payout-summary-item">
-          <div className="payout-summary-label">Total Earnings</div>
-          <div className="payout-summary-value" style={{ color: 'var(--gold)' }}>
-            {formatCurrency(stats.totalEarnings)}
-          </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-off-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Total Earnings</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#c9992e' }}>{formatCurrency(stats.totalEarnings)}</div>
         </div>
-        <div className="payout-summary-item">
-          <div className="payout-summary-label">Pending Payouts</div>
-          <div className="payout-summary-value">
+        <div style={{ padding: '1rem', background: 'var(--color-off-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Pending Payouts</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-navy)' }}>
             {formatCurrency(bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + (Number(b.operator_payout_usd) || 0), 0))}
           </div>
         </div>
@@ -194,48 +286,94 @@ export function OperatorBookingsPage() {
 
       {/* Pending Confirmations Section */}
       {pendingBookings.length > 0 && (
-        <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="settings-card-header">
-            <h4><i className="bi bi-bell" /> Awaiting Your Confirmation ({pendingBookings.length})</h4>
+        <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-bell" style={{ color: 'var(--color-gold)' }}></i> Awaiting Your Confirmation ({pendingBookings.length})
+            </h4>
           </div>
-          <div className="settings-card-body" style={{ padding: 0 }}>
+          <div>
             {pendingBookings.map(bk => (
-              <div key={bk.id} className="booking-pending-card">
-                <div className="booking-pending-header">
-                  <div>
-                    <div className="booking-reference">
-                      Booking {String(bk.reference).slice(0, 8).toUpperCase()}
-                    </div>
-                    <div className="booking-details">
-                      {bk.asset_label || bk.asset_type} · Payout: {formatCurrency(bk.operator_payout_usd)}
-                    </div>
-                    <div className="booking-date">
-                      Created: {formatDate(bk.created_at)}
-                    </div>
+              <div key={bk.id} style={{
+                padding: '1rem 1.5rem',
+                borderBottom: '1px solid var(--color-light-gray)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem', marginBottom: '0.15rem' }}>
+                    Booking {String(bk.reference).slice(0, 8).toUpperCase()}
                   </div>
-                  <Badge s={bk.status} />
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                    {bk.asset_label || bk.asset_type} · Payout: {formatCurrency(bk.operator_payout_usd)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>
+                    Created: {formatDate(bk.created_at)}
+                  </div>
                 </div>
-                <div className="booking-actions">
-                  <button
-                    onClick={() => handleAccept(bk.id)}
-                    disabled={processing === bk.id}
-                    className="btn btn-green btn-sm"
-                  >
-                    <i className="bi bi-check-lg" /> Accept
-                  </button>
-                  <button
-                    onClick={() => handleReject(bk.id)}
-                    disabled={processing === bk.id}
-                    className="btn btn-outline-red btn-sm"
-                  >
-                    <i className="bi bi-x-lg" /> Reject
-                  </button>
-                  <button
-                    onClick={() => openDetail(bk)}
-                    className="btn btn-outline-navy btn-sm"
-                  >
-                    <i className="bi bi-eye" /> Details
-                  </button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Badge status={bk.status} />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleAccept(bk.id)}
+                      disabled={processing === bk.id}
+                      style={{
+                        padding: '0.3rem 0.8rem',
+                        background: '#22c55e',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <i className="bi bi-check-lg"></i> Accept
+                    </button>
+                    <button
+                      onClick={() => handleReject(bk.id)}
+                      disabled={processing === bk.id}
+                      style={{
+                        padding: '0.3rem 0.8rem',
+                        background: 'transparent',
+                        color: '#ef4444',
+                        border: '1px solid #ef4444',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <i className="bi bi-x-lg"></i> Reject
+                    </button>
+                    <button
+                      onClick={() => openDetail(bk)}
+                      style={{
+                        padding: '0.3rem 0.8rem',
+                        background: 'transparent',
+                        color: 'var(--color-navy)',
+                        border: '1px solid var(--color-navy)',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <i className="bi bi-eye"></i> Details
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -244,35 +382,51 @@ export function OperatorBookingsPage() {
       )}
 
       {/* All Bookings Section */}
-      <div className="settings-card">
-        <div className="settings-card-header">
-          <h4><i className="bi bi-list-ul" /> All Bookings</h4>
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-list-ul" style={{ color: 'var(--color-gold)' }}></i> All Bookings
+          </h4>
         </div>
-        <div className="settings-card-body" style={{ padding: 0 }}>
+        <div>
           {bookings.length === 0 ? (
-            <div className="table-empty" style={{ padding: '2rem' }}>
-              <i className="bi bi-calendar-x" />
-              <p>No bookings assigned to you yet.</p>
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <i className="bi bi-calendar-x" style={{ fontSize: '2rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '0.5rem' }}></i>
+              <p style={{ color: 'var(--color-mid-gray)' }}>No bookings assigned to you yet.</p>
             </div>
           ) : (
             bookings.map(bk => (
-              <div key={bk.id} className="booking-item" onClick={() => openDetail(bk)}>
-                <div className="booking-item-left">
-                  <div className="booking-reference">
+              <div 
+                key={bk.id} 
+                onClick={() => openDetail(bk)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '1rem 1.5rem',
+                  borderBottom: '1px solid var(--color-light-gray)',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-off-white)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem', marginBottom: '0.15rem' }}>
                     Booking {String(bk.reference).slice(0, 8).toUpperCase()}
                   </div>
-                  <div className="booking-details">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
                     {bk.asset_label || bk.asset_type} · {formatCurrency(bk.operator_payout_usd)} · {formatDate(bk.created_at)}
                   </div>
                   {bk.operator_reference && (
-                    <div className="booking-ref-note">
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-mid-gray)', marginTop: '0.15rem' }}>
                       Your Ref: {bk.operator_reference}
                     </div>
                   )}
                 </div>
-                <div className="booking-item-right">
-                  <Badge s={bk.status} />
-                  <i className="bi bi-chevron-right" style={{ color: 'var(--gray-300)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Badge status={bk.status} />
+                  <i className="bi bi-chevron-right" style={{ color: 'var(--color-light-gray)' }}></i>
                 </div>
               </div>
             ))
@@ -281,69 +435,87 @@ export function OperatorBookingsPage() {
       </div>
 
       {/* Booking Detail Modal */}
-      <Modal open={detailModal} onClose={() => setDetailModal(false)} title={<><i className="bi bi-calendar-check" /> Booking Details</>}>
+      <Modal open={detailModal} onClose={() => setDetailModal(false)} title={<><i className="bi bi-calendar-check"></i> Booking Details</>}>
         {selectedBooking && (
           <div>
-            <div className="detail-row">
-              <div className="detail-key">Reference</div>
-              <div className="detail-val" style={{ fontFamily: 'monospace' }}>{selectedBooking.reference}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Reference</div>
+              <div style={{ fontFamily: 'monospace', color: 'var(--color-dark-gray)' }}>{selectedBooking.reference}</div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Asset Type</div>
-              <div className="detail-val">{selectedBooking.asset_label || selectedBooking.asset_type || '—'}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Asset Type</div>
+              <div style={{ color: 'var(--color-dark-gray)' }}>{selectedBooking.asset_label || selectedBooking.asset_type || '—'}</div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Payout Amount</div>
-              <div className="detail-val td-price">{formatCurrency(selectedBooking.operator_payout_usd)}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Payout Amount</div>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>{formatCurrency(selectedBooking.operator_payout_usd)}</div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Status</div>
-              <div className="detail-val"><Badge s={selectedBooking.status} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Status</div>
+              <div><Badge status={selectedBooking.status} /></div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Created</div>
-              <div className="detail-val">{new Date(selectedBooking.created_at).toLocaleString()}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Created</div>
+              <div style={{ color: 'var(--color-dark-gray)' }}>{new Date(selectedBooking.created_at).toLocaleString()}</div>
             </div>
             {selectedBooking.departure_date && (
-              <div className="detail-row">
-                <div className="detail-key">Departure Date</div>
-                <div className="detail-val">{formatDate(selectedBooking.departure_date)}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Departure Date</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{formatDate(selectedBooking.departure_date)}</div>
               </div>
             )}
             {selectedBooking.operator_reference && (
-              <div className="detail-row">
-                <div className="detail-key">Your Reference</div>
-                <div className="detail-val">{selectedBooking.operator_reference}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Your Reference</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{selectedBooking.operator_reference}</div>
               </div>
             )}
             {selectedBooking.rejection_reason && (
-              <div className="detail-row">
-                <div className="detail-key">Rejection Reason</div>
-                <div className="detail-val" style={{ color: 'var(--red)' }}>{selectedBooking.rejection_reason}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Rejection Reason</div>
+                <div style={{ color: '#ef4444' }}>{selectedBooking.rejection_reason}</div>
               </div>
             )}
             {selectedBooking.status === 'sent' && (
-              <div className="detail-row" style={{ marginTop: '1rem', borderTop: '1px solid var(--gray-100)', paddingTop: '1rem' }}>
-                <div className="detail-key">Quick Actions</div>
-                <div className="detail-val">
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Quick Actions</div>
+                <div>
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <button 
-                      className="btn btn-green btn-sm"
+                      style={{
+                        padding: '0.3rem 0.8rem',
+                        background: '#22c55e',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
                       onClick={() => {
                         handleAccept(selectedBooking.id)
                         setDetailModal(false)
                       }}
                     >
-                      <i className="bi bi-check-lg" /> Accept
+                      <i className="bi bi-check-lg"></i> Accept
                     </button>
                     <button 
-                      className="btn btn-outline-red btn-sm"
+                      style={{
+                        padding: '0.3rem 0.8rem',
+                        background: 'transparent',
+                        color: '#ef4444',
+                        border: '1px solid #ef4444',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
                       onClick={() => {
                         handleReject(selectedBooking.id)
                         setDetailModal(false)
                       }}
                     >
-                      <i className="bi bi-x-lg" /> Reject
+                      <i className="bi bi-x-lg"></i> Reject
                     </button>
                   </div>
                 </div>
@@ -355,5 +527,3 @@ export function OperatorBookingsPage() {
     </div>
   )
 }
-
-export default OperatorBookingsPage

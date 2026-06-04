@@ -4,35 +4,98 @@
 import { useState, useEffect, useCallback } from 'react'
 import { operatorAPI } from '../../services/api'
 
-function Badge({ s }) {
-  const STATUS_COLORS = {
-    submitted: 'amber',
-    shortlisted: 'navy',
-    accepted: 'green',
-    rejected: 'red',
-    expired: 'gray'
-  }
-  const colorClass = STATUS_COLORS[s] || 'gray'
-  const displayText = s?.replace(/_/g, ' ') || '—'
-  return <span className={`badge badge-${colorClass}`}>{displayText}</span>
+const STATUS_COLORS = {
+  submitted: '#f59e0b',
+  shortlisted: '#0f2d5e',
+  accepted: '#22c55e',
+  rejected: '#ef4444',
+  expired: '#64748b'
+}
+
+const STATUS_LABELS = {
+  submitted: 'Submitted',
+  shortlisted: 'Shortlisted',
+  accepted: 'Accepted',
+  rejected: 'Rejected',
+  expired: 'Expired'
+}
+
+function Badge({ status }) {
+  const color = STATUS_COLORS[status] || '#64748b'
+  const label = STATUS_LABELS[status] || status?.replace(/_/g, ' ') || '—'
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '0.2rem 0.6rem',
+      background: `${color}15`,
+      color: color,
+      border: `1px solid ${color}30`,
+      borderRadius: '6px',
+      fontSize: '0.7rem',
+      fontWeight: 600,
+      textTransform: 'capitalize'
+    }}>
+      {label}
+    </span>
+  )
 }
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
+  
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg">
-        <div className="modal-header">
-          <div className="modal-title">{title}</div>
-          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(5, 20, 43, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--color-white)',
+        borderRadius: '10px',
+        width: '100%',
+        maxWidth: '600px',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid var(--color-light-gray)'
+        }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            color: 'var(--color-mid-gray)',
+            padding: '0.25rem'
+          }}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+          {children}
+        </div>
       </div>
     </div>
   )
 }
 
-export function OperatorRFQPage() {
+export default function OperatorRFQPage() {
   const [bids, setBids] = useState([])
   const [myAircraft, setMyAircraft] = useState([])
   const [loading, setLoading] = useState(true)
@@ -136,86 +199,140 @@ export function OperatorRFQPage() {
 
   if (loading) {
     return (
-      <div className="table-empty">
-        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-        <p>Loading RFQ bids...</p>
+      <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+        <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--color-mid-gray)' }}>Loading RFQ bids...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>RFQ Bids</h2>
-          <p>View Request For Quote invitations and submit competitive bids</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>RFQ Bids</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>View Request For Quote invitations and submit competitive bids</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={load}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
-          </button>
-        </div>
+        <button onClick={load} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.4rem 1rem',
+          background: 'transparent',
+          color: 'var(--color-navy)',
+          border: '1.5px solid var(--color-navy)',
+          borderRadius: '6px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+          <i className="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="operator-stats">
-        <div className="operator-stat-card">
-          <div className="operator-stat-number">{stats.total}</div>
-          <div className="operator-stat-label">Total RFQs</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.total}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total RFQs</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--gold)' }}>{stats.open}</div>
-          <div className="operator-stat-label">Open to Bid</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#c9992e' }}>{stats.open}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Open to Bid</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--navy)' }}>{stats.shortlisted}</div>
-          <div className="operator-stat-label">Shortlisted</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0f2d5e' }}>{stats.shortlisted}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Shortlisted</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--green)' }}>{stats.accepted}</div>
-          <div className="operator-stat-label">Accepted</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#22c55e' }}>{stats.accepted}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Accepted</div>
         </div>
       </div>
 
       {/* Message Alert */}
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+          border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+          borderRadius: '6px',
+          color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Open RFQs Section */}
-      <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
-        <div className="settings-card-header">
-          <h4><i className="bi bi-bell" /> Open RFQs ({openBids.length})</h4>
+      <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-bell" style={{ color: 'var(--color-gold)' }}></i> Open RFQs ({openBids.length})
+          </h4>
         </div>
-        <div className="settings-card-body" style={{ padding: 0 }}>
+        <div>
           {openBids.length === 0 ? (
-            <div className="table-empty" style={{ padding: '2rem' }}>
-              <i className="bi bi-check-circle" style={{ color: 'var(--green)' }} />
-              <p>No open RFQs at the moment. Check back later!</p>
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <i className="bi bi-check-circle" style={{ color: '#22c55e', fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}></i>
+              <p style={{ color: 'var(--color-mid-gray)' }}>No open RFQs at the moment. Check back later!</p>
             </div>
           ) : (
             openBids.map(bid => (
-              <div key={bid.id} className="rfq-item">
-                <div className="rfq-info">
-                  <div className="rfq-booking">
-                    Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
-                    <Badge s={bid.status} />
+              <div key={bid.id} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '1rem 1.5rem',
+                borderBottom: '1px solid var(--color-light-gray)',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem' }}>
+                      Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
+                    </span>
+                    <Badge status={bid.status} />
                   </div>
-                  <div className="rfq-details">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
                     Your bid: {formatCurrency(bid.operator_price_usd)}
                     {bid.valid_until && ` · Valid until ${formatDate(bid.valid_until)}`}
                   </div>
                   {bid.route && (
-                    <div className="rfq-route">
-                      <i className="bi bi-geo-alt" /> {bid.route}
+                    <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', marginTop: '0.25rem' }}>
+                      <i className="bi bi-geo-alt"></i> {bid.route}
                     </div>
                   )}
                 </div>
-                <button onClick={() => openBid(bid)} className="btn btn-navy btn-sm">
-                  <i className="bi bi-send" /> Submit Bid
+                <button onClick={() => openBid(bid)} style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.4rem 0.9rem',
+                  background: 'var(--color-navy)',
+                  color: 'var(--color-white)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}>
+                  <i className="bi bi-send"></i> Submit Bid
                 </button>
               </div>
             ))
@@ -224,28 +341,41 @@ export function OperatorRFQPage() {
       </div>
 
       {/* Previous Bids Section */}
-      <div className="settings-card">
-        <div className="settings-card-header">
-          <h4><i className="bi bi-clock-history" /> Previous Bids ({pastBids.length})</h4>
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-clock-history" style={{ color: 'var(--color-gold)' }}></i> Previous Bids ({pastBids.length})
+          </h4>
         </div>
-        <div className="settings-card-body" style={{ padding: 0 }}>
+        <div>
           {pastBids.length === 0 ? (
-            <div className="table-empty" style={{ padding: '2rem' }}>
-              <i className="bi bi-inbox" />
-              <p>No previous bids yet.</p>
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <i className="bi bi-inbox" style={{ fontSize: '2rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '0.5rem' }}></i>
+              <p style={{ color: 'var(--color-mid-gray)' }}>No previous bids yet.</p>
             </div>
           ) : (
             pastBids.map(bid => (
-              <div key={bid.id} className="rfq-item past">
-                <div className="rfq-info">
-                  <div className="rfq-booking">
-                    Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
-                    <Badge s={bid.status} />
+              <div key={bid.id} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '1rem 1.5rem',
+                borderBottom: '1px solid var(--color-light-gray)',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                opacity: 0.8
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem' }}>
+                      Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
+                    </span>
+                    <Badge status={bid.status} />
                   </div>
-                  <div className="rfq-details">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
                     Your bid: {formatCurrency(bid.operator_price_usd)}
                     {bid.njh_client_price && (
-                      <span className="client-price">
+                      <span style={{ marginLeft: '0.5rem' }}>
                         · Client price: {formatCurrency(bid.njh_client_price)}
                       </span>
                     )}
@@ -258,16 +388,18 @@ export function OperatorRFQPage() {
       </div>
 
       {/* Bid Modal */}
-      <Modal open={activeBid !== null} onClose={() => setActiveBid(null)} title={<><i className="bi bi-send" /> Submit Bid</>}>
+      <Modal open={activeBid !== null} onClose={() => setActiveBid(null)} title={<><i className="bi bi-send"></i> Submit Bid</>}>
         <form onSubmit={handleSubmitBid}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Assign Aircraft <span className="req">*</span></label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Assign Aircraft <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <select 
-                className="form-control" 
                 value={bidForm.aircraft} 
                 onChange={e => setBidForm(f => ({ ...f, aircraft: e.target.value }))}
                 required
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               >
                 <option value="">Select aircraft</option>
                 {myAircraft.map(a => (
@@ -275,80 +407,94 @@ export function OperatorRFQPage() {
                 ))}
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label">Your Price (USD) <span className="req">*</span></label>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Your Price (USD) <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <input 
-                className="form-control" 
                 type="number" 
                 step="0.01"
                 value={bidForm.operator_price_usd} 
                 onChange={e => setBidForm(f => ({ ...f, operator_price_usd: e.target.value }))} 
                 required 
                 placeholder="25000"
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Estimated Hours</label>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Estimated Hours</label>
               <input 
-                className="form-control" 
                 type="number" 
                 step="0.1"
                 value={bidForm.estimated_hours} 
                 onChange={e => setBidForm(f => ({ ...f, estimated_hours: e.target.value }))} 
                 placeholder="2.5"
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Positioning Cost (USD)</label>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Positioning Cost (USD)</label>
               <input 
-                className="form-control" 
                 type="number" 
                 step="0.01"
                 value={bidForm.positioning_cost} 
                 onChange={e => setBidForm(f => ({ ...f, positioning_cost: e.target.value }))} 
                 placeholder="0"
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Catering Cost (USD)</label>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Catering Cost (USD)</label>
               <input 
-                className="form-control" 
                 type="number" 
                 step="0.01"
                 value={bidForm.catering_cost} 
                 onChange={e => setBidForm(f => ({ ...f, catering_cost: e.target.value }))} 
                 placeholder="0"
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Overnight Cost (USD)</label>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Overnight Cost (USD)</label>
               <input 
-                className="form-control" 
                 type="number" 
                 step="0.01"
                 value={bidForm.overnight_cost} 
                 onChange={e => setBidForm(f => ({ ...f, overnight_cost: e.target.value }))} 
                 placeholder="0"
-              />
-            </div>
-            <div className="form-group form-full">
-              <label className="form-label">Notes</label>
-              <textarea 
-                className="form-control" 
-                rows={3}
-                value={bidForm.notes} 
-                onChange={e => setBidForm(f => ({ ...f, notes: e.target.value }))} 
-                placeholder="Any notes for the NJH team..."
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
           </div>
+
+          <div style={{ marginTop: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Notes</label>
+            <textarea 
+              rows={3}
+              value={bidForm.notes} 
+              onChange={e => setBidForm(f => ({ ...f, notes: e.target.value }))} 
+              placeholder="Any notes for the NJH team..."
+              style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
+            />
+          </div>
+
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setActiveBid(null)}>Cancel</button>
-            <button type="submit" className="btn btn-navy" disabled={submitting}>
+            <button type="button" onClick={() => setActiveBid(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={submitting} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
               {submitting ? (
-                <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</>
+                <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Submitting…</>
               ) : (
-                <><i className="bi bi-check-lg" /> Submit Bid</>
+                <><i className="bi bi-check-lg"></i> Submit Bid</>
               )}
             </button>
           </div>
@@ -357,5 +503,3 @@ export function OperatorRFQPage() {
     </div>
   )
 }
-
-export default OperatorRFQPage

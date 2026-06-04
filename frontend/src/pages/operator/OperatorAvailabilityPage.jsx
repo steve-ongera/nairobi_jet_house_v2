@@ -4,22 +4,68 @@
 import { useState, useEffect, useCallback } from 'react'
 import { operatorAPI } from '../../services/api'
 
+const BLOCK_TYPES = [
+  { value: 'maintenance', label: 'Maintenance', color: '#ef4444' },
+  { value: 'private_use', label: 'Private Use', color: '#0f2d5e' },
+  { value: 'other_booking', label: 'Other Booking', color: '#f59e0b' },
+  { value: 'seasonal_off', label: 'Seasonal Off', color: '#64748b' }
+]
+
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
+  
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <div className="modal-title">{title}</div>
-          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(5, 20, 43, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--color-white)',
+        borderRadius: '10px',
+        width: '100%',
+        maxWidth: '420px',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid var(--color-light-gray)'
+        }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            color: 'var(--color-mid-gray)',
+            padding: '0.25rem'
+          }}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+          {children}
+        </div>
       </div>
     </div>
   )
 }
 
-export function OperatorAvailabilityPage() {
+export default function OperatorAvailabilityPage() {
   const [blocks, setBlocks] = useState([])
   const [aircraft, setAircraft] = useState([])
   const [yachts, setYachts] = useState([])
@@ -37,13 +83,6 @@ export function OperatorAvailabilityPage() {
     end_date: '',
     notes: '',
   })
-
-  const BLOCK_TYPES = [
-    { value: 'maintenance', label: 'Maintenance', color: 'red' },
-    { value: 'private_use', label: 'Private Use', color: 'navy' },
-    { value: 'other_booking', label: 'Other Booking', color: 'amber' },
-    { value: 'seasonal_off', label: 'Seasonal Off', color: 'gray' }
-  ]
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -116,7 +155,7 @@ export function OperatorAvailabilityPage() {
 
   const getBlockTypeColor = (type) => {
     const found = BLOCK_TYPES.find(t => t.value === type)
-    return found?.color || 'gray'
+    return found?.color || '#64748b'
   }
 
   const formatDate = (dateStr) => {
@@ -137,69 +176,103 @@ export function OperatorAvailabilityPage() {
 
   if (loading) {
     return (
-      <div className="table-empty">
-        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-        <p>Loading availability data...</p>
+      <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+        <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--color-mid-gray)' }}>Loading availability data...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Availability Management</h2>
-          <p>Mark blackout windows when your fleet is unavailable for charter</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Availability Management</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Mark blackout windows when your fleet is unavailable for charter</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={load}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
-          </button>
-        </div>
+        <button onClick={load} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.4rem 1rem',
+          background: 'transparent',
+          color: 'var(--color-navy)',
+          border: '1.5px solid var(--color-navy)',
+          borderRadius: '6px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+          <i className="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </div>
 
       {/* Message Alert */}
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+          border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+          borderRadius: '6px',
+          color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div className="operator-stats">
-        <div className="operator-stat-card">
-          <div className="operator-stat-number">{stats.total}</div>
-          <div className="operator-stat-label">Total Blocks</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.total}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total Blocks</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--red)' }}>{stats.maintenance}</div>
-          <div className="operator-stat-label">Maintenance</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ef4444' }}>{stats.maintenance}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Maintenance</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--navy)' }}>{stats.privateUse}</div>
-          <div className="operator-stat-label">Private Use</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0f2d5e' }}>{stats.privateUse}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Private Use</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--amber)' }}>{stats.upcoming}</div>
-          <div className="operator-stat-label">Upcoming</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f59e0b' }}>{stats.upcoming}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Upcoming</div>
         </div>
       </div>
 
       {/* Add Block Form */}
-      <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
-        <div className="settings-card-header">
-          <h4><i className="bi bi-calendar-x" /> Add Availability Block</h4>
+      <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-calendar-x" style={{ color: 'var(--color-gold)' }}></i> Add Availability Block
+          </h4>
         </div>
-        <div className="settings-card-body">
+        <div style={{ padding: '1.5rem' }}>
           <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Asset Type</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Asset Type</label>
                 <select 
-                  className="form-control" 
                   value={form.asset_type} 
                   onChange={e => setForm(f => ({ ...f, asset_type: e.target.value, aircraft: '', yacht: '' }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 >
                   <option value="aircraft">Aircraft</option>
                   <option value="yacht">Yacht</option>
@@ -207,13 +280,15 @@ export function OperatorAvailabilityPage() {
               </div>
 
               {form.asset_type === 'aircraft' ? (
-                <div className="form-group">
-                  <label className="form-label">Select Aircraft <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Select Aircraft <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <select 
-                    className="form-control" 
                     value={form.aircraft} 
                     onChange={e => setForm(f => ({ ...f, aircraft: e.target.value }))} 
                     required
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   >
                     <option value="">Choose aircraft</option>
                     {aircraft.map(a => (
@@ -222,13 +297,15 @@ export function OperatorAvailabilityPage() {
                   </select>
                 </div>
               ) : (
-                <div className="form-group">
-                  <label className="form-label">Select Yacht <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Select Yacht <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <select 
-                    className="form-control" 
                     value={form.yacht} 
                     onChange={e => setForm(f => ({ ...f, yacht: e.target.value }))} 
                     required
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   >
                     <option value="">Choose yacht</option>
                     {yachts.map(y => (
@@ -238,12 +315,14 @@ export function OperatorAvailabilityPage() {
                 </div>
               )}
 
-              <div className="form-group">
-                <label className="form-label">Block Type</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Block Type</label>
                 <select 
-                  className="form-control" 
                   value={form.block_type} 
                   onChange={e => setForm(f => ({ ...f, block_type: e.target.value }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 >
                   {BLOCK_TYPES.map(t => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -251,45 +330,63 @@ export function OperatorAvailabilityPage() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Start Date <span className="req">*</span></label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Start Date <span style={{ color: 'var(--color-error)' }}>*</span></label>
                 <input 
-                  className="form-control" 
                   type="date" 
                   value={form.start_date} 
                   onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} 
                   required 
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">End Date <span className="req">*</span></label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>End Date <span style={{ color: 'var(--color-error)' }}>*</span></label>
                 <input 
-                  className="form-control" 
                   type="date" 
                   value={form.end_date} 
                   onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} 
                   required 
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
 
-              <div className="form-group form-full">
-                <label className="form-label">Notes (Optional)</label>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Notes (Optional)</label>
                 <input 
-                  className="form-control" 
                   value={form.notes} 
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} 
                   placeholder="Reason for block..."
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button type="submit" className="btn btn-navy" disabled={submitting}>
+              <button type="submit" disabled={submitting} style={{
+                padding: '0.6rem 1.2rem',
+                background: 'var(--color-navy)',
+                color: 'var(--color-white)',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
                 {submitting ? (
-                  <><span className="spinner" style={{ borderTopColor: 'white' }} /> Adding…</>
+                  <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Adding…</>
                 ) : (
-                  <><i className="bi bi-plus-lg" /> Add Block</>
+                  <><i className="bi bi-plus-lg"></i> Add Block</>
                 )}
               </button>
             </div>
@@ -298,39 +395,74 @@ export function OperatorAvailabilityPage() {
       </div>
 
       {/* Existing Blocks */}
-      <div className="settings-card">
-        <div className="settings-card-header">
-          <h4><i className="bi bi-list-ul" /> Current Blocked Periods</h4>
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-list-ul" style={{ color: 'var(--color-gold)' }}></i> Current Blocked Periods
+          </h4>
         </div>
-        <div className="settings-card-body" style={{ padding: 0 }}>
+        <div>
           {blocks.length === 0 ? (
-            <div className="table-empty" style={{ padding: '2rem' }}>
-              <i className="bi bi-calendar-check" />
-              <p>No availability blocks set. Your fleet is fully available.</p>
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <i className="bi bi-calendar-check" style={{ fontSize: '2rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '0.5rem' }}></i>
+              <p style={{ color: 'var(--color-mid-gray)' }}>No availability blocks set. Your fleet is fully available.</p>
             </div>
           ) : (
-            blocks.map(b => (
-              <div key={b.id} className="block-item">
-                <div className="block-info">
-                  <div className="block-title">
-                    {b.aircraft_name || b.yacht_name || '—'}
-                    <span className={`badge badge-${getBlockTypeColor(b.block_type)}`}>
-                      {getBlockTypeLabel(b.block_type)}
-                    </span>
+            blocks.map(b => {
+              const blockColor = getBlockTypeColor(b.block_type)
+              return (
+                <div key={b.id} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '1rem 1.5rem',
+                  borderBottom: '1px solid var(--color-light-gray)',
+                  flexWrap: 'wrap',
+                  gap: '1rem'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem' }}>{b.aircraft_name || b.yacht_name || '—'}</span>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0.15rem 0.5rem',
+                        background: `${blockColor}15`,
+                        color: blockColor,
+                        border: `1px solid ${blockColor}30`,
+                        borderRadius: '4px',
+                        fontSize: '0.65rem',
+                        fontWeight: 600
+                      }}>
+                        {getBlockTypeLabel(b.block_type)}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                      <i className="bi bi-calendar" style={{ fontSize: '0.7rem', marginRight: '0.25rem' }}></i> 
+                      {formatDate(b.start_date)} → {formatDate(b.end_date)}
+                      {b.notes && <span style={{ marginLeft: '0.5rem' }}>· {b.notes}</span>}
+                    </div>
                   </div>
-                  <div className="block-dates">
-                    <i className="bi bi-calendar" /> {formatDate(b.start_date)} → {formatDate(b.end_date)}
-                    {b.notes && <span className="block-notes"> · {b.notes}</span>}
-                  </div>
+                  <button
+                    onClick={() => setDeleteConfirm(b.id)}
+                    style={{
+                      padding: '0.3rem 0.7rem',
+                      background: 'transparent',
+                      color: '#ef4444',
+                      border: '1px solid #ef4444',
+                      borderRadius: '6px',
+                      fontSize: '0.7rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <i className="bi bi-trash"></i> Remove
+                  </button>
                 </div>
-                <button
-                  onClick={() => setDeleteConfirm(b.id)}
-                  className="btn btn-outline-red btn-sm"
-                >
-                  <i className="bi bi-trash" /> Remove
-                </button>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
@@ -338,20 +470,29 @@ export function OperatorAvailabilityPage() {
       {/* Delete Confirmation Modal */}
       <Modal open={deleteConfirm !== null} onClose={() => setDeleteConfirm(null)} title="Remove Availability Block">
         <div style={{ textAlign: 'center' }}>
-          <i className="bi bi-exclamation-triangle" style={{ fontSize: '2rem', color: 'var(--amber)', marginBottom: '1rem', display: 'block' }} />
-          <p style={{ marginBottom: '1rem' }}>Are you sure you want to remove this availability block?</p>
+          <i className="bi bi-exclamation-triangle" style={{ fontSize: '2rem', color: '#f59e0b', marginBottom: '1rem', display: 'block' }}></i>
+          <p style={{ marginBottom: '1rem', color: 'var(--color-dark-gray)' }}>Are you sure you want to remove this availability block?</p>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-            <button className="btn btn-ghost" onClick={() => setDeleteConfirm(null)}>Cancel</button>
-            <button className="btn btn-red" onClick={() => handleDelete(deleteConfirm)}>
-              Yes, Remove
-            </button>
+            <button onClick={() => setDeleteConfirm(null)} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={() => handleDelete(deleteConfirm)} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}>Yes, Remove</button>
           </div>
         </div>
       </Modal>
 
       {/* Info Note */}
-      <div className="alert alert-info" style={{ marginTop: '1.5rem', fontSize: '0.8rem' }}>
-        <i className="bi bi-lightbulb" />
+      <div style={{ 
+        marginTop: '1.5rem', 
+        padding: '0.75rem 1rem', 
+        background: 'rgba(15,92,164,0.08)', 
+        border: '1px solid rgba(15,92,164,0.22)', 
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+        fontSize: '0.8rem',
+        color: 'var(--color-info)'
+      }}>
+        <i className="bi bi-lightbulb" style={{ fontSize: '1rem', color: 'var(--color-info)' }}></i>
         <div>
           <strong>Tip:</strong> Marking maintenance or private use periods helps prevent double-booking. NJH will not dispatch charters during blocked dates.
         </div>
@@ -359,5 +500,3 @@ export function OperatorAvailabilityPage() {
     </div>
   )
 }
-
-export default OperatorAvailabilityPage

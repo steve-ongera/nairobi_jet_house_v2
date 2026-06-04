@@ -4,20 +4,44 @@
 import { useState, useEffect, useCallback } from 'react'
 import { operatorAPI } from '../../services/api'
 
-function Badge({ s, type = 'status' }) {
-  const STATUS_COLOR = {
-    available: 'green',
-    pending: 'amber',
-    booked: 'navy',
-    maintenance: 'red',
-    inactive: 'gray'
-  }
-  const colorClass = STATUS_COLOR[s] || 'gray'
-  const displayText = s?.replace(/_/g, ' ') || '—'
-  return <span className={`badge badge-${colorClass}`}>{displayText}</span>
+const STATUS_COLOR = {
+  available: '#22c55e',
+  pending: '#f59e0b',
+  booked: '#0f2d5e',
+  maintenance: '#ef4444',
+  inactive: '#64748b'
 }
 
-export function OperatorYachtsPage() {
+const STATUS_LABEL = {
+  available: 'Available',
+  pending: 'Pending',
+  booked: 'Booked',
+  maintenance: 'Maintenance',
+  inactive: 'Inactive'
+}
+
+function Badge({ status }) {
+  const color = STATUS_COLOR[status] || '#64748b'
+  const label = STATUS_LABEL[status] || status?.replace(/_/g, ' ') || '—'
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '0.2rem 0.6rem',
+      background: `${color}15`,
+      color: color,
+      border: `1px solid ${color}30`,
+      borderRadius: '6px',
+      fontSize: '0.7rem',
+      fontWeight: 600,
+      textTransform: 'capitalize'
+    }}>
+      {label}
+    </span>
+  )
+}
+
+export default function OperatorYachtsPage() {
   const [yachts, setYachts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -139,29 +163,63 @@ export function OperatorYachtsPage() {
 
   if (loading) {
     return (
-      <div className="table-empty">
-        <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-        <p>Loading yachts...</p>
+      <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px' }}>
+        <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--color-mid-gray)' }}>Loading yachts...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>My Yachts</h2>
-          <p>Manage your yacht fleet for charter</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>My Yachts</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Manage your yacht fleet for charter</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={load}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={load} style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 1rem',
+            background: 'transparent',
+            color: 'var(--color-navy)',
+            border: '1.5px solid var(--color-navy)',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+            <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
           <button 
-            className={`btn ${showForm ? 'btn-outline-red' : 'btn-navy'} btn-sm`} 
             onClick={() => { setShowForm(!showForm); if (!showForm) resetForm() }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.4rem 1rem',
+              background: showForm ? '#ef4444' : 'var(--color-navy)',
+              color: 'var(--color-white)',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
           >
-            <i className={`bi bi-${showForm ? 'x-lg' : 'plus-lg'}`} /> 
+            <i className={`bi bi-${showForm ? 'x-lg' : 'plus-lg'}`}></i> 
             {showForm ? 'Cancel' : 'Add Yacht'}
           </button>
         </div>
@@ -169,145 +227,174 @@ export function OperatorYachtsPage() {
 
       {/* Message Alert */}
       {message.text && (
-        <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+          border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+          borderRadius: '6px',
+          color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div className="operator-stats">
-        <div className="operator-stat-card">
-          <div className="operator-stat-number">{stats.total}</div>
-          <div className="operator-stat-label">Total Yachts</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-navy)' }}>{stats.total}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Total Yachts</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--green)' }}>{stats.available}</div>
-          <div className="operator-stat-label">Available</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#22c55e' }}>{stats.available}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Available</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--amber)' }}>{stats.pending}</div>
-          <div className="operator-stat-label">Pending Approval</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f59e0b' }}>{stats.pending}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Pending Approval</div>
         </div>
-        <div className="operator-stat-card">
-          <div className="operator-stat-number" style={{ color: 'var(--navy)' }}>{stats.booked}</div>
-          <div className="operator-stat-label">Booked</div>
+        <div style={{ padding: '1rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0f2d5e' }}>{stats.booked}</div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-mid-gray)' }}>Booked</div>
         </div>
       </div>
 
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="settings-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="settings-card-header">
-            <h4><i className="bi bi-water" /> {editingYacht ? 'Edit Yacht' : 'Add New Yacht'}</h4>
+        <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-water" style={{ color: 'var(--color-gold)' }}></i> {editingYacht ? 'Edit Yacht' : 'Add New Yacht'}
+            </h4>
           </div>
-          <div className="settings-card-body">
+          <div style={{ padding: '1.5rem' }}>
             {error && (
-              <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
-                <i className="bi bi-exclamation-triangle" />
+              <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', borderRadius: '6px', color: 'var(--color-error)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="bi bi-exclamation-triangle"></i>
                 <span>{error}</span>
               </div>
             )}
             <form onSubmit={handleSubmit}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Yacht Name <span className="req">*</span></label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Yacht Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input 
-                    className="form-control" 
                     value={form.name} 
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
                     required 
                     placeholder="Ocean Majesty"
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Yacht Type</label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Yacht Type</label>
                   <select 
-                    className="form-control" 
                     value={form.yacht_type} 
                     onChange={e => setForm(f => ({ ...f, yacht_type: e.target.value }))}
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   >
                     {YACHT_TYPES.map(t => (
                       <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Length (meters) <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Length (meters) <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input 
-                    className="form-control" 
                     type="number" 
                     step="0.1"
                     value={form.length_meters} 
                     onChange={e => setForm(f => ({ ...f, length_meters: e.target.value }))} 
                     required 
                     placeholder="45"
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Guest Capacity <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Guest Capacity <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input 
-                    className="form-control" 
                     type="number" 
                     value={form.guest_capacity} 
                     onChange={e => setForm(f => ({ ...f, guest_capacity: e.target.value }))} 
                     required 
                     placeholder="12"
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Crew Count <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Crew Count <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input 
-                    className="form-control" 
                     type="number" 
                     value={form.crew_count} 
                     onChange={e => setForm(f => ({ ...f, crew_count: e.target.value }))} 
                     required 
                     placeholder="6"
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Daily Rate (USD) <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Daily Rate (USD) <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input 
-                    className="form-control" 
                     type="number" 
                     step="0.01"
                     value={form.daily_rate_usd} 
                     onChange={e => setForm(f => ({ ...f, daily_rate_usd: e.target.value }))} 
                     required 
                     placeholder="15000"
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Home Port <span className="req">*</span></label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Home Port <span style={{ color: 'var(--color-error)' }}>*</span></label>
                   <input 
-                    className="form-control" 
                     value={form.home_port} 
                     onChange={e => setForm(f => ({ ...f, home_port: e.target.value }))} 
                     required 
                     placeholder="Monaco"
+                    style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                   />
                 </div>
               </div>
 
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label className="form-label">Description</label>
+              <div style={{ marginTop: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Description</label>
                 <textarea 
-                  className="form-control" 
                   rows={3}
                   value={form.description} 
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))} 
                   placeholder="Yacht features, amenities, and special considerations..."
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn btn-navy" disabled={submitting}>
+                <button type="button" onClick={() => setShowForm(false)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                   {submitting ? (
-                    <><span className="spinner" style={{ borderTopColor: 'white' }} /> Submitting…</>
+                    <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Submitting…</>
                   ) : (
-                    <><i className="bi bi-check-lg" /> {editingYacht ? 'Update Yacht' : 'Submit for Approval'}</>
+                    <><i className="bi bi-check-lg"></i> {editingYacht ? 'Update Yacht' : 'Submit for Approval'}</>
                   )}
                 </button>
               </div>
@@ -318,41 +405,85 @@ export function OperatorYachtsPage() {
 
       {/* Yacht List */}
       {yachts.length === 0 ? (
-        <div className="empty-state">
-          <i className="bi bi-water" />
-          <h3>No Yachts Listed</h3>
-          <p>Click "Add Yacht" to list your first yacht for charter.</p>
+        <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px' }}>
+          <i className="bi bi-water" style={{ fontSize: '3rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '1rem' }}></i>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.5rem' }}>No Yachts Listed</h3>
+          <p style={{ color: 'var(--color-mid-gray)' }}>Click "Add Yacht" to list your first yacht for charter.</p>
         </div>
       ) : (
-        <div className="yacht-list">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {yachts.map(y => (
-            <div key={y.id} className="yacht-card-item" onClick={() => openEditModal(y)} style={{ cursor: 'pointer' }}>
-              <div className="yacht-card-left">
-                <div className="yacht-icon">
-                  <i className="bi bi-water" />
+            <div 
+              key={y.id} 
+              onClick={() => openEditModal(y)} 
+              style={{ 
+                cursor: 'pointer',
+                background: 'var(--color-white)',
+                border: '1px solid var(--color-light-gray)',
+                borderRadius: '10px',
+                padding: '1rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                transition: 'all var(--transition-base)'
+              }}
+            >
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: 1 }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'var(--color-off-white)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <i className="bi bi-water" style={{ fontSize: '1.2rem', color: 'var(--color-gold)' }}></i>
                 </div>
-                <div className="yacht-info">
-                  <div className="yacht-name">{y.name}</div>
-                  <div className="yacht-details">
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.9rem' }}>{y.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>
                     {y.yacht_type} · {formatNumber(y.length_meters)}m · {y.guest_capacity} guests · {y.crew_count} crew
                   </div>
-                  <div className="yacht-rate">
+                  <div style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
                     {formatCurrency(y.daily_rate_usd)}/day · Port: {y.home_port}
                   </div>
                 </div>
               </div>
-              <div className="yacht-card-right">
-                <Badge s={y.status} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                <Badge status={y.status} />
                 {!y.is_approved && y.status !== 'pending' && (
-                  <span className="badge badge-amber">Pending Approval</span>
+                  <span style={{
+                    display: 'inline-flex',
+                    padding: '0.2rem 0.6rem',
+                    background: 'rgba(245,158,11,0.1)',
+                    color: '#f59e0b',
+                    border: '1px solid rgba(245,158,11,0.3)',
+                    borderRadius: '6px',
+                    fontSize: '0.7rem',
+                    fontWeight: 600
+                  }}>Pending Approval</span>
                 )}
                 {y.is_approved && (
-                  <span className="approved-badge">
-                    <i className="bi bi-check-circle-fill" /> Approved
+                  <span style={{ fontSize: '0.7rem', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <i className="bi bi-check-circle-fill"></i> Approved
                   </span>
                 )}
-                <button className="btn btn-outline-navy btn-sm" onClick={(e) => { e.stopPropagation(); openEditModal(y); }}>
-                  <i className="bi bi-pencil" />
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openEditModal(y); }}
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    background: 'transparent',
+                    color: 'var(--color-navy)',
+                    border: '1px solid var(--color-navy)',
+                    borderRadius: '6px',
+                    fontSize: '0.7rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <i className="bi bi-pencil"></i>
                 </button>
               </div>
             </div>
@@ -361,8 +492,19 @@ export function OperatorYachtsPage() {
       )}
 
       {/* Info Note */}
-      <div className="alert alert-info" style={{ marginTop: '1.5rem', fontSize: '0.8rem' }}>
-        <i className="bi bi-info-circle" />
+      <div style={{ 
+        marginTop: '1.5rem', 
+        padding: '0.75rem 1rem', 
+        background: 'rgba(15,92,164,0.08)', 
+        border: '1px solid rgba(15,92,164,0.22)', 
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+        fontSize: '0.8rem',
+        color: 'var(--color-info)'
+      }}>
+        <i className="bi bi-info-circle" style={{ fontSize: '1rem', color: 'var(--color-info)' }}></i>
         <div>
           <strong>Note:</strong> All newly listed yachts require NJH admin approval before they appear publicly in search results and become available for charter.
         </div>
@@ -370,5 +512,3 @@ export function OperatorYachtsPage() {
     </div>
   )
 }
-
-export default OperatorYachtsPage
