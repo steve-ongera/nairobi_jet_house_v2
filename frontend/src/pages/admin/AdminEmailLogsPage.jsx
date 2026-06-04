@@ -6,20 +6,59 @@ import { adminAPI } from '../../services/api'
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
+  
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-md">
-        <div className="modal-header">
-          <div className="modal-title">{title}</div>
-          <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg" /></button>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(5, 20, 43, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'var(--color-white)',
+        borderRadius: '10px',
+        width: '100%',
+        maxWidth: '560px',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 1.5rem',
+          borderBottom: '1px solid var(--color-light-gray)'
+        }}>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-navy)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            color: 'var(--color-mid-gray)',
+            padding: '0.25rem'
+          }}>
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+          {children}
+        </div>
       </div>
     </div>
   )
 }
 
-export function AdminEmailLogsPage() {
+export default function AdminEmailLogsPage() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -82,24 +121,49 @@ export function AdminEmailLogsPage() {
     return new Date(dateStr).toLocaleString()
   }
 
-  const quickRecipients = [
-    { label: 'Test', email: 'admin@nairobiJethouse.com', name: 'Admin' },
-  ]
-
   return (
     <div>
-      <div className="dash-header">
-        <div className="dash-header-left">
-          <h2>Email Logs</h2>
-          <p>Track all outbound emails sent from the platform</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Email Logs</h2>
+          <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Track all outbound emails sent from the platform</p>
         </div>
-        <div className="admin-actions-right">
-          <button className="btn btn-outline-navy btn-sm" onClick={load}>
-            <i className="bi bi-arrow-clockwise" /> Refresh
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={load} style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 1rem',
+            background: 'transparent',
+            color: 'var(--color-navy)',
+            border: '1.5px solid var(--color-navy)',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
+            <i className="bi bi-arrow-clockwise"></i> Refresh
           </button>
           <button 
-            className={`btn ${showSend ? 'btn-outline-red' : 'btn-navy'} btn-sm`} 
             onClick={() => setShowSend(s => !s)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.4rem 1rem',
+              background: showSend ? '#ef4444' : 'var(--color-navy)',
+              color: 'var(--color-white)',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
           >
             <i className={`bi bi-${showSend ? 'x-lg' : 'send'}`} /> 
             {showSend ? 'Cancel' : 'Send Email'}
@@ -109,44 +173,63 @@ export function AdminEmailLogsPage() {
 
       {/* Send Email Form */}
       {showSend && (
-        <div className="send-email-card">
-          <h4><i className="bi bi-envelope-paper" /> Compose New Email</h4>
+        <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', padding: '1.5rem' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="bi bi-envelope-paper"></i> Compose New Email
+          </h4>
           
           {message.text && (
-            <div className={`alert alert-${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '1rem' }}>
-              <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`} />
+            <div style={{ 
+              marginBottom: '1rem', 
+              padding: '0.75rem 1rem', 
+              background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
+              border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
+              borderRadius: '6px',
+              color: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}`}></i>
               <span>{message.text}</span>
             </div>
           )}
 
           <form onSubmit={sendEmail}>
-            <div className="form-grid">
-              <div className="form-group form-full">
-                <label className="form-label">To Email <span className="req">*</span></label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>To Email <span style={{ color: 'var(--color-error)' }}>*</span></label>
                 <input 
-                  className="form-control" 
                   type="email" 
                   value={sendForm.to_email} 
                   onChange={e => setSendForm(f => ({ ...f, to_email: e.target.value }))} 
                   required 
                   placeholder="customer@example.com"
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">To Name</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>To Name</label>
                 <input 
-                  className="form-control" 
                   value={sendForm.to_name} 
                   onChange={e => setSendForm(f => ({ ...f, to_name: e.target.value }))} 
                   placeholder="Customer name"
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Inquiry Type</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Inquiry Type</label>
                 <select 
-                  className="form-control" 
                   value={sendForm.inquiry_type} 
                   onChange={e => setSendForm(f => ({ ...f, inquiry_type: e.target.value }))}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
                 >
                   <option value="general">General</option>
                   <option value="booking">Booking</option>
@@ -157,36 +240,40 @@ export function AdminEmailLogsPage() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginTop: '1rem' }}>
-              <label className="form-label">Subject <span className="req">*</span></label>
+            <div style={{ marginTop: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Subject <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <input 
-                className="form-control" 
                 value={sendForm.subject} 
                 onChange={e => setSendForm(f => ({ ...f, subject: e.target.value }))} 
                 required 
                 placeholder="Email subject"
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
 
-            <div className="form-group" style={{ marginTop: '1rem' }}>
-              <label className="form-label">Message <span className="req">*</span></label>
+            <div style={{ marginTop: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Message <span style={{ color: 'var(--color-error)' }}>*</span></label>
               <textarea 
-                className="form-control" 
                 rows={6}
                 value={sendForm.body} 
                 onChange={e => setSendForm(f => ({ ...f, body: e.target.value }))} 
                 required 
                 placeholder="Type your message here..."
+                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
               />
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => setShowSend(false)}>Cancel</button>
-              <button type="submit" className="btn btn-navy" disabled={sending}>
+              <button type="button" onClick={() => setShowSend(false)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={sending} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                 {sending ? (
-                  <><span className="spinner" style={{ borderTopColor: 'white' }} /> Sending…</>
+                  <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Sending…</>
                 ) : (
-                  <><i className="bi bi-send" /> Send Email</>
+                  <><i className="bi bi-send"></i> Send Email</>
                 )}
               </button>
             </div>
@@ -195,83 +282,118 @@ export function AdminEmailLogsPage() {
       )}
 
       {/* Search */}
-      <div className="filter-bar" style={{ marginBottom: '1.5rem' }}>
-        <div className="filter-group">
-          <label>Search</label>
-          <div className="search-wrap">
-            <i className="bi bi-search" />
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1, minWidth: '250px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>Search</label>
+          <div style={{ position: 'relative' }}>
+            <i className="bi bi-search" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-mid-gray)', fontSize: '0.9rem' }}></i>
             <input 
-              className="form-control search-input" 
+              style={{ width: '100%', padding: '0.6rem 0.75rem 0.6rem 2rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none', transition: 'border-color 0.2s ease' }}
               placeholder="Search by email, subject, or recipient..." 
               value={search} 
               onChange={e => setSearch(e.target.value)} 
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-light-gray)'}
             />
           </div>
         </div>
         {search && (
-          <div className="filter-group" style={{ flex: '0 0 auto' }}>
-            <label>&nbsp;</label>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-mid-gray)', marginBottom: '0.25rem' }}>&nbsp;</label>
             <button 
-              className="btn btn-ghost btn-sm" 
+              style={{ padding: '0.6rem 1rem', background: 'transparent', border: 'none', color: 'var(--color-mid-gray)', fontSize: '0.8rem', cursor: 'pointer' }}
               onClick={() => setSearch('')}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-error)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-mid-gray)'}
             >
-              <i className="bi bi-x-lg" /> Clear
+              <i className="bi bi-x-lg"></i> Clear
             </button>
           </div>
         )}
       </div>
 
       {/* Email Logs Table */}
-      <div className="table-card">
-        <div className="table-scroll">
+      <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
           {loading ? (
-            <div className="table-empty">
-              <div className="spinner-ring" style={{ margin: '0 auto 1rem' }} />
-              <p>Loading email logs...</p>
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ color: 'var(--color-mid-gray)' }}>Loading email logs...</p>
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
             </div>
           ) : logs.length === 0 ? (
-            <div className="table-empty">
-              <i className="bi bi-envelope" />
-              <p>No email logs found.</p>
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <i className="bi bi-envelope" style={{ fontSize: '3rem', color: 'var(--color-light-gray)', display: 'block', marginBottom: '1rem' }} />
+              <p style={{ color: 'var(--color-mid-gray)', marginBottom: '1rem' }}>No email logs found.</p>
               {search && (
-                <button className="btn btn-outline-navy btn-sm" onClick={() => setSearch('')}>
+                <button 
+                  style={{ padding: '0.5rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+                  onClick={() => setSearch('')}
+                >
                   Clear search
                 </button>
               )}
             </div>
           ) : (
-            <table>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
-                <tr>
-                  <th>Recipient</th>
-                  <th>Subject</th>
-                  <th>Type</th>
-                  <th>Sent</th>
-                  <th>Status</th>
+                <tr style={{ borderBottom: '1px solid var(--color-light-gray)', background: 'var(--color-off-white)' }}>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Recipient</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Subject</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Type</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Sent</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-navy)' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map(l => (
-                  <tr key={l.id} style={{ cursor: 'pointer' }} onClick={() => openDetail(l)}>
-                    <td>
-                      <div className="td-name">{l.to_name || l.to_email}</div>
-                      <div className="td-email">{l.to_email}</div>
+                  <tr key={l.id} style={{ borderBottom: '1px solid var(--color-light-gray)', cursor: 'pointer' }} onClick={() => openDetail(l)}>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ fontWeight: 500, color: 'var(--color-navy)' }}>{l.to_name || l.to_email}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{l.to_email}</div>
                     </td>
-                    <td>
-                      <div className="email-subject" title={l.subject}>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-dark-gray)', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={l.subject}>
                         {l.subject}
                       </div>
                     </td>
-                    <td>
-                      <span className="badge badge-gray">{l.inquiry_type || 'general'}</span>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        padding: '0.15rem 0.5rem',
+                        background: 'rgba(100,116,139,0.1)',
+                        color: 'var(--color-mid-gray)',
+                        border: '1px solid rgba(100,116,139,0.2)',
+                        borderRadius: '4px',
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        textTransform: 'capitalize'
+                      }}>
+                        {l.inquiry_type || 'general'}
+                      </span>
                     </td>
-                    <td style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.78rem', whiteSpace: 'nowrap', color: 'var(--color-dark-gray)' }}>
                       {formatDate(l.sent_at)}
                     </td>
-                    <td>
-                      <span className={`badge badge-${l.success ? 'green' : 'red'}`}>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0.2rem 0.6rem',
+                        background: l.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                        color: l.success ? '#22c55e' : '#ef4444',
+                        border: `1px solid ${l.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600
+                      }}>
                         {l.success ? 'Sent' : 'Failed'}
                       </span>
+                      
                     </td>
                   </tr>
                 ))}
@@ -283,14 +405,7 @@ export function AdminEmailLogsPage() {
 
       {/* Stats Summary */}
       {!loading && logs.length > 0 && (
-        <div style={{ 
-          marginTop: '1rem', 
-          padding: '0.75rem 1rem', 
-          fontSize: '0.8rem', 
-          color: 'var(--gray-400)',
-          textAlign: 'center',
-          borderTop: '1px solid var(--gray-100)'
-        }}>
+        <div style={{ marginTop: '1rem', padding: '0.75rem', fontSize: '0.8rem', color: 'var(--color-mid-gray)', textAlign: 'center' }}>
           Showing {logs.length} email{logs.length !== 1 ? 's' : ''}
           {search && ' matching your search'}
           {' · '}
@@ -299,55 +414,86 @@ export function AdminEmailLogsPage() {
       )}
 
       {/* Email Detail Modal */}
-      <Modal open={detailModal} onClose={() => setDetailModal(false)} title={<><i className="bi bi-envelope" /> Email Details</>}>
+      <Modal open={detailModal} onClose={() => setDetailModal(false)} title={<><i className="bi bi-envelope"></i> Email Details</>}>
         {selectedLog && (
           <div>
-            <div className="detail-row">
-              <div className="detail-key">To</div>
-              <div className="detail-val">
-                {selectedLog.to_name && <div>{selectedLog.to_name}</div>}
-                <div>{selectedLog.to_email}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>To</div>
+              <div>
+                {selectedLog.to_name && <div style={{ fontWeight: 500, color: 'var(--color-navy)' }}>{selectedLog.to_name}</div>}
+                <div style={{ color: 'var(--color-dark-gray)' }}>{selectedLog.to_email}</div>
               </div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Subject</div>
-              <div className="detail-val">{selectedLog.subject}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Subject</div>
+              <div style={{ color: 'var(--color-dark-gray)' }}>{selectedLog.subject}</div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Type</div>
-              <div className="detail-val">
-                <span className="badge badge-gray">{selectedLog.inquiry_type || 'general'}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Type</div>
+              <div>
+                <span style={{
+                  display: 'inline-flex',
+                  padding: '0.15rem 0.5rem',
+                  background: 'rgba(100,116,139,0.1)',
+                  color: 'var(--color-mid-gray)',
+                  border: '1px solid rgba(100,116,139,0.2)',
+                  borderRadius: '4px',
+                  fontSize: '0.65rem',
+                  fontWeight: 600
+                }}>
+                  {selectedLog.inquiry_type || 'general'}
+                </span>
               </div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Sent</div>
-              <div className="detail-val">{formatDate(selectedLog.sent_at)}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Sent</div>
+              <div style={{ color: 'var(--color-dark-gray)' }}>{formatDate(selectedLog.sent_at)}</div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Status</div>
-              <div className="detail-val">
-                <span className={`badge badge-${selectedLog.success ? 'green' : 'red'}`}>
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Status</div>
+              <div>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.2rem 0.6rem',
+                  background: selectedLog.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: selectedLog.success ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${selectedLog.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                  borderRadius: '6px',
+                  fontSize: '0.7rem',
+                  fontWeight: 600
+                }}>
                   {selectedLog.success ? 'Delivered' : 'Failed'}
                 </span>
                 {selectedLog.error_message && (
-                  <div style={{ fontSize: '0.7rem', color: 'var(--red)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '0.25rem' }}>
                     {selectedLog.error_message}
                   </div>
                 )}
               </div>
             </div>
-            <div className="detail-row">
-              <div className="detail-key">Message</div>
-              <div className="detail-val">
-                <div className="email-preview">
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Message</div>
+              <div>
+                <div style={{
+                  padding: '0.75rem',
+                  background: 'var(--color-off-white)',
+                  border: '1px solid var(--color-light-gray)',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  lineHeight: 1.6,
+                  color: 'var(--color-dark-gray)',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
                   {selectedLog.body || 'No message content'}
                 </div>
               </div>
             </div>
             {selectedLog.sent_by && (
-              <div className="detail-row">
-                <div className="detail-key">Sent By</div>
-                <div className="detail-val">{selectedLog.sent_by}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Sent By</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{selectedLog.sent_by}</div>
               </div>
             )}
           </div>
@@ -356,5 +502,3 @@ export function AdminEmailLogsPage() {
     </div>
   )
 }
-
-export default AdminEmailLogsPage
