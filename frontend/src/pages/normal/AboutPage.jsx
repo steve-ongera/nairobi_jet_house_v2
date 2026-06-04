@@ -6,10 +6,10 @@ import PublicNavbar from '../../components/common/PublicNavbar';
 import PublicFooter from '../../components/common/PublicFooter';
 
 const LEADERSHIP = [
-  { name: 'Captain Michael Ochieng', title: 'Chief Executive Officer', bio: 'Former pilot with 25+ years in private aviation across Africa. Built Nairobi Jet House from the ground up.', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80' },
-  { name: 'Grace Wanjiku', title: 'Head of Operations', bio: 'Ex-Kenya Airways operations director. Manages our 24/7 dispatch and concierge team.', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80' },
-  { name: 'David Kimathi', title: 'Chief Pilot', bio: 'Type-rated on 8 aircraft types. Oversees all flight operations and safety protocols.', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80' },
-  { name: 'Sarah Muthoni', title: 'Client Experience Director', bio: 'Luxury hospitality expert ensuring every journey exceeds expectations.', image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80' },
+  { name: 'Captain Michael Steven', title: 'Chief Executive Officer', bio: 'Former pilot with 25+ years in private aviation across Africa. Built Nairobi Jet House from the ground up.', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80' },
+  { name: 'Grace Witken', title: 'Head of Operations', bio: 'Ex-Kenya Airways operations director. Manages our 24/7 dispatch and concierge team.', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80' },
+  { name: 'David Elius', title: 'Chief Pilot', bio: 'Type-rated on 8 aircraft types. Oversees all flight operations and safety protocols.', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80' },
+  { name: 'Sarah Hassan', title: 'Client Experience Director', bio: 'Luxury hospitality expert ensuring every journey exceeds expectations.', image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80' },
 ]
 
 // Trusted Partners with local images from /logo folder

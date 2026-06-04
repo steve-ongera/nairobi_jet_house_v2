@@ -8,6 +8,7 @@ import HomePage             from './pages/normal/HomePage';
 import BookFlightPage       from './pages/normal/BookFlightPage';
 import BookYachtPage        from './pages/normal/BookYachtPage';
 import FleetPage            from './pages/normal/FleetPage';
+import FleetDetailPage      from './pages/normal/FleetDetailPage';
 import YachtsPage           from './pages/normal/YachtsPage';
 import ServicesPage         from './pages/normal/ServicesPage';
 import AboutPage            from './pages/normal/AboutPage';
@@ -367,6 +368,7 @@ export default function App() {
           <Route path="/book-flight"       element={<BookFlightPage />} />
           <Route path="/book-yacht"        element={<BookYachtPage />} />
           <Route path="/fleet"             element={<FleetPage />} />
+          <Route path="/fleet/:id"         element={<FleetDetailPage />} /> 
           <Route path="/yachts"            element={<YachtsPage />} />
           <Route path="/services"          element={<ServicesPage />} />
           <Route path="/about"             element={<AboutPage />} />

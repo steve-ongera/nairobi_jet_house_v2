@@ -1855,7 +1855,7 @@ hr.divider-gov {
 }
 
 .badge-navy   { background: rgba(15,45,94,0.09);   color: var(--color-navy);    border: 1px solid rgba(15,45,94,0.18); }
-.badge-gold   { background: rgba(201,153,46,0.12);  color: var(--color-gold-dark); border: 1px solid rgba(201,153,46,0.28); }
+.badge-gold { background: linear-gradient(135deg, rgba(201,153,46,0.12), rgba(201,153,46,0.06)); color: #b8860b; border: 1px solid rgba(201,153,46,0.25); border-radius: 20px; padding: 4px 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
 .badge-green  { background: rgba(26,127,90,0.1);    color: #0d5c3a; border: 1px solid rgba(26,127,90,0.22); }
 .badge-red    { background: rgba(192,57,43,0.1);    color: #8b1a0d; border: 1px solid rgba(192,57,43,0.22); }
 .badge-purple { background: rgba(124,58,237,0.09);  color: #4c1d95; border: 1px solid rgba(124,58,237,0.2); }

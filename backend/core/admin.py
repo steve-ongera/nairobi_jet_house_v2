@@ -332,18 +332,36 @@ class OperatorAircraftAdmin(admin.ModelAdmin):
     def maintenance_badge(self, obj):
         if obj.maintenance_due:
             return format_html('<span style="color:#dc2626;font-weight:700;">OVERDUE</span>')
+        
         hrs = obj.hours_until_maintenance
-        color = "#d97706" if hrs < 10 else "#16a34a"
-        return format_html('<span style="color:{};">{:.0f} hrs</span>', color, hrs)
+        try:
+            hrs_float = float(str(hrs))
+        except (TypeError, ValueError, AttributeError):
+            return format_html('<span style="color:#6b7280;">N/A</span>')
+        
+        color = "#d97706" if hrs_float < 10 else "#16a34a"
+        hrs_formatted = f"{hrs_float:.0f} hrs"  # format BEFORE passing to format_html
+        return format_html('<span style="color:{};">{}</span>', color, hrs_formatted)
 
     @admin.display(description="Client Rate")
     def hourly_rate_display(self, obj):
         try:
-            return f"${obj.display_hourly_rate:,.2f}/hr"
-        except Exception:
-            return f"${obj.hourly_rate_usd:,.2f}/hr"
-
-
+            # Try to get display_hourly_rate and convert to float
+            rate = obj.display_hourly_rate
+            if rate is None:
+                return f"${float(obj.hourly_rate_usd):,.2f}/hr"
+            
+            # Try to convert to float (handles strings, SafeStrings, numbers)
+            rate_float = float(rate)
+            return f"${rate_float:,.2f}/hr"
+        except (TypeError, ValueError, AttributeError):
+            # Fallback to hourly_rate_usd
+            try:
+                return f"${float(obj.hourly_rate_usd):,.2f}/hr"
+            except (TypeError, ValueError, AttributeError):
+                return "$0.00/hr"
+            
+            
 # ─────────────────────────────────────────────────────────────────────────────
 # V2 — OPERATOR YACHT
 # ─────────────────────────────────────────────────────────────────────────────
