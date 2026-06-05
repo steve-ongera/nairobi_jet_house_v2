@@ -28,6 +28,7 @@ import GroupCharterPage     from './pages/normal/GroupCharterPage';
 import AdminLayout               from './components/admin/AdminLayout';
 import AdminDashboardPage        from './pages/admin/AdminDashboardPage';
 import AdminFlightBookingsPage   from './pages/admin/AdminFlightBookingsPage';
+import AdminGroupCharterInquiryPage from './pages/admin/AdminGroupCharterInquiryPage';
 import AdminYachtChartersPage    from './pages/admin/AdminYachtChartersPage';
 import AdminInquiriesPage        from './pages/admin/AdminInquiriesPage';
 import AdminMarketplacePage      from './pages/admin/AdminMarketplacePage';
@@ -392,6 +393,7 @@ export default function App() {
           }>
             <Route index                      element={<AdminDashboardPage />} />
             <Route path="bookings"            element={<AdminFlightBookingsPage />} />
+            <Route path="group-charter"       element={<AdminGroupCharterInquiryPage />} />
             <Route path="charters"            element={<AdminYachtChartersPage />} />
             <Route path="inquiries"           element={<AdminInquiriesPage />} />
             <Route path="marketplace"         element={<AdminMarketplacePage />} />

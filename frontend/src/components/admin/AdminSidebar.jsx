@@ -8,6 +8,7 @@ const NAV = [
 
   { section: 'Bookings' },
   { to: '/admin/bookings',  icon: 'bi-airplane',       label: 'Flight Bookings' },
+  { to: '/admin/group-charter' , icon: 'bi-people',    label: 'Group Charter'},
   { to: '/admin/charters',  icon: 'bi-water',          label: 'Yacht Charters' },
   { to: '/admin/marketplace',icon:'bi-shop',            label: 'Marketplace' },
   { to: '/admin/cargo-bookings', icon: 'bi-box-seam',  label: 'Cargo Bookings',  badge: 'V2' },
