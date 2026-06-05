@@ -1,12 +1,14 @@
-// AdminNavbar.jsx (Updated - With proper styling)
+// AdminNavbar.jsx (Updated - With profile image)
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+const profileImage = '/profile.png'
 
 export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [imgError, setImgError] = useState(false)
   const dropdownRef = useRef(null)
 
   const handleLogout = () => { 
@@ -24,7 +26,6 @@ export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
     setDropdownOpen(false)
   }
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -39,6 +40,19 @@ export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
   const fullName = user?.first_name && user?.last_name 
     ? `${user.first_name} ${user.last_name}`
     : user?.first_name || user?.username || 'Admin User'
+
+  // Reusable avatar — shows image, falls back to initial if load fails
+  const Avatar = ({ className }) => (
+    imgError
+      ? <div className={className}>{initial}</div>
+      : <img
+          src={profileImage}
+          alt={fullName}
+          className={className}
+          onError={() => setImgError(true)}
+          style={{ objectFit: 'cover', borderRadius: '50%' }}
+        />
+  )
 
   return (
     <nav className="admin-navbar">
@@ -64,7 +78,7 @@ export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
             className="profile-trigger"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <div className="profile-avatar">{initial}</div>
+            <Avatar className="profile-avatar" />
             <div className="profile-info">
               <span className="profile-name">{fullName}</span>
               <span className="profile-role">{user?.role || 'Administrator'}</span>
@@ -75,7 +89,7 @@ export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
           {dropdownOpen && (
             <div className="dropdown-menu">
               <div className="dropdown-header">
-                <div className="dropdown-avatar">{initial}</div>
+                <Avatar className="dropdown-avatar" />
                 <div className="dropdown-user-info">
                   <div className="dropdown-user-name">{fullName}</div>
                   <div className="dropdown-user-email">{user?.email || 'admin@nairobi.jet.house'}</div>
