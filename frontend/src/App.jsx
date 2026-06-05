@@ -22,6 +22,7 @@ import RegisterPage         from './pages/normal/RegisterPage';
 import NotFoundPage         from './pages/normal/NotFoundPage';
 import AirCargoPage         from './pages/normal/AirCargoPage';
 import LeasePage            from './pages/normal/LeasePage';
+import GroupCharterPage     from './pages/normal/GroupCharterPage'; 
 
 // ── Admin
 import AdminLayout               from './components/admin/AdminLayout';
@@ -381,6 +382,7 @@ export default function App() {
           <Route path="/register"          element={<RegisterPage />} />
           <Route path="/air-cargo"         element={<AirCargoPage />} />
           <Route path="/lease"             element={<LeasePage />} />
+          <Route path="/group-charter" element={<GroupCharterPage />} />
 
           {/* ── Admin ──────────────────────────────────────────── */}
           <Route path="/admin" element={

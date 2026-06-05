@@ -153,7 +153,13 @@ export const charterAPI      = {
 export const leaseAPI        = { create: d => api.post('/leases/', d) };
 export const flightInqAPI    = { create: d => api.post('/flight-inquiries/', d) };
 export const contactAPI      = { create: d => api.post('/contacts/', d) };
-export const groupCharterAPI = { create: d => api.post('/group-charters/', d) };
+// With:
+export const groupCharterAPI = {
+  create: d      => api.post('/group-charters/', d),
+  track:  ref    => api.get(`/group-charters/track/${ref}/`),
+  list:   params => api.get('/group-charters/', { params }),
+};
+
 export const cargoAPI        = { create: d => api.post('/cargo/', d) };
 export const salesAPI        = { create: d => api.post('/aircraft-sales/', d) };
 

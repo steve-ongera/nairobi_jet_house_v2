@@ -8,7 +8,7 @@ const SERVICES_DROPDOWN = [
   { path: '/book-yacht',  label: 'Superyacht Charter',  icon: 'bi-water', desc: 'Mediterranean, Caribbean & beyond' },
   { path: '/lease',       label: 'Long-Term Leasing',   icon: 'bi-file-earmark-text', desc: 'Dedicated aircraft & yacht programs' },
   { path: '/air-cargo',   label: 'Air Cargo',           icon: 'bi-boxes', desc: 'Gold, minerals, pharma & freight' },
-  { path: '/contact',     label: 'Group Charter',       icon: 'bi-people', desc: 'Corporate, sports & incentives' },
+  { path: '/group-charter',     label: 'Group Charter',       icon: 'bi-people', desc: 'Corporate, sports & incentives' },
   { path: '/membership',  label: 'Membership',          icon: 'bi-star', desc: 'Exclusive jet house membership' },
 ]
 
@@ -26,7 +26,7 @@ const NAV_LINKS = [
   { path: '/fleet',     label: 'Fleet',     icon: 'bi-grid-3x3' },
   { path: '/yachts',    label: 'Yachts',    icon: 'bi-water' },
   { path: '/services',  label: 'Services',  icon: 'bi-grid-1x2' },
-  { path: '/book-flight', label: 'Charter',   icon: 'bi-airplane' },
+  { path: '/book-flight', label: 'Private Charter',   icon: 'bi-airplane' },
   { path: '/lease',     label: 'Leasing',   icon: 'bi-file-earmark-text' },
   { path: '/air-cargo', label: 'Air Cargo', icon: 'bi-boxes' },
   { path: '/contact',   label: 'Contact',   icon: 'bi-envelope' },
