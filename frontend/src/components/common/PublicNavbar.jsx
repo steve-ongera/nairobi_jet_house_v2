@@ -26,7 +26,7 @@ const NAV_LINKS = [
   { path: '/fleet',     label: 'Fleet',     icon: 'bi-grid-3x3' },
   { path: '/yachts',    label: 'Yachts',    icon: 'bi-water' },
   { path: '/services',  label: 'Services',  icon: 'bi-grid-1x2' },
-  { path: '/book-flight', label: 'Private Charter',   icon: 'bi-airplane' },
+  { path: '/book-flight', label: 'Private Jet Charter',   icon: 'bi-airplane' },
   { path: '/lease',     label: 'Leasing',   icon: 'bi-file-earmark-text' },
   { path: '/air-cargo', label: 'Air Cargo', icon: 'bi-boxes' },
   { path: '/contact',   label: 'Contact',   icon: 'bi-envelope' },

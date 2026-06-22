@@ -702,12 +702,14 @@ mark    { background: var(--color-gold-pale); color: var(--color-navy-dark); bor
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
+  color: #05142b;
 }
 
 .dropdown-header-desc {
   font-family: var(--font-label);
   font-size: 0.75rem;
   opacity: 0.7;
+  color:#163a78;
 }
 
 .dropdown-grid {
