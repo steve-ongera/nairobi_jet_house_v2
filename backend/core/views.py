@@ -72,6 +72,8 @@ from .serializers import (
     WebhookLogSerializer,
 )
 
+from .models import OTPVerification   # add to existing model imports
+from .serializers import OTPRequestSerializer, OTPVerifySerializer  # add to serializer imports
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PERMISSION HELPERS
@@ -118,20 +120,110 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    """
+    Step 1 of 2-factor login.
+    Validates credentials, sends OTP to user's email, returns no tokens yet.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
-        ser = UserLoginSerializer(data=request.data)
-        if ser.is_valid():
-            user    = ser.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'user':    UserProfileSerializer(user).data,
-                'refresh': str(refresh),
-                'access':  str(refresh.access_token),
-            })
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        ser = OTPRequestSerializer(data=request.data)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        user = ser.validated_data['user']
+        otp  = OTPVerification.generate_for(user)
+
+        # Mask email for display: j***@gmail.com
+        email = user.email
+        at    = email.index('@')
+        masked = email[0] + ('*' * (at - 1)) + email[at:]
+
+        # Send the code
+        subject = f"Your NairobiJetHouse login code: {otp.code}"
+        body    = (
+            f"Hi {user.first_name or user.username},\n\n"
+            f"Your login verification code is:\n\n"
+            f"    {otp.code}\n\n"
+            f"This code expires in 2 minutes. Do not share it with anyone.\n\n"
+            f"If you did not attempt to log in, please ignore this email.\n\n"
+            f"— NairobiJetHouse Security"
+        )
+        try:
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL,
+                      [user.email], fail_silently=False)
+        except Exception:
+            return Response(
+                {'detail': 'Failed to send verification email. Please try again.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        return Response({
+            'detail': f'Verification code sent to {masked}.',
+            'username': user.username,
+            'masked_email': masked,
+        }, status=status.HTTP_200_OK)
+
+
+class OTPVerifyView(APIView):
+    """
+    Step 2 of 2-factor login.
+    Validates the OTP and issues JWT tokens on success.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        ser = OTPVerifySerializer(data=request.data)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        username = ser.validated_data['username']
+        code     = ser.validated_data['code']
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'detail': 'Invalid request.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find the latest unused, unexpired OTP
+        otp = (OTPVerification.objects
+               .filter(user=user, is_used=False)
+               .order_by('-created_at')
+               .first())
+
+        if not otp:
+            return Response(
+                {'detail': 'No active code found. Please log in again.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not otp.is_valid:
+            return Response(
+                {'detail': 'This code has expired. Please log in again.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if otp.code != code:
+            return Response(
+                {'detail': 'Incorrect code. Please try again.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark used and issue tokens
+        otp.is_used = True
+        otp.save()
+
+        refresh = RefreshToken.for_user(user)
+
+        # 1-hour access token lifetime
+        from datetime import timedelta
+        refresh.access_token.set_exp(lifetime=timedelta(hours=1))
+
+        return Response({
+            'user':    UserProfileSerializer(user).data,
+            'refresh': str(refresh),
+            'access':  str(refresh.access_token),
+        })
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
