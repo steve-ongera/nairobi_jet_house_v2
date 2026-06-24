@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     # Auth
-    RegisterView, LoginView, ProfileView,
+    RegisterView, LoginView, ProfileView,OTPVerifyView,
 
     # Public catalog
     AirportViewSet, AircraftViewSet, YachtViewSet,
@@ -157,6 +157,7 @@ urlpatterns = [
     path('auth/login/',    LoginView.as_view(),         name='auth-login'),
     path('auth/refresh/',  TokenRefreshView.as_view(), name='auth-refresh'),
     path('auth/profile/',  ProfileView.as_view(),       name='auth-profile'),
+    path('auth/verify-otp/', OTPVerifyView.as_view()),
 
     # ── Dashboards ────────────────────────────────────────────────────────────
     path('dashboard/client/', ClientDashboardView.as_view(), name='client-dashboard'),

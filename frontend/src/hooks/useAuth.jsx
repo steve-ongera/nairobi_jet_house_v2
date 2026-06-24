@@ -1,70 +1,72 @@
 // src/hooks/useAuth.js
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api'; // Adjust path as needed
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Rehydrate on mount ────────────────────────────────────────────────────
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const accessToken = localStorage.getItem('access');
         if (accessToken) {
-          // Fetch user profile with the stored token
           const response = await authAPI.profile();
           setUser(response.data);
         }
       } catch (error) {
-        console.error('Auth error:', error);
-        // If token is invalid, clear it
+        console.error('Auth rehydration error:', error);
         localStorage.removeItem('access');
         localStorage.removeItem('refresh');
+        localStorage.removeItem('user');
       } finally {
         setLoading(false);
       }
     };
-    
+
     checkAuth();
   }, []);
 
+  // ── login ─────────────────────────────────────────────────────────────────
+  // Classic single-step login (kept for backward compat / non-OTP flows).
   const login = async (username, password) => {
-    try {
-      // Call your actual login API
-      const response = await authAPI.login({ username, password });
-      
-      // Store tokens
-      if (response.data.access) {
-        localStorage.setItem('access', response.data.access);
-      }
-      if (response.data.refresh) {
-        localStorage.setItem('refresh', response.data.refresh);
-      }
-      
-      // Fetch and store user data
-      const profileResponse = await authAPI.profile();
-      const userData = profileResponse.data;
-      setUser(userData);
-      
-      // Also store user in localStorage for quick access (optional)
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      return userData;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error; // Re-throw to be caught by your component
+    const response = await authAPI.login({ username, password });
+
+    if (response.data.access) {
+      localStorage.setItem('access', response.data.access);
     }
+    if (response.data.refresh) {
+      localStorage.setItem('refresh', response.data.refresh);
+    }
+
+    const profileResponse = await authAPI.profile();
+    const userData = profileResponse.data;
+
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+
+    return userData;
   };
 
+  // ── setSession ────────────────────────────────────────────────────────────
+  // Called after OTP verification succeeds.
+  // `data` is the verify-otp response: { access, refresh, user }
+  const setSession = (data) => {
+    localStorage.setItem('access',  data.access);
+    localStorage.setItem('refresh', data.refresh);
+    localStorage.setItem('user',    JSON.stringify(data.user));
+    setUser(data.user);   // ← syncs React state so protected routes open immediately
+  };
+
+  // ── logout ────────────────────────────────────────────────────────────────
   const logout = () => {
     setUser(null);
     localStorage.removeItem('access');
     localStorage.removeItem('refresh');
     localStorage.removeItem('user');
-    // Optional: Call logout API if your backend has one
-    // authAPI.logout();
   };
 
   const value = {
@@ -72,6 +74,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    setSession,           // ← consumed by LoginPage after OTP verify
     isAuthenticated: !!user,
   };
 

@@ -128,6 +128,46 @@ class UserAdmin(BaseUserAdmin):
         )
 
 
+from django.contrib import admin
+from .models import OTPVerification
+
+
+@admin.register(OTPVerification)
+class OTPVerificationAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'code',
+        'created_at',
+        'expires_at',
+        'is_used',
+        'is_valid_status',
+    )
+
+    list_filter = (
+        'is_used',
+        'created_at',
+        'expires_at',
+    )
+
+    search_fields = (
+        'user__username',
+        'user__email',
+        'code',
+    )
+
+    readonly_fields = (
+        'created_at',
+    )
+
+    ordering = ('-created_at',)
+
+    def is_valid_status(self, obj):
+        return obj.is_valid
+
+    is_valid_status.boolean = True
+    is_valid_status.short_description = 'Valid'
+    
+    
 # ─────────────────────────────────────────────────────────────────────────────
 # CATALOG
 # ─────────────────────────────────────────────────────────────────────────────
