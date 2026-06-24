@@ -144,6 +144,36 @@ class UserAdminSerializer(serializers.ModelSerializer):
         return obj.get_full_name() or obj.username
 
 
+# ── ADD these two serializers in the AUTH section ─────────────────────────────
+
+class OTPRequestSerializer(serializers.Serializer):
+    """Step 1 — user submits username + password, we send OTP to their email."""
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = authenticate(username=data['username'], password=data['password'])
+        if not user:
+            raise serializers.ValidationError('Invalid credentials.')
+        if not user.is_active:
+            raise serializers.ValidationError('Account disabled.')
+        if not user.email:
+            raise serializers.ValidationError('No email address on file for this account.')
+        data['user'] = user
+        return data
+
+
+class OTPVerifySerializer(serializers.Serializer):
+    """Step 2 — user submits the 6-digit code (with dash) they received."""
+    username = serializers.CharField()
+    code     = serializers.CharField(max_length=7, min_length=7)
+
+    def validate_code(self, value):
+        import re
+        if not re.match(r'^\d{3}-\d{3}$', value):
+            raise serializers.ValidationError('Code must be in XXX-XXX format.')
+        return value
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # MEMBERSHIP
 # ═══════════════════════════════════════════════════════════════════════════════
