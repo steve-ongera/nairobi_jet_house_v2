@@ -129,7 +129,7 @@ export default function PublicNavbar() {
             </Link>
           ))}
           <a href="tel:+254700000000" className="subnavbar-phone">
-            <i className="bi bi-telephone-fill"></i>
+            <i className="bi bi-telephone"></i>
             <span className="subnavbar-phone-text">+254 724 878 136</span>
           </a>
         </div>
