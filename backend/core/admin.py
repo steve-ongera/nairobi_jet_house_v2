@@ -45,7 +45,7 @@ from .models import (
 # ─────────────────────────────────────────────────────────────────────────────
 # SITE BRANDING
 # ─────────────────────────────────────────────────────────────────────────────
-admin.site.site_header  = "✈  NairobiJetHouse Admin"
+admin.site.site_header  = " NairobiJetHouse Admin"
 admin.site.site_title   = "NJH Admin"
 admin.site.index_title  = "Operations Dashboard"
 
@@ -90,8 +90,12 @@ def money(value, currency="$"):
 
 
 def tick(value):
-    return format_html('<span style="color:#16a34a;font-size:16px;">✓</span>') if value \
-        else format_html('<span style="color:#dc2626;font-size:16px;">✗</span>')
+    """Return a green check or red cross. format_html requires at least one
+    positional/keyword arg even with no real substitution, so we pass the
+    glyph itself as the arg rather than hardcoding it into the literal."""
+    if value:
+        return format_html('<span style="color:#16a34a;font-size:16px;">{}</span>', "✓")
+    return format_html('<span style="color:#dc2626;font-size:16px;">{}</span>', "✗")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -371,13 +375,13 @@ class OperatorAircraftAdmin(admin.ModelAdmin):
     @admin.display(description="Maint. Due")
     def maintenance_badge(self, obj):
         if obj.maintenance_due:
-            return format_html('<span style="color:#dc2626;font-weight:700;">OVERDUE</span>')
+            return format_html('<span style="color:#dc2626;font-weight:700;">{}</span>', "OVERDUE")
         
         hrs = obj.hours_until_maintenance
         try:
             hrs_float = float(str(hrs))
         except (TypeError, ValueError, AttributeError):
-            return format_html('<span style="color:#6b7280;">N/A</span>')
+            return format_html('<span style="color:#6b7280;">{}</span>', "N/A")
         
         color = "#d97706" if hrs_float < 10 else "#16a34a"
         hrs_formatted = f"{hrs_float:.0f} hrs"  # format BEFORE passing to format_html
@@ -589,12 +593,14 @@ class RFQBidAdmin(admin.ModelAdmin):
 
     @admin.display(description="NJH Margin")
     def margin_display(self, obj):
-        if obj.njh_margin_usd:
+        try:
+            margin = float(obj.njh_margin_usd)
             return format_html(
                 '<span style="color:#16a34a;font-weight:600;">${:,.2f}</span>',
-                obj.njh_margin_usd
+                margin
             )
-        return "—"
+        except (TypeError, ValueError):
+            return "—"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -653,10 +659,14 @@ class OperatorPayoutLogAdmin(admin.ModelAdmin):
 
     @admin.display(description="Amount")
     def amount_display(self, obj):
-        return format_html(
-            '<strong>${:,.2f}</strong>',
-            obj.amount_usd
-        )
+        try:
+            amount = float(obj.amount_usd)
+            return format_html(
+                '<strong>${:,.2f}</strong>',
+                amount
+            )
+        except (TypeError, ValueError):
+            return "—"
 
     @admin.display(description="Status")
     def status_badge(self, obj):
@@ -878,11 +888,19 @@ class MarketplaceAircraftAdmin(admin.ModelAdmin):
     @admin.display(description="Maint.")
     def maintenance_badge(self, obj):
         if obj.maintenance_due:
-            return format_html('<span style="color:#dc2626;font-weight:700;">OVERDUE</span>')
-        color = "#d97706" if obj.hours_until_maintenance < 10 else "#16a34a"
+            return format_html(
+                '<span style="color:#dc2626;font-weight:700;">{}</span>',
+                "OVERDUE"
+            )
+
+        hours = float(obj.hours_until_maintenance)
+
+        color = "#d97706" if hours < 10 else "#16a34a"
+
         return format_html(
-            '<span style="color:{};">{:.0f} hrs</span>',
-            color, obj.hours_until_maintenance
+            '<span style="color:{};">{} hrs</span>',
+            color,
+            round(hours)
         )
 
 

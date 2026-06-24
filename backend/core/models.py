@@ -326,13 +326,25 @@ class OperatorAircraft(models.Model):
     def maintenance_due(self):
         return self.hours_until_maintenance <= 0
 
+    from decimal import Decimal, ROUND_HALF_UP
+
     @property
     def display_hourly_rate(self):
         """Rate shown to clients — operator rate + default commission markup."""
-        from core.models import NJHCommissionRule  # avoid circular import
-        rule = NJHCommissionRule.objects.filter(is_active=True).order_by('-priority').first()
-        pct  = rule.markup_pct if rule else Decimal('20')
-        return (self.hourly_rate_usd * (1 + pct / 100)).quantize(Decimal('0.01'), ROUND_HALF_UP)
+        from core.models import NJHCommissionRule
+
+        if self.hourly_rate_usd is None:
+            return Decimal('0.00')
+
+        rule = NJHCommissionRule.objects.filter(
+            is_active=True
+        ).order_by('-priority').first()
+
+        pct = rule.markup_pct if rule else Decimal('20')
+
+        return (
+            self.hourly_rate_usd * (Decimal('1') + pct / Decimal('100'))
+        ).quantize(Decimal('0.01'), ROUND_HALF_UP)
 
     def __str__(self):
         return f"{self.name} ({self.registration_number}) — {self.operator.name}"
