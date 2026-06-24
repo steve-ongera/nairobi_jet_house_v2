@@ -307,10 +307,13 @@ export const adminAPI = {
   jobApplications: params  => api.get('/admin/job-applications/', { params }),
   updateAppStatus: (id, d) => api.post(`/admin/job-applications/${id}/update_status/`, d),
 
-  // ── V2 Operator Aircraft (Admin) ── ADD THIS ─────────────────────────────
+  // ── V2 Operator Aircraft (Admin) ── ADD THESE ─────────────────────────────
   allOperatorAircraft: (params) => api.get('/admin/operator-aircraft/', { params }),
-
-  // ── V2 Operator Aircraft Actions ── ADD THESE ────────────────────────────
+  createOperatorAircraft: (d) => api.post('/admin/operator-aircraft/', d),
+  updateOperatorAircraft: (id, d) => api.patch(`/admin/operator-aircraft/${id}/`, d),
+  deleteOperatorAircraft: (id) => api.delete(`/admin/operator-aircraft/${id}/`),
+  
+  // ── V2 Operator Aircraft Actions ──────────────────────────────────────────
   approveOperatorAircraft: (id) => api.post(`/admin/operator-aircraft/${id}/approve/`),
   rejectOperatorAircraft:  (id) => api.post(`/admin/operator-aircraft/${id}/reject/`),
   featureOperatorAircraft: (id) => api.post(`/admin/operator-aircraft/${id}/feature/`),
@@ -331,9 +334,9 @@ export const adminAPI = {
   opReviews:      id      => api.get(`/admin/operators/${id}/reviews/`),
   opWebhooks:     id      => api.get(`/admin/operators/${id}/webhooks/`),
 
-  // Approve / reject aircraft & yachts
-  approveAircraft: id => api.post(`/my-aircraft/${id}/approve/`),   // Keep existing
-  rejectAircraft:  id => api.post(`/my-aircraft/${id}/reject/`),    // Keep existing
+  // Approve / reject aircraft & yachts (legacy)
+  approveAircraft: id => api.post(`/my-aircraft/${id}/approve/`),
+  rejectAircraft:  id => api.post(`/my-aircraft/${id}/reject/`),
   approveYacht:    id => api.post(`/my-yachts/${id}/approve/`),
 
   // RFQ bids
