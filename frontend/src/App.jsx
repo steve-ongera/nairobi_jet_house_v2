@@ -25,6 +25,12 @@ import AirCargoPage         from './pages/normal/AirCargoPage';
 import LeasePage            from './pages/normal/LeasePage';
 import GroupCharterPage     from './pages/normal/GroupCharterPage'; 
 
+import PrivacyPage from './pages/normal/PrivacyPage';
+import TermsPage from './pages/normal/TermsPage';
+import CookiesPage from './pages/normal/CookiesPage';
+import EmergencyPage from './pages/normal/EmergencyPage';
+import CorporatePage from './pages/normal/CorporatePage';
+
 // ── Admin
 import AdminLayout               from './components/admin/AdminLayout';
 import AdminDashboardPage        from './pages/admin/AdminDashboardPage';
@@ -385,7 +391,12 @@ export default function App() {
           <Route path="/register"          element={<RegisterPage />} />
           <Route path="/air-cargo"         element={<AirCargoPage />} />
           <Route path="/lease"             element={<LeasePage />} />
-          <Route path="/group-charter" element={<GroupCharterPage />} />
+          <Route path="/group-charter"     element={<GroupCharterPage />} />
+          <Route path="/privacy"          element={<PrivacyPage />} />
+          <Route path="/terms"            element={<TermsPage />} />
+          <Route path="/cookies"          element={<CookiesPage />} />
+          <Route path="/emergency"        element={<EmergencyPage />} />
+          <Route path="/corporate"        element={<CorporatePage />} />
 
           {/* ── Admin ──────────────────────────────────────────── */}
           <Route path="/admin" element={
