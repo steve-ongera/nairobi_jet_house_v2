@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-const profileImage = '/profile.png'
+const profileImage = '/profile.jpg'
 
 export default function AdminNavbar({ collapsed, setCollapsed, setMobile }) {
   const { user, logout } = useAuth()

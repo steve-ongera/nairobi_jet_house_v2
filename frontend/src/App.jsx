@@ -10,6 +10,7 @@ import BookYachtPage        from './pages/normal/BookYachtPage';
 import FleetPage            from './pages/normal/FleetPage';
 import FleetDetailPage      from './pages/normal/FleetDetailPage';
 import YachtsPage           from './pages/normal/YachtsPage';
+import YachtDetailPage from './pages/normal/YachtDetailPage';
 import ServicesPage         from './pages/normal/ServicesPage';
 import AboutPage            from './pages/normal/AboutPage';
 import ContactPage          from './pages/normal/ContactPage';
@@ -372,6 +373,7 @@ export default function App() {
           <Route path="/fleet"             element={<FleetPage />} />
           <Route path="/fleet/:id"         element={<FleetDetailPage />} /> 
           <Route path="/yachts"            element={<YachtsPage />} />
+          <Route path="/yachts/:id"        element={<YachtDetailPage />} />  
           <Route path="/services"          element={<ServicesPage />} />
           <Route path="/about"             element={<AboutPage />} />
           <Route path="/contact"           element={<ContactPage />} />
