@@ -51,7 +51,7 @@ from .views import (
     AdminEmailLogViewSet, AdminSendEmailView,
     AdminCommissionSettingViewSet,
     AdminJobPostingViewSet, AdminJobApplicationViewSet,
-    AdminPriceCalculatorView,
+    AdminPriceCalculatorView, AdminOperatorAircraftViewSet,
 
     # Admin — V2 operator network
     AdminCharterOperatorViewSet,
@@ -142,6 +142,7 @@ router.register(r'admin/commission',       AdminCommissionSettingViewSet,  basen
 router.register(r'admin/jobs',             AdminJobPostingViewSet,         basename='admin-job')
 router.register(r'admin/job-applications', AdminJobApplicationViewSet,     basename='admin-job-app')
 router.register(r'admin/documents',        AdminDocumentUploadViewSet,     basename='admin-document')
+router.register(r'admin/operator-aircraft', AdminOperatorAircraftViewSet, basename='admin-operator-aircraft')
 
 # ── Admin — V2 operator network
 router.register(r'admin/operators',        AdminCharterOperatorViewSet,   basename='admin-operator')

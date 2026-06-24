@@ -19,6 +19,7 @@ const NAV = [
 
   { section: 'Operators', badge: 'V2' },
   { to: '/admin/operators', icon: 'bi-building',        label: 'Charter Operators' },
+  {to: '/admin/fleet', icon: 'bi-airplane-engines', label: 'Operator Aircraft'},
   { to: '/admin/payouts',   icon: 'bi-cash-stack',      label: 'Payouts' },
 
   { section: 'Platform' },

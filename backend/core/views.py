@@ -2555,3 +2555,125 @@ def _send_and_log(user, to_email, to_name, subject, body, inquiry_type, related_
         success      = success,
         error_msg    = error,
     )
+    
+    
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2 ADMIN — OPERATOR AIRCRAFT (ALL OPERATORS)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AdminOperatorAircraftViewSet(viewsets.ModelViewSet):
+    """
+    Admin view for managing operator aircraft across all operators.
+    GET    /api/admin/operator-aircraft/          — list all with filters
+    GET    /api/admin/operator-aircraft/<pk>/     — detail
+    POST   /api/admin/operator-aircraft/          — create
+    PATCH  /api/admin/operator-aircraft/<pk>/     — update
+    DELETE /api/admin/operator-aircraft/<pk>/     — delete
+    """
+    permission_classes = [IsStaffOrAdmin]
+    filter_backends    = [filters.SearchFilter]
+    search_fields      = ['name', 'model', 'registration_number', 'operator__name']
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return OperatorAircraftCreateSerializer
+        if self.action == 'retrieve':
+            return OperatorAircraftDetailSerializer
+        return OperatorAircraftListSerializer
+
+    def get_queryset(self):
+        qs = OperatorAircraft.objects.select_related(
+            'operator',
+            'catalog_aircraft',
+            'base_airport'
+        ).order_by('-created_at')
+
+        # Filter by operator
+        operator_id = self.request.query_params.get('operator')
+        if operator_id:
+            qs = qs.filter(operator_id=operator_id)
+
+        # Filter by status
+        status = self.request.query_params.get('status')
+        if status:
+            qs = qs.filter(status=status)
+
+        # Filter by approval status
+        approved = self.request.query_params.get('is_approved')
+        if approved is not None and approved.lower() in ('true', 'false'):
+            is_approved = approved.lower() == 'true'
+            qs = qs.filter(is_approved=is_approved)
+
+        # Filter by category
+        category = self.request.query_params.get('category')
+        if category:
+            qs = qs.filter(category=category)
+
+        return qs
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve an operator aircraft for public listing."""
+        aircraft = self.get_object()
+        aircraft.is_approved = True
+        aircraft.status = 'available'
+        aircraft.save()
+
+        # Send notification to operator
+        try:
+            operator_contacts = aircraft.operator.users.all()
+            for user in operator_contacts:
+                ClientNotification.objects.create(
+                    user=user,
+                    notif_type='status_update',
+                    title=f'Aircraft Approved: {aircraft.name}',
+                    body=f'Your aircraft {aircraft.name} ({aircraft.registration_number}) has been approved and is now listed.',
+                    link=f'/operator/aircraft/{aircraft.id}'
+                )
+        except Exception as e:
+            print(f"Notification error: {e}")
+
+        return Response({
+            'detail': f'{aircraft.name} approved and listed.',
+            'aircraft': OperatorAircraftDetailSerializer(aircraft).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Reject an operator aircraft."""
+        aircraft = self.get_object()
+        aircraft.is_approved = False
+        aircraft.status = 'inactive'
+        aircraft.save()
+        return Response({
+            'detail': f'{aircraft.name} rejected.',
+            'aircraft': OperatorAircraftDetailSerializer(aircraft).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def feature(self, request, pk=None):
+        """Toggle featured status of an aircraft."""
+        aircraft = self.get_object()
+        aircraft.is_featured = not aircraft.is_featured
+        aircraft.save()
+        return Response({
+            'detail': f'{aircraft.name} {"featured" if aircraft.is_featured else "unfeatured"}.',
+            'aircraft': OperatorAircraftDetailSerializer(aircraft).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        """Manually update aircraft status (admin override)."""
+        aircraft = self.get_object()
+        new_status = request.data.get('status')
+        valid = [s[0] for s in OperatorAircraft.STATUS_CHOICES]
+        if new_status not in valid:
+            return Response({'detail': f'Invalid status. Choose from {valid}.'}, status=400)
+
+        aircraft.status = new_status
+        aircraft.save()
+        return Response({
+            'detail': f'Status updated to {new_status}.',
+            'aircraft': OperatorAircraftDetailSerializer(aircraft).data
+        })
