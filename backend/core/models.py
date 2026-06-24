@@ -47,6 +47,42 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} ({self.role})"
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2  TWO-FACTOR AUTH — OTP Verification
+# ═══════════════════════════════════════════════════════════════════════════════
+import random
+
+class OTPVerification(models.Model):
+    """
+    One-time passcode sent to user email after password verification.
+    Format: 'XXX-XXX' (e.g. 673-893). Expires in 2 minutes.
+    """
+    user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                    related_name='otp_verifications')
+    code       = models.CharField(max_length=7)   # stores '673-893'
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used    = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @classmethod
+    def generate_for(cls, user):
+        """Invalidate any old codes, generate and return a fresh one."""
+        cls.objects.filter(user=user, is_used=False).update(is_used=True)
+        part1 = random.randint(100, 999)
+        part2 = random.randint(100, 999)
+        code  = f"{part1}-{part2}"
+        expires_at = timezone.now() + timezone.timedelta(minutes=2)
+        return cls.objects.create(user=user, code=code, expires_at=expires_at)
+
+    @property
+    def is_valid(self):
+        return not self.is_used and timezone.now() < self.expires_at
+
+    def __str__(self):
+        return f"OTP {self.code} for {self.user.username} [{'valid' if self.is_valid else 'expired/used'}]"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # V1  AIRPORT / AIRCRAFT CATALOG / YACHT CATALOG
