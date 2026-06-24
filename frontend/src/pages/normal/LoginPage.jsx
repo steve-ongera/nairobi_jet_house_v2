@@ -182,7 +182,8 @@ export default function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 6rem 1rem 3rem;
+          padding: 1rem;
+          min-height: calc(100vh - 80px);
         }
         .login-container {
           width: 100%;
@@ -191,7 +192,7 @@ export default function LoginPage() {
         .login-card {
           background: var(--color-white);
           border: 1px solid var(--color-light-gray);
-          border-radius: 10px;
+          border-radius: 5px;
           padding: 2rem;
           box-shadow: var(--shadow-md);
         }
@@ -200,7 +201,7 @@ export default function LoginPage() {
           margin-bottom: 2rem;
         }
         .login-logo {
-          height: 3.5rem;
+          height: 6rem;
           width: auto;
           margin: 0 auto 1rem;
           display: block;
