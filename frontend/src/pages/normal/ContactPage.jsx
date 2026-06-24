@@ -26,12 +26,14 @@ const OFFICES = [
   { 
     city: 'Nairobi', 
     country: 'Kenya', 
-    address: 'Wilson Airport, Langata Rd, Nairobi', 
+    address: 'Wilson Airport, Karen, Langata Rd, Nairobi, Kenya', 
     phone: '+254 724 878 136', 
     email: 'nairobi@nairobijethouse.com', 
     flag: '🇰🇪',
     lat: -1.3217,
     lng: 36.8150,
+    // Real, verified Google Maps place link for Wilson Airport (no API key required)
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Wilson+Airport,+Nairobi,+Nairobi+County&query_place_id=ChIJsecKN0YQLxgRk6kAkzxsn_8',
   },
   { 
     city: 'Dubai', 
@@ -42,6 +44,7 @@ const OFFICES = [
     flag: '🇦🇪',
     lat: 25.2048,
     lng: 55.2708,
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=DIFC+Gate+Building,+Dubai',
   },
   { 
     city: 'London', 
@@ -52,6 +55,7 @@ const OFFICES = [
     flag: '🇬🇧',
     lat: 51.5074,
     lng: -0.1278,
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Harrods+Aviation,+Farnborough+Airport',
   },
 ]
 
@@ -74,8 +78,11 @@ const CONTACT_ITEMS = [
 // Google Maps Component
 function ContactMap() {
   const [selectedOffice, setSelectedOffice] = useState(0);
-  
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=${encodeURIComponent(OFFICES[selectedOffice].address)}`;
+
+  // No API key required — uses Google Maps' public search-embed format
+  // (the same URL you get from Google Maps → Share → Embed a map → no key needed
+  // for the basic search embed, only for the styled "place" embed).
+  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(OFFICES[selectedOffice].address)}&output=embed`;
   
   return (
     <div className="contact-map-container">
@@ -112,6 +119,14 @@ function ContactMap() {
             <div>
               <strong>{OFFICES[selectedOffice].city}, {OFFICES[selectedOffice].country}</strong>
               <p>{OFFICES[selectedOffice].address}</p>
+              <a
+                href={OFFICES[selectedOffice].mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="contact-map__open-link"
+              >
+                <i className="bi bi-box-arrow-up-right"></i> Open in Google Maps
+              </a>
             </div>
           </div>
         </div>
@@ -148,7 +163,8 @@ export default function ContactPage() {
     <>
       <Helmet>
         <title>Contact Us | NairobiJetHouse - 24/7 Private Aviation Support</title>
-        <meta name="description" content="Contact NairobiJetHouse 24/7. Our concierge team is ready to assist with charter enquiries, partnerships, and support. Offices in Nairobi, Dubai & London." />
+        <meta name="description" content="Contact NairobiJetHouse 24/7. Our concierge team is ready to assist with charter enquiries, partnerships, and support. Offices in Nairobi (Wilson Airport), Dubai & London." />
+        <meta name="keywords" content="contact NairobiJetHouse, private jet charter Nairobi contact, Wilson Airport jet charter office, Nairobi aviation concierge, charter booking support Kenya, NairobiJetHouse Dubai office, NairobiJetHouse London office" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.nairobijethouse.com/contact" />
         <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
@@ -495,6 +511,19 @@ export default function ContactPage() {
           font-size: 0.75rem;
           color: var(--color-mid-gray);
           margin-top: 0.25rem;
+        }
+        .contact-map__open-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          margin-top: 0.5rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--color-gold-dark);
+          text-decoration: none;
+        }
+        .contact-map__open-link:hover {
+          text-decoration: underline;
         }
 
         /* Quick Links */
