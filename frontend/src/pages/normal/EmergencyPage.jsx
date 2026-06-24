@@ -41,6 +41,7 @@ const EMERGENCY_GUIDES = [
   {
     icon: 'bi-heart-pulse',
     title: 'Medical Emergency',
+    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=80',
     items: [
       'Call our emergency hotline immediately',
       'Our team will coordinate with local medical facilities',
@@ -51,6 +52,7 @@ const EMERGENCY_GUIDES = [
   {
     icon: 'bi-airplane',
     title: 'Flight Emergency',
+    image: 'https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=400&q=80',
     items: [
       'Flight delays and cancellations assistance',
       'Alternative routing and rebooking support',
@@ -61,6 +63,7 @@ const EMERGENCY_GUIDES = [
   {
     icon: 'bi-shield-lock',
     title: 'Security Incident',
+    image: 'https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?w=400&q=80',
     items: [
       '24/7 security coordination',
       'Emergency ground transport arrangement',
@@ -71,6 +74,7 @@ const EMERGENCY_GUIDES = [
   {
     icon: 'bi-geo-alt',
     title: 'Travel Disruption',
+    image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=80',
     items: [
       'Lost passport/document assistance',
       'Hotel accommodation arrangement',
@@ -91,6 +95,7 @@ export default function EmergencyPage() {
         <link rel="canonical" href="https://www.nairobijethouse.com/emergency" />
         <meta property="og:title" content="Emergency Assistance | Nairobi Jet House" />
         <meta property="og:description" content="24/7 emergency support for Nairobi Jet House clients. Immediate assistance for travel emergencies, medical incidents, and urgent flight changes." />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1200&q=80" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
@@ -98,11 +103,11 @@ export default function EmergencyPage() {
 
       <PublicNavbar />
 
-      {/* Hero Section */}
+      {/* Hero Section with Background Image */}
       <div className="page-header" style={{
-        backgroundImage: 'linear-gradient(140deg, #7f1d1d 0%, #991b1b 55%, #b91c1c 100%)',
+        backgroundImage: 'linear-gradient(140deg, #7f1d1d 0%, #991b1b 55%, #b91c1c 100%), url(https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=1600&q=80)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: 'center 30%',
         backgroundBlend: 'overlay',
       }}>
         <div className="page-header__glow"></div>
@@ -162,7 +167,7 @@ export default function EmergencyPage() {
         </div>
       </section>
 
-      {/* Emergency Guides Section */}
+      {/* Emergency Guides Section with Images */}
       <section className="section-padding" style={{ background: 'var(--color-white)' }}>
         <div className="container">
           <div className="section-header centered">
@@ -174,8 +179,13 @@ export default function EmergencyPage() {
           <div className="emergency-guides-grid">
             {EMERGENCY_GUIDES.map((guide) => (
               <div key={guide.title} className="emergency-guide-card">
-                <div className="emergency-guide-icon">
-                  <i className={`bi ${guide.icon}`}></i>
+                <div className="emergency-guide-image">
+                  <img src={guide.image} alt={guide.title} loading="lazy" />
+                  <div className="emergency-guide-overlay">
+                    <div className="emergency-guide-icon">
+                      <i className={`bi ${guide.icon}`}></i>
+                    </div>
+                  </div>
                 </div>
                 <h4 className="emergency-guide-title">{guide.title}</h4>
                 <ul className="emergency-guide-list">
@@ -254,6 +264,11 @@ export default function EmergencyPage() {
           border: 1px solid var(--color-light-gray);
           padding: 2rem;
           text-align: center;
+          transition: all var(--transition-base);
+        }
+        .emergency-contact-card:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-4px);
         }
         .emergency-contact-icon {
           width: 64px;
@@ -308,42 +323,69 @@ export default function EmergencyPage() {
           color: white;
         }
 
-        /* Emergency Guides Grid */
+        /* Emergency Guides Grid with Images */
         .emergency-guides-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 1.5rem;
+          gap: 2rem;
           margin-top: 2rem;
         }
         .emergency-guide-card {
           background: var(--color-white);
           border: 1px solid var(--color-light-gray);
-          padding: 1.5rem;
+          overflow: hidden;
+          transition: all var(--transition-base);
+        }
+        .emergency-guide-card:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-4px);
+        }
+        .emergency-guide-image {
+          position: relative;
+          height: 180px;
+          overflow: hidden;
+        }
+        .emergency-guide-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.5s ease;
+        }
+        .emergency-guide-card:hover .emergency-guide-image img {
+          transform: scale(1.05);
+        }
+        .emergency-guide-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(11, 28, 54, 0.7) 0%, rgba(11, 28, 54, 0.3) 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .emergency-guide-icon {
-          width: 48px;
-          height: 48px;
-          background: rgba(200, 164, 90, 0.1);
+          width: 56px;
+          height: 56px;
+          background: rgba(200, 164, 90, 0.9);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 0.75rem;
         }
         .emergency-guide-icon i {
-          font-size: 1.3rem;
-          color: var(--color-gold);
+          font-size: 1.6rem;
+          color: var(--color-navy);
         }
         .emergency-guide-title {
           font-family: var(--font-heading);
-          font-size: 0.95rem;
+          font-size: 1rem;
           font-weight: 600;
           color: var(--color-navy);
-          margin-bottom: 0.75rem;
+          padding: 1rem 1.25rem 0.5rem 1.25rem;
+          margin: 0;
         }
         .emergency-guide-list {
           list-style: none;
-          padding: 0;
+          padding: 0 1.25rem 1.25rem 1.25rem;
           margin: 0;
         }
         .emergency-guide-list li {
@@ -371,6 +413,10 @@ export default function EmergencyPage() {
           padding: 2rem;
           max-width: 860px;
           margin: 0 auto;
+          transition: all var(--transition-base);
+        }
+        .emergency-important:hover {
+          box-shadow: var(--shadow-md);
         }
         .emergency-important-icon {
           flex-shrink: 0;
@@ -422,6 +468,18 @@ export default function EmergencyPage() {
           }
           .emergency-important-content ul {
             text-align: left;
+          }
+          .emergency-guide-image {
+            height: 150px;
+          }
+        }
+        @media (max-width: 480px) {
+          .btn-emergency {
+            font-size: 0.95rem;
+            padding: 0.6rem 1.5rem;
+          }
+          .emergency-contact-card {
+            padding: 1.5rem;
           }
         }
       `}</style>
