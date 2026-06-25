@@ -275,43 +275,99 @@ class YachtViewSet(viewsets.ReadOnlyModelViewSet):
 # FLIGHT BOOKING (PUBLIC)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+from rest_framework import viewsets, status, filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+ 
+from .models import FlightBooking
+from .notifications import notify_flight_booking_created
+from .serializers import (
+    FlightBookingSerializer,
+    FlightBookingCreateSerializer,
+)
+ 
+ 
 class FlightBookingViewSet(viewsets.ModelViewSet):
+    """
+    Public-facing flight booking viewset.
+ 
+    POST   /api/flight-bookings/              — submit a new booking
+    GET    /api/flight-bookings/track/<ref>/  — track by UUID reference
+    GET    /api/flight-bookings/by-email/     — list all bookings for an email
+    """
     permission_classes = [AllowAny]
-
+ 
     def get_serializer_class(self):
         if self.action == 'create':
             return FlightBookingCreateSerializer
         return FlightBookingSerializer
-
+ 
     def get_queryset(self):
         return FlightBooking.objects.all().order_by('-created_at')
-
+ 
+    # ── CREATE ──────────────────────────────────────────────────────────────
+ 
     def create(self, request, *args, **kwargs):
         ser = FlightBookingCreateSerializer(data=request.data)
-        if ser.is_valid():
-            booking = ser.save()
-            return Response({
-                'message': 'Flight booking submitted. Our team will contact you within 2–4 hours.',
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+ 
+        booking = ser.save()
+ 
+        # ── Fire notifications (never lets an exception bubble up) ──────────
+        try:
+            notify_flight_booking_created(
+                booking,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            # Notification failure must NEVER fail the booking response
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification dispatch failed for booking %s", booking.reference
+            )
+ 
+        return Response(
+            {
+                'message': (
+                    'Flight booking submitted. '
+                    'Our team will contact you within 2–4 hours.'
+                ),
                 'booking': FlightBookingSerializer(booking).data,
-            }, status=status.HTTP_201_CREATED)
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            },
+            status=status.HTTP_201_CREATED,
+        )
+ 
+    # ── TRACK ────────────────────────────────────────────────────────────────
+ 
     @action(detail=False, methods=['get'], url_path='track/(?P<ref>[^/.]+)')
     def track(self, request, ref=None):
         try:
             booking = FlightBooking.objects.get(reference=ref)
             return Response(FlightBookingSerializer(booking).data)
         except FlightBooking.DoesNotExist:
-            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
-
+            return Response(
+                {'detail': 'Booking not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+ 
+    # ── BY EMAIL ─────────────────────────────────────────────────────────────
+ 
     @action(detail=False, methods=['get'], url_path='by-email')
     def by_email(self, request):
         email = request.query_params.get('email')
         if not email:
-            return Response({'detail': 'Email required.'}, status=status.HTTP_400_BAD_REQUEST)
-        bookings = FlightBooking.objects.filter(guest_email__iexact=email).order_by('-created_at')
+            return Response(
+                {'detail': 'Email required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        bookings = (
+            FlightBooking.objects
+            .filter(guest_email__iexact=email)
+            .order_by('-created_at')
+        )
         return Response(FlightBookingSerializer(bookings, many=True).data)
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # YACHT CHARTER (PUBLIC)

@@ -1,4 +1,5 @@
-// src/pages/public/Contact.jsx
+// src/pages/normal/ContactPage.jsx
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
@@ -32,7 +33,6 @@ const OFFICES = [
     flag: '🇰🇪',
     lat: -1.3217,
     lng: 36.8150,
-    // Real, verified Google Maps place link for Wilson Airport (no API key required)
     mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Wilson+Airport,+Nairobi,+Nairobi+County&query_place_id=ChIJsecKN0YQLxgRk6kAkzxsn_8',
   },
   { 
@@ -79,9 +79,6 @@ const CONTACT_ITEMS = [
 function ContactMap() {
   const [selectedOffice, setSelectedOffice] = useState(0);
 
-  // No API key required — uses Google Maps' public search-embed format
-  // (the same URL you get from Google Maps → Share → Embed a map → no key needed
-  // for the basic search embed, only for the styled "place" embed).
   const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(OFFICES[selectedOffice].address)}&output=embed`;
   
   return (
@@ -344,6 +341,24 @@ export default function ContactPage() {
                   </form>
                 </>
               )}
+
+              {/* ── Full Width Customer Service Image ── */}
+              <div className="contact-service-image">
+                <img 
+                  src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80" 
+                  alt="Our dedicated customer service team ready to assist you" 
+                  loading="lazy"
+                />
+                <div className="contact-service-overlay">
+                  <div className="contact-service-content">
+                    <i className="bi bi-headset"></i>
+                    <div>
+                      <div className="contact-service-title">24/7 Customer Support</div>
+                      <div className="contact-service-subtitle">Our team is ready to assist you anytime</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -540,6 +555,7 @@ export default function ContactPage() {
           border: 1px solid var(--color-light-gray);
           border-radius: var(--radius-md);
           padding: 2rem;
+          overflow: hidden;
         }
         .contact-form-header {
           margin-bottom: 1.5rem;
@@ -575,11 +591,71 @@ export default function ContactPage() {
           justify-content: center;
         }
 
+        /* ── Full Width Customer Service Image ── */
+        .contact-service-image {
+          margin-top: 2.75rem;
+          border-radius: 4px;
+          overflow: hidden;
+          position: relative;
+          width: calc(100% + 2rem);
+          margin-left: -1rem;
+          margin-right: -1rem;
+          margin-bottom: 1rem;
+          background: var(--color-navy-dark);
+          min-height: 160px;
+        }
+
+        .contact-service-image img {
+          width: 100%;
+          height: 220px;
+          object-fit: cover;
+          object-position: center;
+          display: block;
+        }
+        .contact-service-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(11, 28, 54, 0.75) 0%, rgba(11, 28, 54, 0.4) 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1.5rem;
+        }
+        .contact-service-content {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          color: white;
+          text-align: center;
+        }
+        .contact-service-content i {
+          font-size: 2.2rem;
+          color: var(--color-gold);
+          flex-shrink: 0;
+        }
+        .contact-service-title {
+          font-family: var(--font-heading);
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: white;
+          margin-bottom: 0.1rem;
+        }
+        .contact-service-subtitle {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.7);
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
           .contact-grid {
             grid-template-columns: 1fr;
             gap: 2rem;
+          }
+          .contact-service-image {
+            width: calc(100% + 3rem);
+            margin-left: -1.5rem;
+            margin-right: -1.5rem;
+            margin-bottom: -1.5rem;
           }
         }
 
@@ -596,6 +672,35 @@ export default function ContactPage() {
           .contact-hero-actions a {
             width: 100%;
             justify-content: center;
+          }
+          .contact-service-image {
+            width: calc(100% + 3rem);
+            margin-left: -1.5rem;
+            margin-right: -1.5rem;
+            margin-bottom: -1.5rem;
+          }
+          .contact-service-image img {
+            height: 160px;
+          }
+          .contact-service-content i {
+            font-size: 1.8rem;
+          }
+          .contact-service-title {
+            font-size: 0.95rem;
+          }
+          .contact-service-subtitle {
+            font-size: 0.75rem;
+          }
+        }
+        @media (max-width: 480px) {
+          .contact-service-image img {
+            height: 140px;
+          }
+          .contact-service-content {
+            gap: 0.75rem;
+          }
+          .contact-service-content i {
+            font-size: 1.5rem;
           }
         }
       `}</style>
