@@ -94,6 +94,7 @@ from .notifications import (
     notify_flight_booking_created,
     notify_yacht_charter_created,
     notify_air_cargo_created,
+    notify_air_cargo_inquiry_created,   # NEW — for the inquiry viewset
     notify_lease_inquiry_created,
     notify_group_charter_created,
     notify_contact_inquiry_created,
@@ -540,7 +541,7 @@ class AirCargoInquiryViewSet(viewsets.ModelViewSet):
         inquiry = ser.save()
 
         try:
-            notify_air_cargo_created(
+            notify_air_cargo_inquiry_created(          # changed from notify_air_cargo_created
                 inquiry,
                 triggered_by=request.user if request.user.is_authenticated else None,
             )
@@ -560,7 +561,6 @@ class AircraftSalesInquiryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     serializer_class   = AircraftSalesInquirySerializer
     queryset           = AircraftSalesInquiry.objects.all().order_by('-created_at')
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PUBLIC JOBS

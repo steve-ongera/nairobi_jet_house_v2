@@ -255,7 +255,84 @@ def notify_air_cargo_created(booking, triggered_by=None):
         related_id=booking.pk,
     )
 
+def notify_air_cargo_inquiry_created(inquiry, triggered_by=None):
+    """Called when an AirCargoInquiry (not a booking) is submitted."""
+    ref   = str(inquiry.reference)[:8].upper()
+    route = inquiry.origin_description + (
+        f" to {inquiry.destination_description}" if inquiry.destination_description else ""
+    )
 
+    flags = [x for x, f in [
+        ("Hazardous Goods",     inquiry.is_hazardous),
+        ("Temperature Control", inquiry.requires_temperature_control),
+        ("Insurance Required",  inquiry.insurance_required),
+        ("Customs Assistance",  inquiry.customs_assistance_needed),
+    ] if f]
+
+    client_rows = [
+        ("Cargo Type",  inquiry.get_cargo_type_display()),
+        ("Origin",      inquiry.origin_description),
+        ("Destination", inquiry.destination_description or "To be confirmed"),
+        ("Urgency",     inquiry.get_urgency_display()),
+        ("Reference",   ref),
+    ]
+    if inquiry.weight_kg:
+        client_rows.append(("Weight",      f"{inquiry.weight_kg} kg"))
+    if inquiry.volume_m3:
+        client_rows.append(("Volume",      f"{inquiry.volume_m3} m³"))
+    if inquiry.pickup_date:
+        client_rows.append(("Pickup Date", str(inquiry.pickup_date)))
+    if flags:
+        client_rows.append(("Special Requirements", ", ".join(flags)))
+
+    staff_rows = [
+        ("Reference",        ref),
+        ("Contact Name",     inquiry.contact_name),
+        ("Contact Email",    inquiry.email),          # AirCargoInquiry uses .email
+        ("Contact Phone",    inquiry.phone or "-"),
+        ("Company",          inquiry.company or "-"),
+        ("Cargo Type",       inquiry.get_cargo_type_display()),
+        ("Description",      inquiry.cargo_description),
+        ("Origin",           inquiry.origin_description),
+        ("Destination",      inquiry.destination_description or "-"),
+        ("Pickup Date",      str(inquiry.pickup_date) if inquiry.pickup_date else "-"),
+        ("Urgency",          inquiry.get_urgency_display()),
+        ("Weight (kg)",      str(inquiry.weight_kg) if inquiry.weight_kg else "-"),
+        ("Volume (m³)",      str(inquiry.volume_m3) if inquiry.volume_m3 else "-"),
+        ("Hazardous",        "Yes" if inquiry.is_hazardous else "No"),
+        ("Temp Control",     "Yes" if inquiry.requires_temperature_control else "No"),
+        ("Insurance",        "Yes" if inquiry.insurance_required else "No"),
+        ("Customs Help",     "Yes" if inquiry.customs_assistance_needed else "No"),
+        ("Submitted",        timezone.now().strftime('%d %b %Y %H:%M UTC')),
+    ]
+
+    _dispatch(
+        triggered_by=triggered_by,
+        client_user=None,
+        client_email=inquiry.email,               # .email, not .contact_email
+        client_name=inquiry.contact_name,
+        client_subject=f"Cargo Enquiry Received - {route} | {_BRAND_NAME}",
+        client_heading="Air Cargo Enquiry Received",
+        client_intro=(
+            f"Dear {inquiry.contact_name}, we have received your air cargo enquiry. "
+            f"Our logistics team will review the details and respond with a quote and "
+            f"flight options shortly."
+        ),
+        client_rows=client_rows,
+        client_footer="For time-critical or AOG shipments please call us directly.",
+        client_notif_title=f"Cargo Enquiry Received - {route}",
+        client_notif_body=f"Your cargo enquiry has been received. Reference: {ref}.",
+        client_notif_link=f"/inquiries/cargo/{inquiry.reference}",
+        staff_subject=f"[NJH] New Air Cargo Enquiry - {ref}",
+        staff_heading="New Air Cargo Enquiry",
+        staff_rows=staff_rows,
+        staff_admin_path=f"/admin/cargo-inquiries/{inquiry.pk}",
+        staff_notif_title=f"New Air Cargo Enquiry - {inquiry.get_cargo_type_display()} ({ref})",
+        staff_notif_body=f"Client: {inquiry.contact_name} | {route} | {inquiry.get_urgency_display()}",
+        staff_notif_link=f"/admin/cargo-inquiries/{inquiry.pk}",
+        inquiry_type='air_cargo',
+        related_id=inquiry.pk,
+    )
 # ═════════════════════════════════════════════════════════════════════════════
 # 4. LEASE INQUIRY
 # ═════════════════════════════════════════════════════════════════════════════
