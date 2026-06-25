@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import viewsets, status, generics, filters, permissions
 
 from .models import (
     User, Airport, Aircraft, Yacht,
@@ -29,6 +30,8 @@ from .models import (
     AvailabilityBlock, NJHCommissionRule,
     RFQBid, OperatorBooking, OperatorPayoutLog,
     OperatorReview, DocumentUpload, ClientNotification, WebhookLog,
+    # V2 cargo/lease
+    AirCargoBooking, LeaseBooking,
 )
 from .serializers import (
     AirportSerializer, AircraftSerializer, YachtSerializer,
@@ -70,10 +73,31 @@ from .serializers import (
     DocumentUploadSerializer,
     ClientNotificationSerializer,
     WebhookLogSerializer,
+    # V2 cargo/lease
+    AirCargoBookingListSerializer,
+    AirCargoBookingDetailSerializer,
+    AirCargoBookingCreateSerializer,
+    AirCargoBookingPriceSerializer,
+    AirCargoBookingTrackingSerializer,
+    LeaseBookingListSerializer,
+    LeaseBookingDetailSerializer,
+    LeaseBookingCreateSerializer,
+    LeaseBookingPriceSerializer,
+    LeaseBookingContractSerializer,
 )
 
-from .models import OTPVerification   # add to existing model imports
-from .serializers import OTPRequestSerializer, OTPVerifySerializer  # add to serializer imports
+from .models import OTPVerification
+from .serializers import OTPRequestSerializer, OTPVerifySerializer
+
+# ─── NOTIFICATION IMPORTS ────────────────────────────────────────────────────
+from .notifications import (
+    notify_flight_booking_created,
+    notify_yacht_charter_created,
+    notify_air_cargo_created,
+    notify_lease_inquiry_created,
+    notify_group_charter_created,
+    notify_contact_inquiry_created,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PERMISSION HELPERS
@@ -275,59 +299,45 @@ class YachtViewSet(viewsets.ReadOnlyModelViewSet):
 # FLIGHT BOOKING (PUBLIC)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-from rest_framework import viewsets, status, filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
- 
-from .models import FlightBooking
-from .notifications import notify_flight_booking_created
-from .serializers import (
-    FlightBookingSerializer,
-    FlightBookingCreateSerializer,
-)
- 
- 
 class FlightBookingViewSet(viewsets.ModelViewSet):
     """
     Public-facing flight booking viewset.
- 
+
     POST   /api/flight-bookings/              — submit a new booking
     GET    /api/flight-bookings/track/<ref>/  — track by UUID reference
     GET    /api/flight-bookings/by-email/     — list all bookings for an email
     """
     permission_classes = [AllowAny]
- 
+
     def get_serializer_class(self):
         if self.action == 'create':
             return FlightBookingCreateSerializer
         return FlightBookingSerializer
- 
+
     def get_queryset(self):
         return FlightBooking.objects.all().order_by('-created_at')
- 
+
     # ── CREATE ──────────────────────────────────────────────────────────────
- 
+
     def create(self, request, *args, **kwargs):
         ser = FlightBookingCreateSerializer(data=request.data)
         if not ser.is_valid():
             return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
- 
+
         booking = ser.save()
- 
-        # ── Fire notifications (never lets an exception bubble up) ──────────
+
+        # ── Fire notifications ────────────────────────────────────────────────
         try:
             notify_flight_booking_created(
                 booking,
                 triggered_by=request.user if request.user.is_authenticated else None,
             )
         except Exception:
-            # Notification failure must NEVER fail the booking response
             import logging
             logging.getLogger(__name__).exception(
-                "Notification dispatch failed for booking %s", booking.reference
+                "Notification failed for flight booking %s", booking.reference
             )
- 
+
         return Response(
             {
                 'message': (
@@ -338,9 +348,9 @@ class FlightBookingViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
- 
+
     # ── TRACK ────────────────────────────────────────────────────────────────
- 
+
     @action(detail=False, methods=['get'], url_path='track/(?P<ref>[^/.]+)')
     def track(self, request, ref=None):
         try:
@@ -351,9 +361,9 @@ class FlightBookingViewSet(viewsets.ModelViewSet):
                 {'detail': 'Booking not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
- 
+
     # ── BY EMAIL ─────────────────────────────────────────────────────────────
- 
+
     @action(detail=False, methods=['get'], url_path='by-email')
     def by_email(self, request):
         email = request.query_params.get('email')
@@ -380,13 +390,26 @@ class YachtCharterViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         ser = YachtCharterSerializer(data=request.data)
-        if ser.is_valid():
-            charter = ser.save()
-            return Response({
-                'message': 'Yacht charter request received. Our specialists will respond within 4 hours.',
-                'charter': YachtCharterSerializer(charter).data,
-            }, status=status.HTTP_201_CREATED)
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        charter = ser.save()
+
+        try:
+            notify_yacht_charter_created(
+                charter,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for yacht charter %s", charter.reference
+            )
+
+        return Response({
+            'message': 'Yacht charter request received. Our specialists will respond within 4 hours.',
+            'charter': YachtCharterSerializer(charter).data,
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'], url_path='track/(?P<ref>[^/.]+)')
     def track(self, request, ref=None):
@@ -408,13 +431,26 @@ class LeaseInquiryViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         ser = self.get_serializer(data=request.data)
-        if ser.is_valid():
-            inquiry = ser.save()
-            return Response({
-                'message': 'Lease inquiry submitted. Our leasing team will respond within 24 hours.',
-                'inquiry': LeaseInquirySerializer(inquiry).data,
-            }, status=status.HTTP_201_CREATED)
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        inquiry = ser.save()
+
+        try:
+            notify_lease_inquiry_created(
+                inquiry,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for lease inquiry %s", inquiry.reference
+            )
+
+        return Response({
+            'message': 'Lease inquiry submitted. Our leasing team will respond within 24 hours.',
+            'inquiry': LeaseInquirySerializer(inquiry).data,
+        }, status=status.HTTP_201_CREATED)
 
 
 class FlightInquiryViewSet(viewsets.ModelViewSet):
@@ -438,6 +474,29 @@ class ContactInquiryViewSet(viewsets.ModelViewSet):
     serializer_class   = ContactInquirySerializer
     queryset           = ContactInquiry.objects.all().order_by('-created_at')
 
+    def create(self, request, *args, **kwargs):
+        ser = ContactInquirySerializer(data=request.data)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        inquiry = ser.save()
+
+        try:
+            notify_contact_inquiry_created(
+                inquiry,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for contact inquiry %s", inquiry.reference
+            )
+
+        return Response({
+            'message': 'Message received. We will respond within one business day.',
+            'inquiry': ContactInquirySerializer(inquiry).data,
+        }, status=status.HTTP_201_CREATED)
+
 
 class GroupCharterInquiryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
@@ -446,13 +505,26 @@ class GroupCharterInquiryViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         ser = self.get_serializer(data=request.data)
-        if ser.is_valid():
-            inquiry = ser.save()
-            return Response({
-                'message': 'Group charter request received.',
-                'inquiry': GroupCharterInquirySerializer(inquiry).data,
-            }, status=status.HTTP_201_CREATED)
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        inquiry = ser.save()
+
+        try:
+            notify_group_charter_created(
+                inquiry,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for group charter %s", inquiry.reference
+            )
+
+        return Response({
+            'message': 'Group charter request received.',
+            'inquiry': GroupCharterInquirySerializer(inquiry).data,
+        }, status=status.HTTP_201_CREATED)
 
 
 class AirCargoInquiryViewSet(viewsets.ModelViewSet):
@@ -462,13 +534,26 @@ class AirCargoInquiryViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         ser = self.get_serializer(data=request.data)
-        if ser.is_valid():
-            inquiry = ser.save()
-            return Response({
-                'message': 'Cargo inquiry received. Our logistics team will respond shortly.',
-                'inquiry': AirCargoInquirySerializer(inquiry).data,
-            }, status=status.HTTP_201_CREATED)
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not ser.is_valid():
+            return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        inquiry = ser.save()
+
+        try:
+            notify_air_cargo_created(
+                inquiry,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for cargo inquiry %s", inquiry.reference
+            )
+
+        return Response({
+            'message': 'Cargo inquiry received. Our logistics team will respond shortly.',
+            'inquiry': AirCargoInquirySerializer(inquiry).data,
+        }, status=status.HTTP_201_CREATED)
 
 
 class AircraftSalesInquiryViewSet(viewsets.ModelViewSet):
@@ -1033,6 +1118,7 @@ class AdminFlightBookingViewSet(viewsets.ModelViewSet):
         ser     = FlightBookingPriceSerializer(data=request.data)
         if ser.is_valid():
             data = ser.validated_data
+
             booking.quoted_price_usd  = data['quoted_price_usd']
             booking.operator_cost_usd = data.get('operator_cost_usd')
             booking.commission_pct    = data['commission_pct']
@@ -1041,15 +1127,48 @@ class AdminFlightBookingViewSet(viewsets.ModelViewSet):
             booking.save()
 
             if data.get('send_email') and booking.guest_email:
-                body = data.get('email_message') or (
+                custom_msg = data.get('email_message', '').strip()
+
+                # Plain text fallback
+                plain = (
                     f"Dear {booking.guest_name},\n\n"
-                    f"Your flight from {booking.origin.code} to {booking.destination.code} "
+                    + (f"{custom_msg}\n\n" if custom_msg else "")
+                    + f"Your flight from {booking.origin.code} to {booking.destination.code} "
                     f"has been quoted at USD {booking.quoted_price_usd:,.2f}.\n\n"
-                    f"Reference: {booking.reference}\n\nNairobiJetHouse Team"
+                    f"Departure : {booking.departure_date}\n"
+                    f"Passengers: {booking.passenger_count}\n"
+                    f"Reference : {str(booking.reference)[:8].upper()}\n\n"
+                    f"To confirm, reply to this email or contact your aviation concierge.\n\n"
+                    f"NairobiJetHouse Team"
                 )
-                _send_and_log(request.user, booking.guest_email, booking.guest_name,
-                              'Flight Booking Quote — NairobiJetHouse', body,
-                              'flight_booking', booking.id)
+
+                # Rich HTML email
+                html = _build_quote_email_html(
+                    guest_name      = booking.guest_name,
+                    origin_code     = booking.origin.code,
+                    destination_code= booking.destination.code,
+                    departure_date  = booking.departure_date,
+                    passenger_count = booking.passenger_count,
+                    quoted_price    = booking.quoted_price_usd,
+                    reference       = booking.reference,
+                    custom_message  = custom_msg,
+                )
+
+                email_sent = _send_and_log(
+                    sent_by      = request.user,
+                    to_email     = booking.guest_email,
+                    to_name      = booking.guest_name,
+                    subject      = f'Your Flight Quote — {booking.origin.code}→{booking.destination.code} | NairobiJetHouse',
+                    body         = plain,
+                    inquiry_type = 'flight_booking',
+                    related_id   = booking.id,
+                    html_message = html,
+                )
+
+                if not email_sent:
+                    response_data = FlightBookingAdminSerializer(booking).data
+                    response_data['email_warning'] = 'Price saved but email delivery failed. Check email logs.'
+                    return Response(response_data)
 
             return Response(FlightBookingAdminSerializer(booking).data)
         return Response(ser.errors, status=400)
@@ -1865,111 +1984,12 @@ def _send_and_log(sent_by, to_email, to_name, subject, body,
     return success
 
 
-# ── Replace set_price action inside AdminFlightBookingViewSet ─────────────────
-
-    @action(detail=True, methods=['post'])
-    def set_price(self, request, pk=None):
-        booking = self.get_object()
-        ser     = FlightBookingPriceSerializer(data=request.data)
-        if ser.is_valid():
-            data = ser.validated_data
-
-            booking.quoted_price_usd  = data['quoted_price_usd']
-            booking.operator_cost_usd = data.get('operator_cost_usd')
-            booking.commission_pct    = data['commission_pct']
-            if data.get('status'):
-                booking.status = data['status']
-            booking.save()
-
-            if data.get('send_email') and booking.guest_email:
-                custom_msg = data.get('email_message', '').strip()
-
-                # Plain text fallback
-                plain = (
-                    f"Dear {booking.guest_name},\n\n"
-                    + (f"{custom_msg}\n\n" if custom_msg else "")
-                    + f"Your flight from {booking.origin.code} to {booking.destination.code} "
-                    f"has been quoted at USD {booking.quoted_price_usd:,.2f}.\n\n"
-                    f"Departure : {booking.departure_date}\n"
-                    f"Passengers: {booking.passenger_count}\n"
-                    f"Reference : {str(booking.reference)[:8].upper()}\n\n"
-                    f"To confirm, reply to this email or contact your aviation concierge.\n\n"
-                    f"NairobiJetHouse Team"
-                )
-
-                # Rich HTML email
-                html = _build_quote_email_html(
-                    guest_name      = booking.guest_name,
-                    origin_code     = booking.origin.code,
-                    destination_code= booking.destination.code,
-                    departure_date  = booking.departure_date,
-                    passenger_count = booking.passenger_count,
-                    quoted_price    = booking.quoted_price_usd,
-                    reference       = booking.reference,
-                    custom_message  = custom_msg,
-                )
-
-                email_sent = _send_and_log(
-                    sent_by      = request.user,
-                    to_email     = booking.guest_email,
-                    to_name      = booking.guest_name,
-                    subject      = f'Your Flight Quote — {booking.origin.code}→{booking.destination.code} | NairobiJetHouse',
-                    body         = plain,
-                    inquiry_type = 'flight_booking',
-                    related_id   = booking.id,
-                    html_message = html,
-                )
-
-                if not email_sent:
-                    # Still return success for the price update, just flag the email failure
-                    response_data = FlightBookingAdminSerializer(booking).data
-                    response_data['email_warning'] = 'Price saved but email delivery failed. Check email logs.'
-                    return Response(response_data)
-
-            return Response(FlightBookingAdminSerializer(booking).data)
-        return Response(ser.errors, status=400)
-    
-    
 # ═══════════════════════════════════════════════════════════════════════════════
-# NairobiJetHouse V2 — views_v2_cargo_lease.py
-# Air Cargo Booking & Lease Booking views
+# V2 — AIR CARGO BOOKING & LEASE BOOKING VIEWS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-from decimal import Decimal
-from django.utils import timezone
-from django.core.mail import send_mail
-from django.conf import settings
+# ─── Permission helpers ───────────────────────────────────────────────────────
 
-from rest_framework import generics, status, permissions
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from .models import (
-    AirCargoBooking,
-    AirCargoInquiry,
-    LeaseBooking,
-    LeaseInquiry,
-    EmailLog,
-    CommissionSetting,
-)
-from .serializers import (
-    # Air Cargo
-    AirCargoBookingListSerializer,
-    AirCargoBookingDetailSerializer,
-    AirCargoBookingCreateSerializer,
-    AirCargoBookingPriceSerializer,
-    AirCargoBookingTrackingSerializer,
-    # Lease
-    LeaseBookingListSerializer,
-    LeaseBookingDetailSerializer,
-    LeaseBookingCreateSerializer,
-    LeaseBookingPriceSerializer,
-    LeaseBookingContractSerializer,
-)
-
-
-# ─── Permission helpers (mirrors rest of codebase) ───────────────────────────
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ('admin', 'staff')
@@ -2037,10 +2057,21 @@ class AirCargoBookingListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         booking = serializer.save()
 
-        # If converted from an inquiry, mark the inquiry as converted
         if booking.source_inquiry:
             booking.source_inquiry.status = 'converted'
             booking.source_inquiry.save(update_fields=['status'])
+
+        # ── Fire notifications ────────────────────────────────────────────────
+        try:
+            notify_air_cargo_created(
+                booking,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for cargo booking %s", booking.reference
+            )
 
         return Response(
             AirCargoBookingDetailSerializer(booking).data,
@@ -2342,6 +2373,19 @@ class LeaseBookingListCreateView(generics.ListCreateAPIView):
             booking.source_inquiry.status = 'converted'
             booking.source_inquiry.save(update_fields=['status'])
 
+        # ── Fire notifications ────────────────────────────────────────────────
+        # Note: LeaseBooking uses notify_lease_inquiry_created since it's a lease
+        try:
+            notify_lease_inquiry_created(
+                booking,
+                triggered_by=request.user if request.user.is_authenticated else None,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Notification failed for lease booking %s", booking.reference
+            )
+
         return Response(
             LeaseBookingDetailSerializer(booking).data,
             status=status.HTTP_201_CREATED,
@@ -2579,40 +2623,6 @@ class LeaseBookingStatsView(APIView):
             'by_duration':   list(by_duration),
         })
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SHARED HELPER
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def _send_and_log(user, to_email, to_name, subject, body, inquiry_type, related_id):
-    """Send an email and write an EmailLog entry."""
-    success = True
-    error   = ''
-    try:
-        send_mail(
-            subject,
-            body,
-            settings.DEFAULT_FROM_EMAIL,
-            [to_email],
-            fail_silently=False,
-        )
-    except Exception as exc:
-        success = False
-        error   = str(exc)
-
-    EmailLog.objects.create(
-        sent_by      = user if user.is_authenticated else None,
-        to_email     = to_email,
-        to_name      = to_name,
-        subject      = subject,
-        body         = body,
-        inquiry_type = inquiry_type,
-        related_id   = related_id,
-        success      = success,
-        error_msg    = error,
-    )
-    
-    
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # V2 ADMIN — OPERATOR AIRCRAFT (ALL OPERATORS)
