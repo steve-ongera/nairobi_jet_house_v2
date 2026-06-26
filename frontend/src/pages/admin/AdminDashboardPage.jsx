@@ -29,77 +29,158 @@ const MOCK_REVENUE = [
   { month: '2025-04', confirmed_count: 32, gross_usd: 341800, commission_usd: 51270, net_usd: 290530 },
 ]
 
-// ── Sparkline ─────────────────────────────────────────────────────────────────
-function Sparkline({ data, color, height = 36 }) {
-  if (!data || data.length < 2) return null
-  const w = 260, h = height
-  const min = Math.min(...data)
-  const max = Math.max(...data)
-  const range = max - min || 1
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w
-    const y = h - ((v - min) / range) * (h - 6) - 3
-    return `${x},${y}`
-  })
-  const area = `M${pts[0]} ` + pts.slice(1).map(p => `L${p}`).join(' ') + ` L${w},${h} L0,${h} Z`
-  const line = `M${pts[0]} ` + pts.slice(1).map(p => `L${p}`).join(' ')
-  const gradId = `sg-${color.replace(/[^a-z0-9]/gi, '')}`
-  const [lx, ly] = pts[pts.length - 1].split(',')
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height, display: 'block' }}>
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${gradId})`} />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={lx} cy={ly} r="3" fill={color} />
-    </svg>
-  )
-}
-
-// ── Bar Chart ─────────────────────────────────────────────────────────────────
-function BarChart({ data }) {
+// ── Line Chart ────────────────────────────────────────────────────────────────
+function LineChart({ data }) {
   const [hovered, setHovered] = useState(null)
   if (!data.length) return null
 
+  const W = 520, H = 200, PL = 52, PR = 20, PT = 16, PB = 32
+  const innerW = W - PL - PR
+  const innerH = H - PT - PB
+
   const maxVal = Math.max(...data.map(d => d.gross_usd))
-  const W = 520, H = 180, PL = 10, PR = 10, PT = 16, PB = 28
-  const barW = Math.floor((W - PL - PR) / data.length) - 6
+  const minVal = 0
+  const range  = maxVal - minVal || 1
+
+  const toX = (i) => PL + (i / (data.length - 1)) * innerW
+  const toY = (v) => PT + innerH - ((v - minVal) / range) * innerH
+
+  // Y-axis gridlines
+  const ticks = 4
+  const yTicks = Array.from({ length: ticks + 1 }, (_, i) => (maxVal / ticks) * i)
+
+  // Build SVG paths — smooth cubic bezier curves
+  const grossPts  = data.map((d, i) => [toX(i), toY(d.gross_usd)])
+  const commPts   = data.map((d, i) => [toX(i), toY(d.commission_usd)])
+  const netPts    = data.map((d, i) => [toX(i), toY(d.net_usd)])
+
+  // Catmull-Rom → cubic bezier: tension 0.4 gives a natural smooth curve
+  const buildPath = (pts) => {
+    if (pts.length < 2) return ''
+    const tension = 0.4
+    let d = `M${pts[0][0]},${pts[0][1]}`
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i]
+      const p1 = pts[i]
+      const p2 = pts[i + 1]
+      const p3 = pts[i + 2] || p2
+      const cp1x = p1[0] + (p2[0] - p0[0]) * tension
+      const cp1y = p1[1] + (p2[1] - p0[1]) * tension
+      const cp2x = p2[0] - (p3[0] - p1[0]) * tension
+      const cp2y = p2[1] - (p3[1] - p1[1]) * tension
+      d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2[0]},${p2[1]}`
+    }
+    return d
+  }
+
+  const buildArea = (pts) =>
+    buildPath(pts) + ` L${pts[pts.length - 1][0]},${PT + innerH} L${pts[0][0]},${PT + innerH} Z`
+
+  const gradients = [
+    { id: 'gGross', color: 'var(--color-navy)' },
+    { id: 'gComm',  color: 'var(--color-gold)' },
+    { id: 'gNet',   color: '#22c55e' },
+  ]
+
+  const series = [
+    { label: 'Gross',      pts: grossPts, color: 'var(--color-navy)', gradId: 'gGross', values: data.map(d => d.gross_usd) },
+    { label: 'Commission', pts: commPts,  color: 'var(--color-gold)', gradId: 'gComm',  values: data.map(d => d.commission_usd) },
+    { label: 'Net',        pts: netPts,   color: '#22c55e',            gradId: 'gNet',   values: data.map(d => d.net_usd) },
+  ]
+
+  const hov = hovered != null ? data[hovered] : null
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
-      {data.map((d, i) => {
-        const barH = ((d.gross_usd / maxVal) * (H - PT - PB)) || 2
-        const commH = (d.commission_usd / maxVal) * (H - PT - PB)
-        const x = PL + i * ((W - PL - PR) / data.length) + 3
-        const y = H - PB - barH
-        const isHov = hovered === i
+      <defs>
+        {gradients.map(g => (
+          <linearGradient key={g.id} id={g.id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor={g.color} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={g.color} stopOpacity="0" />
+          </linearGradient>
+        ))}
+      </defs>
+
+      {/* Y-axis gridlines + labels */}
+      {yTicks.map((v, i) => {
+        const y = toY(v)
         return (
-          <g key={d.month} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-            <rect x={x} width={barW} y={y} height={barH} rx={3} fill="var(--color-navy)" opacity={isHov ? 0.7 : 0.4} style={{ transition: 'opacity 0.15s' }} />
-            <rect x={x} width={barW} y={H - PB - commH} height={commH} rx={3} fill="var(--color-gold)" opacity={isHov ? 1 : 0.85} style={{ transition: 'opacity 0.15s' }} />
-            <text x={x + barW / 2} y={H - 8} textAnchor="middle" fontSize="9" fill="currentColor" opacity="0.45" fontFamily="inherit">
-              {d.month.slice(5)}
+          <g key={i}>
+            <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="currentColor" strokeWidth="1" opacity="0.06" strokeDasharray="3,3" />
+            <text x={PL - 6} y={y + 4} textAnchor="end" fontSize="8.5" fill="currentColor" opacity="0.35" fontFamily="inherit">
+              {v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`}
             </text>
-            {isHov && (
-              <g>
-                <rect x={x - 8} y={y - 42} width={barW + 16} height={36} rx={4} fill="var(--color-white)" stroke="var(--color-gold)" strokeWidth="0.5" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.12))' }} />
-                <text x={x + barW / 2} y={y - 25} textAnchor="middle" fontSize="9.5" fill="var(--color-gold)" fontFamily="inherit" fontWeight="700">
-                  {fmt(d.gross_usd)}
-                </text>
-                <text x={x + barW / 2} y={y - 13} textAnchor="middle" fontSize="8" fill="currentColor" opacity="0.5" fontFamily="inherit">
-                  Comm: {fmt(d.commission_usd)}
-                </text>
-              </g>
-            )}
           </g>
         )
       })}
-      <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke="currentColor" strokeWidth="1" opacity="0.1" />
+
+      {/* Area fills (bottom to top so gross is behind) */}
+      {series.slice().reverse().map(s => (
+        <path key={s.gradId + '-area'} d={buildArea(s.pts)} fill={`url(#${s.gradId})`} />
+      ))}
+
+      {/* Lines */}
+      {series.map(s => (
+        <path key={s.label + '-line'} d={buildPath(s.pts)} fill="none" stroke={s.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      ))}
+
+      {/* Hover vertical line */}
+      {hovered != null && (
+        <line
+          x1={toX(hovered)} y1={PT}
+          x2={toX(hovered)} y2={PT + innerH}
+          stroke="currentColor" strokeWidth="1" opacity="0.12" strokeDasharray="4,3"
+        />
+      )}
+
+      {/* Dots + hover targets */}
+      {data.map((d, i) => (
+        <g key={d.month}
+          onMouseEnter={() => setHovered(i)}
+          onMouseLeave={() => setHovered(null)}>
+          {/* invisible wide hit area */}
+          <rect x={toX(i) - 16} y={PT} width={32} height={innerH} fill="transparent" style={{ cursor: 'crosshair' }} />
+
+          {series.map(s => (
+            <circle key={s.label}
+              cx={toX(i)} cy={s.pts[i][1]} r={hovered === i ? 4 : 2.5}
+              fill={s.color} stroke="var(--color-white)" strokeWidth="1.5"
+              style={{ transition: 'r 0.12s' }}
+            />
+          ))}
+
+          {/* X-axis label */}
+          <text x={toX(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="currentColor" opacity="0.4" fontFamily="inherit">
+            {d.month.slice(5)}
+          </text>
+
+          {/* Tooltip */}
+          {hovered === i && (
+            <g>
+              <rect
+                x={Math.min(toX(i) - 54, W - PR - 112)} y={PT + 4}
+                width={108} height={64} rx={5}
+                fill="var(--color-white)" stroke="var(--color-light-gray)" strokeWidth="1"
+                style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }}
+              />
+              <text x={Math.min(toX(i) - 54, W - PR - 112) + 54} y={PT + 18} textAnchor="middle" fontSize="8.5" fontWeight="700" fill="currentColor" opacity="0.5" fontFamily="inherit">
+                {d.month}
+              </text>
+              {series.map((s, si) => (
+                <text key={s.label}
+                  x={Math.min(toX(i) - 54, W - PR - 112) + 54}
+                  y={PT + 31 + si * 13}
+                  textAnchor="middle" fontSize="9" fill={s.color} fontFamily="inherit" fontWeight="600">
+                  {s.label}: {fmt(s.values[i])}
+                </text>
+              ))}
+            </g>
+          )}
+        </g>
+      ))}
+
+      {/* Left axis line */}
+      <line x1={PL} y1={PT} x2={PL} y2={PT + innerH} stroke="currentColor" strokeWidth="1" opacity="0.1" />
     </svg>
   )
 }
@@ -107,7 +188,7 @@ function BarChart({ data }) {
 // ── Donut Chart ───────────────────────────────────────────────────────────────
 function DonutChart({ data }) {
   const [hovered, setHovered] = useState(null)
-  const R = 70, r = 44, cx = 90, cy = 90
+  const R = 80, r = 52, cx = 100, cy = 100
   const total = data.reduce((s, d) => s + d.value, 0)
   let angle = -Math.PI / 2
 
@@ -128,30 +209,45 @@ function DonutChart({ data }) {
   const hov = hovered != null ? data[hovered] : null
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-      <svg viewBox="0 0 180 180" style={{ width: 150, height: 150, flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+      {/* Fixed 200×200 so the donut has a clear, consistent size */}
+      <svg viewBox="0 0 200 200" style={{ width: 200, height: 200, flexShrink: 0 }}>
         {slices.map((s) => (
-          <path key={s.label} d={s.path} fill={s.color} stroke="var(--color-white)" strokeWidth={hovered === s.i ? 2 : 1.5}
-            transform={hovered === s.i ? `translate(${(s.lx - cx) * 0.06},${(s.ly - cy) * 0.06})` : ''}
-            style={{ transition: 'transform 0.15s, opacity 0.15s', cursor: 'pointer', opacity: hovered != null && hovered !== s.i ? 0.5 : 1 }}
-            onMouseEnter={() => setHovered(s.i)} onMouseLeave={() => setHovered(null)} />
+          <path key={s.label} d={s.path} fill={s.color}
+            stroke="var(--color-white)" strokeWidth={hovered === s.i ? 2.5 : 1.5}
+            transform={hovered === s.i ? `translate(${(s.lx - cx) * 0.07},${(s.ly - cy) * 0.07})` : ''}
+            style={{ transition: 'transform 0.15s, opacity 0.15s', cursor: 'pointer', opacity: hovered != null && hovered !== s.i ? 0.45 : 1 }}
+            onMouseEnter={() => setHovered(s.i)}
+            onMouseLeave={() => setHovered(null)}
+          />
         ))}
+        {/* Donut hole */}
         <circle cx={cx} cy={cy} r={r} fill="var(--color-white)" />
-        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.45" fontFamily="inherit">
+        <text x={cx} y={cy - 9} textAnchor="middle" fontSize="10.5" fill="currentColor" opacity="0.4" fontFamily="inherit">
           {hov ? hov.label : 'Total'}
         </text>
-        <text x={cx} y={cy + 11} textAnchor="middle" fontSize="13" fontWeight="700" fill={hov ? hov.color : 'var(--color-gold)'} fontFamily="inherit">
+        <text x={cx} y={cy + 10} textAnchor="middle" fontSize="13.5" fontWeight="700"
+          fill={hov ? hov.color : 'var(--color-gold)'} fontFamily="inherit">
           {hov ? `${Math.round(hov.value / total * 100)}%` : fmt(total)}
         </text>
+        {hov && (
+          <text x={cx} y={cy + 25} textAnchor="middle" fontSize="9.5"
+            fill={hov.color} fontFamily="inherit" opacity="0.8">
+            {fmt(hov.value)}
+          </text>
+        )}
       </svg>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+      {/* Legend */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {data.map((d, i) => (
-          <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: hovered != null && hovered !== i ? 0.4 : 1, transition: 'opacity 0.15s' }}
-            onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>{d.label}</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, marginLeft: 'auto', paddingLeft: '0.75rem', color: 'var(--color-navy)' }}>
+          <div key={d.label}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', opacity: hovered != null && hovered !== i ? 0.35 : 1, transition: 'opacity 0.15s' }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}>
+            <span style={{ width: 11, height: 11, borderRadius: 3, background: d.color, flexShrink: 0 }} />
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-mid-gray)', minWidth: 110 }}>{d.label}</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-navy)', marginLeft: 'auto', paddingLeft: '0.5rem' }}>
               {fmt(d.value)}
             </span>
           </div>
@@ -161,34 +257,33 @@ function DonutChart({ data }) {
   )
 }
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
-function StatCard({ icon, label, value, sub, accent = 'var(--color-gold)', trend }) {
+// ── Stat Card (no sparkline) ──────────────────────────────────────────────────
+function StatCard({ icon, label, value, sub, accent = 'var(--color-gold)' }) {
   return (
-    <div style={{ 
-      background: 'var(--color-white)', 
-      border: '1px solid var(--color-light-gray)', 
-      borderRadius: '8px', 
-      padding: '1.25rem',
-      transition: 'all 0.2s ease'
+    <div style={{
+      background: 'var(--color-white)',
+      border: '1px solid var(--color-light-gray)',
+      borderRadius: '8px',
+      padding: '1.25rem 1.4rem',
+      transition: 'all 0.2s ease',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--color-mid-gray)' }}>{label}</span>
-        <i className={`bi ${icon}`} style={{ color: accent, fontSize: '1rem', opacity: 0.8 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--color-mid-gray)' }}>
+          {label}
+        </span>
+        <span style={{ width: 32, height: 32, borderRadius: '8px', background: accent + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <i className={`bi ${icon}`} style={{ color: accent, fontSize: '1rem' }} />
+        </span>
       </div>
-      <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--color-navy)', marginTop: '0.2rem' }}>{value ?? '—'}</div>
-      {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', marginTop: '0.15rem' }}>{sub}</div>}
-      {trend && (
-        <div style={{ marginTop: '0.5rem' }}>
-          <Sparkline data={trend} color={accent} height={32} />
-        </div>
-      )}
+      <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-navy)', lineHeight: 1.1 }}>{value ?? '—'}</div>
+      {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', marginTop: '0.3rem' }}>{sub}</div>}
     </div>
   )
 }
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function AdminDashboardPage() {
-  const [data, setData] = useState(null)
+  const [data, setData]       = useState(null)
   const [revenue, setRevenue] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -208,18 +303,11 @@ export default function AdminDashboardPage() {
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
       <div style={{ width: 40, height: 40, border: '3px solid var(--color-light-gray)', borderTopColor: 'var(--color-navy)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 
   const last6 = revenue.slice(-6)
-  const revTrend  = last6.map(r => r.gross_usd)
-  const commTrend = last6.map(r => r.commission_usd)
-  const bkgTrend  = last6.map(r => r.confirmed_count)
 
   const donutData = [
     { label: 'Net Revenue',    value: last6.reduce((s, r) => s + r.net_usd, 0),        color: 'var(--color-navy)' },
@@ -236,12 +324,14 @@ export default function AdminDashboardPage() {
           <p style={{ color: 'var(--color-mid-gray)', fontSize: '0.875rem' }}>Platform overview — NairobiJetHouse V2</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Link to="/admin/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s ease' }}
+          <Link to="/admin/bookings"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'transparent', color: 'var(--color-navy)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s ease' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-white)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-navy)' }}>
             <i className="bi bi-airplane" /> Bookings
           </Link>
-          <Link to="/admin/operators" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s ease' }}
+          <Link to="/admin/operators"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: '1.5px solid var(--color-navy)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s ease' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-navy-mid)'; e.currentTarget.style.borderColor = 'var(--color-navy-mid)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-navy)'; e.currentTarget.style.borderColor = 'var(--color-navy)' }}>
             <i className="bi bi-building" /> Operators
@@ -249,39 +339,41 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* 4 Stat Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
-        <StatCard icon="bi-currency-dollar" label="Total Revenue" value={fmt(data?.total_platform_revenue)} sub="all time" accent="var(--color-gold)" trend={revTrend} />
-        <StatCard icon="bi-percent" label="Commissions (6mo)" value={fmt(last6.reduce((s, r) => s + r.commission_usd, 0))} sub="last 6 months" accent="var(--color-navy)" trend={commTrend} />
-        <StatCard icon="bi-people" label="Active Members" value={data?.total_members} sub={`${data?.total_operators ?? '—'} operators`} accent="#22c55e" trend={bkgTrend} />
-        <StatCard icon="bi-clock-history" label="Pending Actions" value={(data?.pending_approvals ?? 0) + (data?.open_disputes ?? 0)} sub={`${data?.pending_approvals ?? 0} approvals · ${data?.open_disputes ?? 0} disputes`} accent="#ef4444" />
+      {/* 4 Stat Cards — clean, no sparklines */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+        <StatCard icon="bi-currency-dollar" label="Total Revenue"      value={fmt(data?.total_platform_revenue)}  sub="all time"                                         accent="var(--color-gold)" />
+        <StatCard icon="bi-percent"          label="Commissions (6mo)" value={fmt(last6.reduce((s, r) => s + r.commission_usd, 0))} sub="last 6 months"                 accent="var(--color-navy)" />
+        <StatCard icon="bi-people"           label="Active Members"    value={data?.total_members}                sub={`${data?.total_operators ?? '—'} operators`}      accent="#22c55e" />
+        <StatCard icon="bi-clock-history"    label="Pending Actions"   value={(data?.pending_approvals ?? 0) + (data?.open_disputes ?? 0)} sub={`${data?.pending_approvals ?? 0} approvals · ${data?.open_disputes ?? 0} disputes`} accent="#ef4444" />
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
 
-        {/* Bar Chart Card */}
+        {/* Line Chart Card */}
         <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-label)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-navy)' }}>
-              <i className="bi bi-bar-chart-fill" style={{ color: 'var(--color-gold)' }} /> Monthly Revenue
+              <i className="bi bi-graph-up" style={{ color: 'var(--color-gold)' }} /> Monthly Revenue
             </div>
             <div style={{ display: 'flex', gap: '1rem', fontSize: '0.68rem', color: 'var(--color-mid-gray)' }}>
-              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: 'var(--color-navy)', borderRadius: '1px', marginRight: 4 }} />Gross</span>
-              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: 'var(--color-gold)', borderRadius: '1px', marginRight: 4 }} />Commission</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: 'var(--color-navy)', borderRadius: '50%', marginRight: 4 }} />Gross</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: 'var(--color-gold)', borderRadius: '50%', marginRight: 4 }} />Commission</span>
+              <span><span style={{ display: 'inline-block', width: 8, height: 8, background: '#22c55e',            borderRadius: '50%', marginRight: 4 }} />Net</span>
             </div>
           </div>
-          <div style={{ padding: '0.75rem' }}>
-            <BarChart data={last6} />
+          <div style={{ padding: '0.75rem 0.5rem 0.25rem' }}>
+            <LineChart data={last6} />
           </div>
         </div>
 
-        {/* Donut Chart Card */}
+        {/* Donut Chart Card — fixed 200px height so donut is clearly sized */}
         <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '8px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-light-gray)', fontFamily: 'var(--font-label)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-navy)' }}>
             <i className="bi bi-pie-chart-fill" style={{ color: 'var(--color-gold)' }} /> Revenue Breakdown
           </div>
-          <div style={{ padding: '1rem' }}>
+          {/* min-height ensures card matches line chart height and donut is not squashed */}
+          <div style={{ padding: '1.5rem 1.25rem', minHeight: 240, display: 'flex', alignItems: 'center' }}>
             <DonutChart data={donutData} />
           </div>
         </div>
@@ -295,14 +387,14 @@ export default function AdminDashboardPage() {
             <i className="bi bi-table" style={{ color: 'var(--color-gold)' }} /> Monthly Breakdown
           </div>
           <Link to="/admin/bookings" style={{ padding: '0.25rem 0.75rem', background: 'transparent', border: 'none', color: 'var(--color-navy)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}>
-            View all <i className="bi bi-arrow-right"></i>
+            View all <i className="bi bi-arrow-right" />
           </Link>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-light-gray)', background: 'var(--color-off-white)' }}>
-                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Month</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'left',  fontWeight: 600, color: 'var(--color-navy)' }}>Month</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Bookings</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Gross Revenue</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>Commission</th>
@@ -312,7 +404,7 @@ export default function AdminDashboardPage() {
             <tbody>
               {last6.slice().reverse().map((r) => (
                 <tr key={r.month} style={{ borderBottom: '1px solid var(--color-light-gray)' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 500, color: 'var(--color-navy)' }}>{r.month}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 500,  color: 'var(--color-navy)' }}>{r.month}</td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--color-dark-gray)' }}>{r.confirmed_count}</td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-navy)' }}>{fmt(r.gross_usd)}</td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-gold)' }}>{fmt(r.commission_usd)}</td>
