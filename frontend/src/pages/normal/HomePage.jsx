@@ -39,7 +39,7 @@ const SERVICES = [
     title: 'Superyacht Charter',
     tagline: 'Mediterranean, Caribbean & beyond',
     description: 'Charter a superyacht by the week or season — full crew, bespoke itineraries, every ocean.',
-    link: '/yacht-charter',
+    link: '/yachts',
     cta: 'Charter a Yacht',
     images: [
       'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=900&q=80&auto=format&fit=crop',
