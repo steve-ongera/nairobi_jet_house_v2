@@ -677,6 +677,7 @@ mark    { background: var(--color-gold-pale); color: var(--color-navy-dark); bor
   border: 1px solid var(--color-light-gray);
   overflow: hidden;
   animation: fadeInUp 0.2s ease;
+  
 }
 
 .services-dropdown::before {

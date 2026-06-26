@@ -1,11 +1,3 @@
-// HomePage.jsx - FULL UPDATED VERSION (Bug Fixes Applied)
-// Fixes:
-//  1. AirportCombobox: eager-clear bug fixed — parent ID only cleared when input fully emptied
-//  2. CharterYachtModal: yacht FK guarded like aircraft (no undefined key sent)
-//  3. LeaseModal: aircraft/yacht FK guard already correct, verified
-//  4. All modals: parseApiError now logs to console.error for debugging
-//  5. BookFlightModal: all optional fields properly stripped before POST
-
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
@@ -27,71 +19,112 @@ const STATS = [
   { value: '< 4hrs', label: 'Avg Response Time',  icon: 'bi-clock' },
 ]
 
+/* SEO-trimmed copy. Each service now carries 3 images for an auto-rotating carousel. */
 const SERVICES = [
   {
     icon: 'bi-airplane',
     title: 'Private Jet Charter',
     tagline: 'Airport to airport, worldwide',
-    description: 'Book a private jet from any airport to any destination worldwide. Whether you need a light jet for a regional hop or an ultra-long-range aircraft for intercontinental travel, our team finds the right aircraft at the right price — instantly.',
+    description: 'Charter a private jet to any destination worldwide — the right aircraft, the right price, instantly.',
     link: '/book-flight',
     cta: 'Book a Flight',
+    images: [
+      'https://plus.unsplash.com/premium_photo-1682142182464-3be6161b3a42?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJpdmF0ZSUyMGpldCUyMGNoYXJ0ZXJ8ZW58MHx8MHx8fDA%3D',
+      'https://images.unsplash.com/photo-1625513123245-fcb02d69ad12?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJpdmF0ZSUyMGpldCUyMGNoYXJ0ZXJ8ZW58MHx8MHx8fDA%3D',
+      'https://images.unsplash.com/photo-1661954864180-e61dea14208a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8cHJpdmF0ZSUyMGpldCUyMGNoYXJ0ZXJ8ZW58MHx8MHx8fDA%3D',
+    ],
   },
   {
     icon: 'bi-water',
     title: 'Superyacht Charter',
     tagline: 'Mediterranean, Caribbean & beyond',
-    description: 'Charter a superyacht for a weekend, a week, or the entire season. From intimate sailing yachts to 130-metre flagship vessels, our fleet covers every ocean. Full crew, bespoke itineraries, and world-class provisioning included.',
+    description: 'Charter a superyacht by the week or season — full crew, bespoke itineraries, every ocean.',
     link: '/yacht-charter',
     cta: 'Charter a Yacht',
+    images: [
+      'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=900&q=80&auto=format&fit=crop',
+      'https://plus.unsplash.com/premium_photo-1733317328038-4aa0269ac803?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8eWF0Y2hzfGVufDB8fDB8fHww',
+      'https://plus.unsplash.com/premium_photo-1680831748191-d726a2f7b201?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8eWF0Y2glMjBjaGFydGVyfGVufDB8fDB8fHww',
+    ],
   },
   {
     icon: 'bi-file-earmark-text',
     title: 'Long-Term Leasing',
     tagline: 'Dedicated aircraft & yacht programs',
-    description: 'For frequent travellers and corporations, a dedicated lease offers unmatched availability and significant cost savings over ad-hoc charter. Monthly, quarterly, and multi-year programs available for aircraft and yachts.',
+    description: 'Monthly to multi-year leases on aircraft and yachts — guaranteed availability, lower cost.',
     link: '/leasing',
     cta: 'Explore Leasing',
+    images: [
+      'https://media.istockphoto.com/id/542970196/photo/handshake.webp?a=1&b=1&s=612x612&w=0&k=20&c=FrWTyn2VhFPh2jvuG8oojIzAG3HQYVV1XlmHylzmAQE=',
+      'https://images.unsplash.com/photo-1542296332-2e4473faf563?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1517260468809-807bfd11d968?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjR8fEFpcmNyYWZ0JTIwbGVhc2luZ3xlbnwwfHwwfHx8MA%3D%3D',
+    ],
   },
   {
     icon: 'bi-send',
     title: 'Flight Inquiry',
     tagline: 'Explore options, no commitment',
-    description: "Not sure of your dates or route? Send a general inquiry and one of our aviation specialists will design the perfect itinerary for you. We'll present aircraft options, pricing estimates, and routing alternatives within hours.",
-    link: '/flight-inquiry',
+    description: 'Not sure of your dates or route? Get a tailored itinerary and pricing within hours.',
+    link: '/contact',
     cta: 'Send Inquiry',
+    images: [
+      'https://images.unsplash.com/photo-1759614581731-4c7090648de0?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1474302770737-173ee21bab63?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fGNvbnRhY3R8ZW58MHx8MHx8fDA%3D',
+    ],
   },
   {
     icon: 'bi-boxes',
     title: 'Air Cargo & Valuables',
     tagline: 'Gold, minerals, pharma & critical freight',
-    description: 'Dedicated air cargo charters for general freight, perishables, pharmaceuticals, and oversized shipments — plus specialist logistics for high-value cargo including gold bullion, diamonds, jewellery, and precious minerals. Full chain-of-custody, armed escort options, and comprehensive insurance worldwide.',
+    description: 'Charter air cargo for freight and high-value goods, with full chain-of-custody and insurance.',
     link: '/air-cargo',
     cta: 'Get a Cargo Quote',
     highlight: true,
+    images: [
+      'https://media.istockphoto.com/id/117952890/photo/loading-cargo-into-a-boeing-747.webp?a=1&b=1&s=612x612&w=0&k=20&c=sXsfWNDuQcBV39AqvcdMiqqPGDDQkfJ_xfq8lt5WYjw=',
+      'https://images.unsplash.com/photo-1565876464729-e5184585870a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjZ8fGFpciUyMGNhcmdvfGVufDB8fDB8fHww',
+      'https://images.unsplash.com/photo-1774698078446-59299e016718?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzF8fGFpciUyMGNhcmdvfGVufDB8fDB8fHww',
+    ],
   },
   {
     icon: 'bi-people',
     title: 'Group Charter',
     tagline: 'Corporate, sports, events & incentives',
-    description: 'Custom group charter flights for corporate teams, sports clubs, government delegations, entertainment productions, and incentive groups. We handle all logistics from ground transport coordination to in-flight catering for groups of any size.',
+    description: 'Custom group flights for teams, delegations, and productions of any size — fully managed.',
     link: '/group-charter',
     cta: 'Request Group Charter',
+    images: [
+      'https://media.istockphoto.com/id/136901927/photo/business-people-with-corporate-jet.webp?a=1&b=1&s=612x612&w=0&k=20&c=odLEhuY9SqH1xrA3CkiCImQgMwhWSyQjQh0dXfHxNpk=',
+      'https://images.unsplash.com/photo-1590008411086-6efbbf3e2cbf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Z3JvdXAlMjBhaXIlMjBjaGFydGVyfGVufDB8fDB8fHww',
+      'https://images.unsplash.com/flagged/photo-1578940836729-707caca98f74?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjR8fGdyb3VwJTIwYWlyJTIwY2hhcnRlcnxlbnwwfHwwfHx8MA%3D%3D',
+    ],
   },
   {
     icon: 'bi-shop',
     title: 'Aircraft Sales',
     tagline: 'Buy, sell, trade or get a valuation',
-    description: 'Looking to acquire your own aircraft or sell an existing one? Our aircraft sales team specialises in private jet acquisitions, trade-ins, pre-owned valuations, and facilitating transactions between buyers and sellers worldwide.',
+    description: 'Private jet acquisitions, trade-ins, and pre-owned valuations — handled worldwide.',
     link: '/aircraft-sales',
     cta: 'Explore Aircraft Sales',
+    images: [
+      'https://images.unsplash.com/photo-1759614581731-4c7090648de0?w=900&q=80&auto=format&fit=crop',
+      'https://media.istockphoto.com/id/2278364445/photo/business-partners-collaborating-on-laptop-during-private-jet-flight.webp?a=1&b=1&s=612x612&w=0&k=20&c=PMhCY1yEgHIlS-qVYjQe-ekxaQc49aCpBgmG8UAyq00=',
+      'https://media.istockphoto.com/id/2167925237/photo/businessman-just-bought-a-private-jet.webp?a=1&b=1&s=612x612&w=0&k=20&c=iHEouhChFUUovUQivxy5BE0hgVT_wASWfwkJuDWtyLc=',
+    ],
   },
   {
     icon: 'bi-search',
     title: 'Track Your Booking',
     tagline: 'Live status on any inquiry or flight',
-    description: 'Already submitted a booking, charter, or inquiry? Track your request in real time using your unique reference number. Get live status updates, quotes, and confirmations — no account needed.',
+    description: 'Track any booking or inquiry in real time with your reference number — no account needed.',
     link: '/track',
     cta: 'Track a Booking',
+    images: [
+      'https://images.unsplash.com/photo-1619652707252-09331e61ff31?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTQxfHx0cmFjayUyMGFpcnBsYW5lfGVufDB8fDB8fHww',
+      'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=900&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1679059384528-e4ea18b65427?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTd8fGFpcmNyYWZ0c3xlbnwwfHwwfHx8MA%3D%3D',
+    ],
   },
 ]
 
@@ -177,6 +210,57 @@ function HeroVideoBackground() {
           muted playsInline loop autoPlay
         />
       )}
+    </div>
+  )
+}
+
+/* ─── Service Card Image Carousel ────────────────────────────────────────────────
+   NEW: Each service card now cycles through 3 images automatically, with a
+   crossfade transition. Height increased from 160px to 220px for more visual
+   weight in the grid.
+──────────────────────────────────────────────────────────────────────────────── */
+function ServiceImageCarousel({ images, title, intervalMs = 4000 }) {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (!images || images.length <= 1) return
+    const t = setInterval(() => {
+      setIndex(i => (i + 1) % images.length)
+    }, intervalMs)
+    return () => clearInterval(t)
+  }, [images, intervalMs])
+
+  if (!images || images.length === 0) return null
+
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      {images.map((src, i) => (
+        <img
+          key={src + i}
+          src={src}
+          alt={`${title} ${i + 1}`}
+          loading="lazy"
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%', objectFit: 'cover',
+            opacity: i === index ? 1 : 0,
+            transition: 'opacity 1.1s ease-in-out',
+          }}
+        />
+      ))}
+      {/* dot indicators */}
+      <div style={{
+        position: 'absolute', bottom: 10, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', gap: 5, zIndex: 2,
+      }}>
+        {images.map((_, i) => (
+          <span key={i} style={{
+            width: 5, height: 5, borderRadius: '50%',
+            background: i === index ? '#C9A84C' : 'rgba(255,255,255,0.55)',
+            transition: 'background 0.3s',
+          }} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -1391,19 +1475,30 @@ export default function HomePage() {
 
             {/* Primary services */}
             <div className="grid-4" style={{ marginTop: '3rem' }}>
-              {SERVICES.slice(0, 4).map(({ icon, title, tagline, description, link, cta }) => (
-                <div className="card" key={title} style={{ padding: '2rem' }}>
-                  <div style={{
-                    width: 52, height: 52, background: 'var(--gold-pale)',
-                    borderRadius: 10, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', marginBottom: '1.25rem',
-                  }}>
-                    <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: 'var(--gold)' }} />
+              {SERVICES.slice(0, 4).map(({ icon, title, tagline, description, link, cta, images }) => (
+                <div className="card" key={title} style={{ padding: 0, overflow: 'hidden' }}>
+                  <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+                    <ServiceImageCarousel images={images} title={title} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(180deg, rgba(11,29,58,0) 50%, rgba(11,29,58,0.55) 100%)',
+                      zIndex: 1,
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: 12, left: 12,
+                      width: 40, height: 40, background: 'rgba(255,255,255,0.92)',
+                      borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)', zIndex: 2,
+                    }}>
+                      <i className={`bi ${icon}`} style={{ fontSize: '1.15rem', color: 'var(--gold)' }} />
+                    </div>
                   </div>
-                  <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
-                  <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
-                  <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
-                  <Link to={link} className="btn btn-outline-navy btn-sm">{cta} <i className="bi bi-arrow-right" /></Link>
+                  <div style={{ padding: '1.5rem' }}>
+                    <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
+                    <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
+                    <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
+                    <Link to={link} className="btn btn-outline-navy btn-sm">{cta} <i className="bi bi-arrow-right" /></Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1417,26 +1512,36 @@ export default function HomePage() {
 
             {/* Additional services */}
             <div className="grid-4">
-              {SERVICES.slice(4).map(({ icon, title, tagline, description, link, cta, highlight }) => (
+              {SERVICES.slice(4).map(({ icon, title, tagline, description, link, cta, highlight, images }) => (
                 <div className="card" key={title} style={{
-                  padding: '2rem',
+                  padding: 0, overflow: 'hidden',
                   ...(highlight ? { borderColor: 'var(--gold)', borderWidth: 2 } : {}),
                 }}>
-                  <div style={{
-                    width: 52, height: 52,
-                    background: highlight ? 'var(--gold-pale)' : 'var(--gray-50)',
-                    borderRadius: 10, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', marginBottom: '1.25rem',
-                    border: highlight ? '1.5px solid #E6CFA0' : '1.5px solid var(--gray-100)',
-                  }}>
-                    <i className={`bi ${icon}`} style={{ fontSize: '1.4rem', color: highlight ? 'var(--gold)' : 'var(--navy)' }} />
+                  <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+                    <ServiceImageCarousel images={images} title={title} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(180deg, rgba(11,29,58,0) 50%, rgba(11,29,58,0.55) 100%)',
+                      zIndex: 1,
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: 12, left: 12,
+                      width: 40, height: 40,
+                      background: highlight ? 'var(--gold)' : 'rgba(255,255,255,0.92)',
+                      borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)', zIndex: 2,
+                    }}>
+                      <i className={`bi ${icon}`} style={{ fontSize: '1.15rem', color: highlight ? '#fff' : 'var(--navy)' }} />
+                    </div>
                   </div>
-                  <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
-                  <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
-                  <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
-                  <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>
-                    {cta} <i className="bi bi-arrow-right" />
-                  </Link>
+                  <div style={{ padding: '1.5rem' }}>
+                    <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
+                    <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', letterSpacing: '0.02em' }}>{tagline}</div>
+                    <p style={{ fontSize: '0.855rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{description}</p>
+                    <Link to={link} className={`btn btn-sm ${highlight ? 'btn-navy' : 'btn-outline-navy'}`}>
+                      {cta} <i className="bi bi-arrow-right" />
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1542,7 +1647,7 @@ export default function HomePage() {
             <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>
               <i className="bi bi-water" /> Superyacht Charter
             </span>
-            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
+            <h2 style={{ color: 'white', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
               Set Sail on the <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>World's Finest</em> Yachts
             </h2>
             <p style={{
@@ -1558,7 +1663,7 @@ export default function HomePage() {
                 <i className="bi bi-water" /> Charter a Yacht
               </Link>
               <Link to="/fleet" className="btn btn-outline-gold btn-lg"
-                style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.4)' }}>
+                style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}>
                 Browse Yachts
               </Link>
             </div>
@@ -1660,11 +1765,16 @@ export default function HomePage() {
         )}
 
         {/* ══ FINAL CTA ════════════════════════════════════════════════════════ */}
-        <section className="section" style={{ background: 'var(--navy)', textAlign: 'center' }}>
-          <div className="container" style={{ maxWidth: 680 }}>
+        <section style={{
+          position: 'relative', padding: '7rem 0', overflow: 'hidden',
+          backgroundImage: `url(https://plus.unsplash.com/premium_photo-1682142182464-3be6161b3a42?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJpdmF0ZSUyMGNoYXJ0ZXJ8ZW58MHx8MHx8fDA%3D)`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(11,29,58,0.92) 0%, rgba(11,29,58,0.78) 100%)' }} />
+          <div className="container" style={{ position: 'relative', maxWidth: 680, textAlign: 'center' }}>
             <span className="eyebrow" style={{ color: 'var(--gold-light)' }}>Ready to Fly?</span>
-            <h2 style={{ color: 'var(--white)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
-              Your Private Jet is <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Waiting</em>
+            <h2 style={{ color: 'white', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
+              Your Private Jet is <em style={{ color: 'white', fontStyle: 'italic' }}>Waiting</em>
             </h2>
             <p style={{
               color: 'rgba(255,255,255,0.65)', marginBottom: '2.5rem',
@@ -1678,8 +1788,8 @@ export default function HomePage() {
               <Link to="/book-flight" className="btn btn-gold btn-lg">
                 <i className="bi bi-airplane" /> Book a Flight
               </Link>
-              <Link to="/flight-inquiry" className="btn btn-outline-gold btn-lg"
-                style={{ color: 'var(--white)', borderColor: 'rgba(255,255,255,0.3)' }}>
+              <Link to="/contact" className="btn btn-outline-gold btn-lg"
+                style={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}>
                 <i className="bi bi-send" /> Send an Inquiry
               </Link>
             </div>

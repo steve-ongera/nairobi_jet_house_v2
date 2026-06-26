@@ -22,14 +22,14 @@ const SUBNAV_LINKS = [
 
 // Main nav links
 const NAV_LINKS = [
-  { path: '/',          label: 'Home',      icon: 'bi-house-door' },
-  { path: '/fleet',     label: 'Fleet',     icon: 'bi-grid-3x3' },
-  { path: '/yachts',    label: 'Yachts',    icon: 'bi-water' },
-  { path: '/services',  label: 'Services',  icon: 'bi-grid-1x2' },
-  { path: '/book-flight', label: 'Private Jet Charter',   icon: 'bi-airplane' },
-  { path: '/lease',     label: 'Leasing',   icon: 'bi-file-earmark-text' },
-  { path: '/air-cargo', label: 'Air Cargo', icon: 'bi-boxes' },
-  { path: '/contact',   label: 'Contact',   icon: 'bi-envelope' },
+  { path: '/',              label: 'Home',             icon: 'bi-house-door' },
+  { path: '/book-flight',   label: 'Private Charter',  icon: 'bi-airplane' },
+  { path: '/group-charter', label: 'Group Charter',    icon: 'bi-people' },
+  { path: '/air-cargo',     label: 'Air Cargo',        icon: 'bi-boxes' },
+  { path: '/lease',         label: 'Aircraft Leasing', icon: 'bi-file-earmark-text' },
+  { path: '/fleet',         label: 'Fleet',            icon: 'bi-grid-3x3' },
+  { path: '/services',      label: 'Menu',             icon: 'bi-grid-1x2' },
+  { path: '/contact',       label: 'Contact Us',       icon: 'bi-envelope' },
 ]
 
 const PORTAL_MAP = {
@@ -153,8 +153,8 @@ export default function PublicNavbar() {
           {/* Desktop Nav Links */}
           <ul className="nav-links" role="list">
             {NAV_LINKS.map(({ path, label }) => {
-              // Special handling for Services dropdown
-              if (label === 'Services') {
+              // Special handling for Menu dropdown (formerly "Services")
+              if (label === 'Menu') {
                 return (
                   <li key={label} ref={servicesRef} style={{ position: 'relative' }}>
                     <button
@@ -310,8 +310,8 @@ export default function PublicNavbar() {
           <span className="drawer-section-label">Navigation</span>
 
           {NAV_LINKS.map(({ path, label, icon }) => {
-            // Special handling for Services dropdown in drawer
-            if (label === 'Services') {
+            // Special handling for Menu dropdown in drawer (formerly "Services")
+            if (label === 'Menu') {
               return (
                 <div key={label}>
                   <div className="drawer-link static">
