@@ -1484,14 +1484,6 @@ export default function HomePage() {
                       background: 'linear-gradient(180deg, rgba(11,29,58,0) 50%, rgba(11,29,58,0.55) 100%)',
                       zIndex: 1,
                     }} />
-                    <div style={{
-                      position: 'absolute', top: 12, left: 12,
-                      width: 40, height: 40, background: 'rgba(255,255,255,0.92)',
-                      borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)', zIndex: 2,
-                    }}>
-                      <i className={`bi ${icon}`} style={{ fontSize: '1.15rem', color: 'var(--gold)' }} />
-                    </div>
                   </div>
                   <div style={{ padding: '1.5rem' }}>
                     <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
@@ -1524,15 +1516,6 @@ export default function HomePage() {
                       background: 'linear-gradient(180deg, rgba(11,29,58,0) 50%, rgba(11,29,58,0.55) 100%)',
                       zIndex: 1,
                     }} />
-                    <div style={{
-                      position: 'absolute', top: 12, left: 12,
-                      width: 40, height: 40,
-                      background: highlight ? 'var(--gold)' : 'rgba(255,255,255,0.92)',
-                      borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)', zIndex: 2,
-                    }}>
-                      <i className={`bi ${icon}`} style={{ fontSize: '1.15rem', color: highlight ? '#fff' : 'var(--navy)' }} />
-                    </div>
                   </div>
                   <div style={{ padding: '1.5rem' }}>
                     <h4 style={{ marginBottom: '0.25rem' }}>{title}</h4>
