@@ -215,7 +215,7 @@ function HeroVideoBackground() {
 }
 
 /* ─── Service Card Image Carousel ────────────────────────────────────────────────
-   NEW: Each service card now cycles through 3 images automatically, with a
+   Each service card cycles through 3 images automatically, with a
    crossfade transition. Height increased from 160px to 220px for more visual
    weight in the grid.
 ──────────────────────────────────────────────────────────────────────────────── */
@@ -583,6 +583,10 @@ function SuccessState({ title, message, reference, onNew, onClose }) {
 function AssetBanner({ asset, type }) {
   if (!asset) return null
   const isAc = type === 'aircraft'
+  // Use client-facing marked-up rate where available, falling back to raw
+  // operator cost only if display_* hasn't been computed by the API yet.
+  const hourly = asset.display_hourly_rate ?? asset.hourly_rate_usd
+  const daily  = asset.display_daily_rate  ?? asset.daily_rate_usd
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '1rem',
@@ -602,8 +606,8 @@ function AssetBanner({ asset, type }) {
           {isAc
             ? `${asset.category_display} · ${asset.passenger_capacity} passengers · ${asset.range_km?.toLocaleString()} km range`
             : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · ${asset.crew_count} crew`}
-          {isAc  && asset.hourly_rate_usd && ` · $${parseInt(asset.hourly_rate_usd).toLocaleString()}/hr`}
-          {!isAc && asset.daily_rate_usd  && ` · $${parseInt(asset.daily_rate_usd).toLocaleString()}/day`}
+          {isAc  && hourly && ` · $${parseInt(hourly).toLocaleString()}/hr`}
+          {!isAc && daily  && ` · $${parseInt(daily).toLocaleString()}/day`}
         </div>
       </div>
     </div>
@@ -1060,9 +1064,9 @@ function CharterYachtModal({ open, onClose, yacht: asset }) {
             }}>
               <i className="bi bi-moon-stars" />
               <strong>{nights()} night{nights() > 1 ? 's' : ''}</strong>
-              {asset?.daily_rate_usd && (
+              {(asset?.display_daily_rate ?? asset?.daily_rate_usd) && (
                 <span style={{ color: '#9A7530' }}>
-                  — estimated ${(nights() * parseInt(asset.daily_rate_usd)).toLocaleString()} before crew &amp; provisions
+                  — estimated ${(nights() * parseInt(asset.display_daily_rate ?? asset.daily_rate_usd)).toLocaleString()} before crew &amp; provisions
                 </span>
               )}
             </div>
@@ -1178,8 +1182,8 @@ function LeaseModal({ open, onClose, asset, assetType }) {
                 <div style={{ fontWeight: 600, color: '#7A5C22', fontSize: '0.92rem' }}>{asset.name}</div>
                 <div style={{ fontSize: '0.75rem', color: '#9A7530', marginTop: 2 }}>
                   {isAc
-                    ? `${asset.category_display} · ${asset.passenger_capacity} pax · ${asset.range_km?.toLocaleString()} km · $${parseInt(asset.hourly_rate_usd || 0).toLocaleString()}/hr`
-                    : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · $${parseInt(asset.daily_rate_usd || 0).toLocaleString()}/day`}
+                    ? `${asset.category_display} · ${asset.passenger_capacity} pax · ${asset.range_km?.toLocaleString()} km · $${parseInt(asset.display_hourly_rate ?? asset.hourly_rate_usd ?? 0).toLocaleString()}/hr`
+                    : `${asset.size_display} · ${asset.length_meters}m · ${asset.guest_capacity} guests · $${parseInt(asset.display_daily_rate ?? asset.daily_rate_usd ?? 0).toLocaleString()}/day`}
                 </div>
               </div>
             </div>
@@ -1280,13 +1284,25 @@ export default function HomePage() {
   const [modal, setModal]       = useState(null)
 
   useEffect(() => {
-    catalogAPI.opAircraft({ limit: 3 })
-      .then(r => setAircraft(r.data?.results || r.data || []))
-      .catch(() => {})
+    let cancelled = false
 
-    catalogAPI.opYachts({ limit: 3 })
-      .then(r => setYachts(r.data?.results || r.data || []))
-      .catch(() => {})
+    /* FIX: `limit` is not a recognised DRF PageNumberPagination param — it was
+       silently ignored, so this previously fetched an unfiltered page of
+       aircraft/yachts (whatever the default page_size returns) instead of
+       3 curated featured items. `page_size` is the correct param name (see
+       fetchAllPages in api.js, which relies on the same pagination shape).
+       Also added is_approved + is_featured filters so the homepage only ever
+       shows vetted, intentionally-featured fleet — matching what Fleet.jsx
+       already filters for via `is_approved: true`. */
+    catalogAPI.opAircraft({ page_size: 3, is_approved: true, is_featured: true })
+      .then(r => { if (!cancelled) setAircraft(r.data?.results || []) })
+      .catch(() => { if (!cancelled) setAircraft([]) })
+
+    catalogAPI.opYachts({ page_size: 3, is_approved: true, is_featured: true })
+      .then(r => { if (!cancelled) setYachts(r.data?.results || []) })
+      .catch(() => { if (!cancelled) setYachts([]) })
+
+    return () => { cancelled = true }
   }, [])
 
   const open  = (type, asset) => setModal({ type, asset })
@@ -1553,32 +1569,170 @@ export default function HomePage() {
                   View Full Fleet <i className="bi bi-arrow-right" />
                 </Link>
               </div>
+
+              {/* ── AIRCRAFT CARDS ──────────────────────────────────────────── */}
               <div className="grid-3">
-                {aircraft.map(ac => (
-                  <div className="card" key={ac.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                    {ac.image_url
-                      ? <img src={ac.image_url} alt={`${ac.name} private jet`} className="card-img" loading="lazy" />
-                      : <div className="card-img-placeholder"><i className="bi bi-airplane" /></div>}
-                    <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <span className="card-tag">{ac.category_display}</span>
-                      <div className="card-title">{ac.name}</div>
-                      <div className="card-meta" style={{ marginBottom: '1rem' }}>
-                        <i className="bi bi-people" style={{ marginRight: 5 }} />{ac.passenger_capacity} passengers
-                        <span style={{ margin: '0 8px', color: 'var(--gray-200)' }}>·</span>
-                        <i className="bi bi-arrow-left-right" style={{ marginRight: 5 }} />{ac.range_km?.toLocaleString()} km range
+                {aircraft.map(ac => {
+                  /* FIX: use the operator's marked-up client-facing rate
+                     (display_hourly_rate, computed server-side from
+                     NJHCommissionRule) instead of the raw operator cost.
+                     hourly_rate_usd is what NJH pays the operator, not what
+                     the client should be quoted. */
+                  const clientHourlyRate = ac.display_hourly_rate ?? ac.hourly_rate_usd
+                  return (
+                  <div key={ac.id} style={{
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #e8edf4',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 2px 12px rgba(11,29,58,0.06)',
+                    transition: 'box-shadow 0.2s, transform 0.2s',
+                  }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(11,29,58,0.13)'
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = '0 2px 12px rgba(11,29,58,0.06)'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                  >
+                    {/* Image */}
+                    <div style={{ position: 'relative', height: 210, overflow: 'hidden', flexShrink: 0 }}>
+                      {ac.image_url
+                        ? <img
+                            src={ac.image_url}
+                            alt={`${ac.name} private jet`}
+                            loading="lazy"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                        : <div style={{
+                            width: '100%', height: '100%',
+                            background: 'linear-gradient(135deg, #0B1D3A 0%, #1a3460 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <i className="bi bi-airplane" style={{ fontSize: '3rem', color: 'rgba(201,168,76,0.4)' }} />
+                          </div>
+                      }
+                      {/* Category badge — refined, floating top-left */}
+                      {ac.category_display && (
+                        <div style={{
+                          position: 'absolute', top: 14, left: 14,
+                          background: 'rgba(11,29,58,0.82)',
+                          backdropFilter: 'blur(6px)',
+                          color: '#C9A84C',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(201,168,76,0.3)',
+                        }}>
+                          {ac.category_display}
+                        </div>
+                      )}
+                      {/* Hourly rate badge — floating top-right */}
+                      {clientHourlyRate != null && (
+                        <div style={{
+                          position: 'absolute', top: 14, right: 14,
+                          background: '#C9A84C',
+                          color: '#0B1D3A',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                        }}>
+                          ${parseInt(clientHourlyRate).toLocaleString()}<span style={{ fontWeight: 500, fontSize: '0.6rem' }}>/hr</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Body */}
+                    <div style={{ padding: '1.35rem 1.4rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      {/* Name */}
+                      <div style={{
+                        fontFamily: 'Georgia, serif',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        color: '#0B1D3A',
+                        marginBottom: '0.9rem',
+                        lineHeight: 1.25,
+                      }}>
+                        {ac.name}
                       </div>
-                      <div className="card-actions" style={{ marginTop: 'auto' }}>
-                        <button className="btn btn-navy btn-sm" onClick={() => open('book-flight', ac)}>
+
+                      {/* Specs grid — 2×2 */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '0.6rem',
+                        marginBottom: '1.1rem',
+                      }}>
+                        {[
+                          { icon: 'bi-people',         label: 'Passengers', value: `${ac.passenger_capacity} pax` },
+                          { icon: 'bi-arrow-left-right', label: 'Range',    value: ac.range_km ? `${Number(ac.range_km).toLocaleString()} km` : '—' },
+                          { icon: 'bi-speedometer2',   label: 'Cruise Speed', value: ac.cruise_speed_kmh ? `${Number(ac.cruise_speed_kmh).toLocaleString()} km/h` : '—' },
+                          { icon: ac.wifi_available ? 'bi-wifi' : 'bi-wifi-off', label: 'Wi-Fi', value: ac.wifi_available ? 'Available' : 'Not Available', dim: !ac.wifi_available },
+                        ].map(({ icon, label, value, dim }) => (
+                          <div key={label} style={{
+                            background: '#f7f9fc',
+                            borderRadius: '7px',
+                            padding: '0.55rem 0.7rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                          }}>
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: '0.3rem',
+                              fontSize: '0.62rem', fontWeight: 600,
+                              color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em',
+                            }}>
+                              <i className={`bi ${icon}`} style={{ color: dim ? '#cbd5e1' : '#C9A84C', fontSize: '0.7rem' }} />
+                              {label}
+                            </div>
+                            <div style={{
+                              fontSize: '0.82rem', fontWeight: 600,
+                              color: dim ? '#94a3b8' : '#1e293b',
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                            }}>
+                              {value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Divider */}
+                      <div style={{ height: 1, background: '#f0f4f8', marginBottom: '1.1rem' }} />
+
+                      {/* Actions */}
+                      <div style={{
+                        display: 'flex', gap: '0.6rem', marginTop: 'auto',
+                      }}>
+                        <button
+                          className="btn btn-navy btn-sm"
+                          onClick={() => open('book-flight', ac)}
+                          style={{ flex: 1, justifyContent: 'center' }}
+                        >
                           <i className="bi bi-airplane" /> Book
                         </button>
-                        <button className="btn btn-outline-navy btn-sm" onClick={() => open('lease-aircraft', ac)}>
+                        <button
+                          className="btn btn-outline-navy btn-sm"
+                          onClick={() => open('lease-aircraft', ac)}
+                          style={{ flex: 1, justifyContent: 'center' }}
+                        >
                           <i className="bi bi-file-earmark-text" /> Lease
                         </button>
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
+              {/* ── END AIRCRAFT CARDS ────────────────────────────────────── */}
+
             </div>
           </section>
         )}
@@ -1716,7 +1870,12 @@ export default function HomePage() {
                 </Link>
               </div>
               <div className="grid-3">
-                {yachts.map(y => (
+                {yachts.map(y => {
+                  /* FIX: prefer display_daily_rate (markup-adjusted) once it
+                     exists on OperatorYacht/its serializer — see note in
+                     models.py below. Falls back to raw daily_rate_usd today. */
+                  const clientDailyRate = y.display_daily_rate ?? y.daily_rate_usd
+                  return (
                   <div className="card" key={y.id} style={{ display: 'flex', flexDirection: 'column' }}>
                     {y.image_url
                       ? <img src={y.image_url} alt={`${y.name} luxury yacht`} className="card-img" loading="lazy" />
@@ -1728,7 +1887,7 @@ export default function HomePage() {
                         {y.length_meters}m &nbsp;·&nbsp; {y.guest_capacity} guests &nbsp;·&nbsp; {y.crew_count} crew
                       </div>
                       <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '1rem' }}>
-                        From ${parseInt(y.daily_rate_usd).toLocaleString()}
+                        From ${parseInt(clientDailyRate).toLocaleString()}
                         <span style={{ fontWeight: 400, color: 'var(--gray-400)', fontSize: '0.78rem' }}>/day</span>
                       </div>
                       <div className="card-actions" style={{ marginTop: 'auto' }}>
@@ -1741,7 +1900,8 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </section>

@@ -352,6 +352,27 @@ function ScrollToTop() {
   return null;
 }
 
+// ── Only render floating buttons on public pages ───────────────────────────
+function PublicOnlyButtons() {
+  const { pathname } = useLocation();
+
+  const isPrivateRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/staff') ||
+    pathname.startsWith('/member') ||
+    pathname.startsWith('/owner') ||
+    pathname.startsWith('/operator');
+
+  if (isPrivateRoute) return null;
+
+  return (
+    <>
+      <BackToTopButton />
+      <WhatsAppButton />
+    </>
+  );
+}
+
 // ── Guards ─────────────────────────────────────────────────────────────────
 function RequireRole({ roles, children }) {
   const { user, loading } = useAuth();
@@ -369,8 +390,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
-        <BackToTopButton />
-        <WhatsAppButton />
+        <PublicOnlyButtons />
         <Routes>
           {/* ── Public ─────────────────────────────────────────── */}
           <Route path="/"                  element={<HomePage />} />
@@ -392,11 +412,11 @@ export default function App() {
           <Route path="/air-cargo"         element={<AirCargoPage />} />
           <Route path="/lease"             element={<LeasePage />} />
           <Route path="/group-charter"     element={<GroupCharterPage />} />
-          <Route path="/privacy"          element={<PrivacyPage />} />
-          <Route path="/terms"            element={<TermsPage />} />
-          <Route path="/cookies"          element={<CookiesPage />} />
-          <Route path="/emergency"        element={<EmergencyPage />} />
-          <Route path="/corporate"        element={<CorporatePage />} />
+          <Route path="/privacy"           element={<PrivacyPage />} />
+          <Route path="/terms"             element={<TermsPage />} />
+          <Route path="/cookies"           element={<CookiesPage />} />
+          <Route path="/emergency"         element={<EmergencyPage />} />
+          <Route path="/corporate"         element={<CorporatePage />} />
 
           {/* ── Admin ──────────────────────────────────────────── */}
           <Route path="/admin" element={
