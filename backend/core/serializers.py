@@ -26,6 +26,7 @@ from .models import (
 )
 
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CORE CATALOG
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -771,11 +772,12 @@ class OperatorAircraftListSerializer(serializers.ModelSerializer):
     class Meta:
         model  = OperatorAircraft
         fields = ['id', 'reference', 'operator', 'operator_name',
-                  'name', 'model', 'category', 'category_display',
-                  'registration_number', 'passenger_capacity', 'range_km',
-                  'hourly_rate_usd', 'display_hourly_rate', 'status', 'status_display',
-                  'is_approved', 'is_featured', 'image_url',
-                  'hours_until_maintenance', 'maintenance_due', 'created_at']
+          'name', 'model', 'category', 'category_display',
+          'registration_number', 'passenger_capacity', 'range_km',
+          'cruise_speed_kmh', 'wifi_available',          # ← ADD THESE TWO
+          'hourly_rate_usd', 'display_hourly_rate', 'status', 'status_display',
+          'is_approved', 'is_featured', 'image_url',
+          'hours_until_maintenance', 'maintenance_due', 'created_at']
 
 
 class OperatorAircraftDetailSerializer(serializers.ModelSerializer):

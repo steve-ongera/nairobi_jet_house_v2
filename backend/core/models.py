@@ -118,7 +118,7 @@ class Aircraft(models.Model):
     range_km           = models.PositiveIntegerField()
     cruise_speed_kmh   = models.PositiveIntegerField()
     description        = models.TextField(blank=True)
-    amenities          = models.JSONField(default=list, blank=True)
+    amenities = models.JSONField(default=list, blank=True, null=True)
     image_url          = models.URLField(blank=True)
     hourly_rate_usd    = models.DecimalField(max_digits=10, decimal_places=2)
     is_available       = models.BooleanField(default=True)
@@ -140,7 +140,7 @@ class Yacht(models.Model):
     guest_capacity  = models.PositiveIntegerField()
     crew_count      = models.PositiveIntegerField()
     description     = models.TextField(blank=True)
-    amenities       = models.JSONField(default=list, blank=True)
+    amenities       = models.JSONField(default=list, blank=True, null=True)
     image_url       = models.URLField(blank=True)
     daily_rate_usd  = models.DecimalField(max_digits=12, decimal_places=2)
     home_port       = models.CharField(max_length=200)
@@ -308,7 +308,7 @@ class OperatorAircraft(models.Model):
 
     # Presentation
     description         = models.TextField(blank=True)
-    amenities           = models.JSONField(default=list)
+    amenities           = models.JSONField(default=list , blank=True, null=True)
     images              = models.JSONField(default=list, help_text='List of image URLs')
     image_url           = models.URLField(blank=True, help_text='Primary thumbnail')
 
@@ -404,7 +404,7 @@ class OperatorYacht(models.Model):
 
     # Presentation
     description      = models.TextField(blank=True)
-    amenities        = models.JSONField(default=list)
+    amenities        = models.JSONField(default=list , blank=True, null=True)
     images           = models.JSONField(default=list)
     image_url        = models.URLField(blank=True)
 
