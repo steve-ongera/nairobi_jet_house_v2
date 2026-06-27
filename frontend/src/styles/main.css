@@ -345,6 +345,26 @@ mark    { background: var(--color-gold-pale); color: var(--color-navy-dark); bor
   transition: all var(--transition-fast);
 }
 
+@keyframes phone-ring {
+  0%   { transform: rotate(0deg) scale(1); }
+  5%   { transform: rotate(-18deg) scale(1.1); }
+  10%  { transform: rotate(18deg) scale(1.1); }
+  15%  { transform: rotate(-14deg) scale(1.05); }
+  20%  { transform: rotate(14deg) scale(1.05); }
+  25%  { transform: rotate(-10deg) scale(1.02); }
+  30%  { transform: rotate(10deg) scale(1.02); }
+  35%  { transform: rotate(-6deg) scale(1); }
+  40%  { transform: rotate(6deg) scale(1); }
+  45%  { transform: rotate(0deg); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.phone-ringing {
+  display: inline-block;
+  animation: phone-ring 1.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
 .subnavbar-phone:hover {
   background: rgba(201,153,46,0.15);
   color: var(--color-gold-light);

@@ -40,6 +40,28 @@ const PORTAL_MAP = {
   operator: '/operator',
 }
 
+// Phone ringing animation styles injected once
+const PHONE_RING_STYLES = `
+@keyframes phone-ring {
+  0%   { transform: rotate(0deg) scale(1); }
+  5%   { transform: rotate(-18deg) scale(1.1); }
+  10%  { transform: rotate(18deg) scale(1.1); }
+  15%  { transform: rotate(-14deg) scale(1.05); }
+  20%  { transform: rotate(14deg) scale(1.05); }
+  25%  { transform: rotate(-10deg) scale(1.02); }
+  30%  { transform: rotate(10deg) scale(1.02); }
+  35%  { transform: rotate(-6deg) scale(1); }
+  40%  { transform: rotate(6deg) scale(1); }
+  45%  { transform: rotate(0deg); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.phone-ringing {
+  display: inline-block;
+  animation: phone-ring 1.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+`
+
 export default function PublicNavbar() {
   const { user, logout } = useAuth()
   const [scrolled, setScrolled] = useState(false)
@@ -48,6 +70,15 @@ export default function PublicNavbar() {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024)
   const { pathname } = useLocation()
   const servicesRef = useRef(null)
+
+  // Inject phone ring styles once
+  useEffect(() => {
+    if (document.getElementById('phone-ring-style')) return
+    const style = document.createElement('style')
+    style.id = 'phone-ring-style'
+    style.textContent = PHONE_RING_STYLES
+    document.head.appendChild(style)
+  }, [])
 
   // Close drawer on route change
   useEffect(() => setDrawerOpen(false), [pathname])
@@ -129,7 +160,7 @@ export default function PublicNavbar() {
             </Link>
           ))}
           <a href="tel:+254700000000" className="subnavbar-phone">
-            <i className="bi bi-telephone"></i>
+            <i className="bi bi-telephone phone-ringing"></i>
             <span className="subnavbar-phone-text">+254 724 878 136</span>
           </a>
         </div>
@@ -412,7 +443,7 @@ export default function PublicNavbar() {
               info@nairobijethouse.co.ke
             </a>
             <a href="tel:+254700000000" onClick={closeDrawer}>
-              <i className="bi bi-telephone-fill" aria-hidden="true"></i>
+              <i className="bi bi-telephone-fill phone-ringing" aria-hidden="true"></i>
               +254 724 878 136
             </a>
             <a href="https://linkedin.com" target="_blank" rel="noreferrer" onClick={closeDrawer}>
