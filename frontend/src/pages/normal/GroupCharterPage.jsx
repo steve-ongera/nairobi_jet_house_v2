@@ -36,19 +36,62 @@ const BUDGET_RANGES = [
   ['flexible',  'Flexible / Open'],
 ]
 
-const GUIDE_TIPS = [
-  { icon: 'bi-people',        title: 'Group Specialists',    desc: 'Dedicated coordinators for complex multi-passenger charters.' },
-  { icon: 'bi-clock-history', title: 'Quick Response',       desc: 'Receive a tailored proposal within 2–4 business hours.' },
-  { icon: 'bi-shield-check',  title: 'Safety Certified',     desc: 'All operators are KCAA-certified with rigorous safety audits.' },
-  { icon: 'bi-geo-alt',       title: 'East Africa Coverage', desc: '50+ airstrips across Kenya, Tanzania, Uganda & beyond.' },
+// ── Unique Value Props for Group Charter ──
+const GROUP_VALUE_PROPS = [
+  { icon: 'bi-people-fill',     title: 'Seamless Group Coordination', desc: 'One point of contact manages all passenger manifests, baggage, and special requirements for your entire group.' },
+  { icon: 'bi-clock-history',   title: 'Flexible Scheduling',         desc: 'Depart when your group is ready — no waiting for commercial flight schedules or connections.' },
+  { icon: 'bi-shield-check',    title: 'Safety Certified Operators',  desc: 'All partner operators meet KCAA and international safety standards with rigorous audits.' },
+  { icon: 'bi-geo-alt',         title: '50+ East Africa Airstrips',   desc: 'Access remote destinations that commercial airlines can\'t reach, from safari camps to private islands.' },
+  { icon: 'bi-cup-hot',         title: 'Customised In-Flight Service',desc: 'Tailored catering, entertainment, and seating arrangements for your group\'s specific needs.' },
+  { icon: 'bi-headset',         title: '24/7 Group Support',          desc: 'Dedicated group charter specialists available around the clock, every day of the year.' },
 ]
 
-const GROUP_TYPE_INFO = [
-  { type: 'Corporate',   icon: 'bi-briefcase', desc: 'Conferences, roadshows & executive travel' },
-  { type: 'Wedding',     icon: 'bi-heart',     desc: 'Bridal parties, guests & honeymoon transfers' },
-  { type: 'Sports Team', icon: 'bi-trophy',    desc: 'Team travel with equipment & full logistics' },
-  { type: 'Government',  icon: 'bi-bank2',     desc: 'Diplomatic & official delegation travel' },
+// ── Group Charter Use Cases (images only - no icons) ──
+const GROUP_USE_CASES = [
+  { label: 'Corporate Events', img: 'https://plus.unsplash.com/premium_photo-1723867267202-169dfe3b197a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Q29ycG9yYXRlJTIwRXZlbnRzfGVufDB8fDB8fHww' },
+  { label: 'Weddings', img: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fFdlZGRpbmdzfGVufDB8fDB8fHww' },
+  { label: 'Sports Teams', img: 'https://plus.unsplash.com/premium_photo-1709059480254-e4a955dafadf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8U3BvcnRzJTIwVGVhbXN8ZW58MHx8MHx8fDA%3D' },
+  { label: 'Music Tours', img: 'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fE11c2ljJTIwVG91cnN8ZW58MHx8MHx8fDA%3D' },
+  { label: 'Government', img: 'https://images.unsplash.com/photo-1586441133374-ed1cb4007a47?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fEdvdmVybm1lbnQlMjBUcmF2ZWx8ZW58MHx8MHx8fDA%3D' },
+  { label: 'Incentive Travel', img: 'https://plus.unsplash.com/premium_photo-1663054911397-c7fe60ec3849?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8SW5jZW50aXZlJTIwVHJhdmVsfGVufDB8fDB8fHww' },
+  { label: 'Film Production', img: 'https://plus.unsplash.com/premium_photo-1710961232986-36cead00da3c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8RmlsbSUyMFByb2R1Y3Rpb258ZW58MHx8MHx8fDA%3D' },
+  { label: 'Request a Quote', img: null, isCta: true },
 ]
+
+// ── Group Charter Stats ──
+const GROUP_STATS = [
+  { value: '500+',  label: 'Group charters completed' },
+  { value: '98%',   label: 'Client satisfaction rate' },
+  { value: '15+',   label: 'Years of group expertise' },
+  { value: '24/7',  label: 'Dedicated support' },
+]
+
+// ── Popular Group Destinations ──
+const GROUP_DESTINATIONS = [
+  { city: 'Maasai Mara',     country: 'Kenya',  img: 'https://images.unsplash.com/photo-1519659528534-7fd733a832a0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8TWFhc2FpJTIwTWFyYXxlbnwwfHwwfHx8MA%3D%3D' },
+  { city: 'Zanzibar',        country: 'Tanzania', img: 'https://images.unsplash.com/photo-1646668072507-b2215b873c70?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8WmFuemliYXJ8ZW58MHx8MHx8fDA%3D' },
+  { city: 'Victoria Falls',  country: 'Zimbabwe', img: 'https://plus.unsplash.com/premium_photo-1697729979889-31ec7ecf6f06?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8VmljdG9yaWElMjBGYWxsc3xlbnwwfHwwfHx8MA%3D%3D' },
+  { city: 'Kigali',          country: 'Rwanda',  img: 'https://images.unsplash.com/photo-1598605272254-16f0c0ecdfa5?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8S2lnYWxpfGVufDB8fDB8fHww' },
+  { city: 'Cape Town',       country: 'South Africa', img: 'https://plus.unsplash.com/premium_photo-1697730061063-ad499e343f26?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Q2FwZSUyMFRvd258ZW58MHx8MHx8fDA%3D' },
+]
+
+const GROUP_FAQS = [
+  { q: 'How far in advance should I book a group charter?',
+    a: 'We recommend at least 2-4 weeks for groups of 10+, but we can accommodate last-minute requests with as little as 24-48 hours notice depending on aircraft availability.' },
+  { q: 'Can you accommodate oversized baggage or equipment?',
+    a: 'Absolutely. We specialise in moving everything from sports equipment and musical instruments to film gear and medical supplies. Please detail your cargo requirements in your inquiry.' },
+  { q: 'What\'s the maximum group size you can handle?',
+    a: 'We can accommodate groups from 2 to 500+ passengers, from light jets for small executive teams to VIP airliners for large delegations and events.' },
+  { q: 'Do you offer group discounts?',
+    a: 'Yes, we offer competitive pricing for group charters. The more passengers, the more cost-effective per seat — often comparable to commercial first class tickets.' },
+]
+
+const STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Group Charter | NairobiJetHouse',
+  description: 'Charter a private jet for your group — corporate events, weddings, sports teams and more. Request a tailored quote within 2–4 hours.',
+}
 
 const INITIAL = {
   contact_name:                '',
@@ -78,32 +121,37 @@ export default function GroupCharterPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
   const [error, setError]     = useState('')
+  const [openFaq, setOpenFaq] = useState(null)
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+
+  const scrollToForm = () => {
+    const el = document.getElementById('group-charter-form-top')
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  }
 
   const handleSubmit = async e => {
     e.preventDefault()
     setLoading(true)
     setError('')
     try {
-      // Field names match GroupCharterInquiry model exactly
       const payload = {
         contact_name:             form.contact_name,
-        email:                    form.contact_email,           // model field: email
+        email:                    form.contact_email,
         phone:                    form.contact_phone || '',
         company:                  form.company       || '',
         group_type:               form.group_type,
         group_size:               Number(form.group_size),
-        origin_description:       form.origin_description,     // model field
-        destination_description:  form.destination_description, // model field
+        origin_description:       form.origin_description,
+        destination_description:  form.destination_description,
         departure_date:           form.departure_date,
         is_round_trip:            form.is_round_trip,
         catering_required:        form.catering_required,
-        ground_transport_required: form.ground_transport_required, // model field
-        additional_notes:         form.additional_notes || '',  // model field
+        ground_transport_required: form.ground_transport_required,
+        additional_notes:         form.additional_notes || '',
       }
       if (form.preferred_aircraft_category)
-        payload.preferred_aircraft_category = form.preferred_aircraft_category  // model field
+        payload.preferred_aircraft_category = form.preferred_aircraft_category
       if (form.budget_range)
         payload.budget_range = form.budget_range
       if (form.is_round_trip && form.return_date)
@@ -182,33 +230,27 @@ export default function GroupCharterPage() {
         <meta name="description" content="Charter a private jet for your group — corporate events, weddings, sports teams and more. Request a tailored quote within 2–4 hours." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.nairobijethouse.com/group-charter" />
+        <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
       </Helmet>
 
       <PublicNavbar />
 
       {/* ── Page Header ── */}
-      <div className="page-header" style={{
-        backgroundImage: 'linear-gradient(140deg, var(--color-navy-dark) 0%, var(--color-navy) 55%, var(--color-navy-light) 100%)',
-      }}>
-        <div className="container page-header__inner">
-          <span className="section-label">
-            <i className="bi bi-people-fill" /> Group Charter Services
+      <section className="group-hero" id="group-charter-form-top">
+        <div className="container">
+          <span className="section-label" style={{ color: 'var(--color-gold)' }}>
+             Group Charter Services
           </span>
-          <h1>Fly Your Group in <em style={{ color: 'var(--color-gold-light)' }}>Luxury</em></h1>
-          <p>
+          <h1 className="group-hero__title">Fly Your Group in <span style={{ color: 'var(--color-gold)' }}>Luxury</span></h1>
+          <p className="group-hero__subtitle">
             Tailored private aviation for corporate events, weddings, sports teams and more.
             Complete the form below and receive a personalised proposal within 2–4 hours.
           </p>
-        </div>
-      </div>
 
-      {/* ── Form + Sidebar ── */}
-      <section className="section-padding" style={{ background: 'var(--color-off-white)' }}>
-        <div className="container">
-          <div className="booking-layout">
+          <div className="group-hero__layout">
 
-            {/* ── Left: Multi-step Form ── */}
-            <div className="booking-form-col">
+            {/* ── Form column ── */}
+            <div className="group-hero__form-col">
 
               {/* Step Indicator */}
               <div className="gc-stepper">
@@ -633,69 +675,203 @@ export default function GroupCharterPage() {
               </form>
             </div>
 
-            {/* ── Right: Sidebar ── */}
-            <div className="booking-sidebar">
-
-              <div className="booking-sidebar-card">
-                <div className="booking-sidebar-card__header">
-                  <i className="bi bi-lightbulb" /> Why Choose Group Charter
+            {/* ── Side panel: Consultant card ── */}
+            <div className="group-hero__side">
+              <div className="consultant-card">
+                <div className="consultant-card__image">
+                  <img
+                    src="https://plus.unsplash.com/premium_photo-1661508803572-8411b83606a3?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDh8fHxlbnwwfHx8fHw%3D"
+                    alt="Group charter specialist"
+                  />
+                  <div className="consultant-card__overlay" />
                 </div>
-                <div className="booking-sidebar-card__body">
-                  {GUIDE_TIPS.map(({ icon, title, desc }) => (
-                    <div key={title} className="booking-tip-item">
-                      <i className={`bi ${icon}`} />
-                      <div>
-                        <strong>{title}</strong>
-                        <p>{desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="booking-sidebar-card">
-                <div className="booking-sidebar-card__header">
-                  <i className="bi bi-people" /> Charter Types
-                </div>
-                <div className="booking-sidebar-card__body">
-                  {GROUP_TYPE_INFO.map((g, i) => (
-                    <div key={i} className="aircraft-sidebar-item">
-                      <div className="aircraft-sidebar-info">
-                        <strong style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <i className={`bi ${g.icon}`} style={{ color: 'var(--color-gold)', fontSize: '0.9rem' }} />
-                          {g.type}
-                        </strong>
-                        <p>{g.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="booking-sidebar-card">
-                <div className="booking-sidebar-card__header">
-                  <i className="bi bi-headset" /> Need Help?
-                </div>
-                <div className="booking-sidebar-card__body">
-                  <p>Our concierge team is available 24/7 to assist with your group charter.</p>
-                  <a
-                    href="tel:+254724878136"
-                    className="btn-outline-gov btn-sm"
-                    style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
-                  >
-                    <i className="bi bi-telephone" /> +254 724 878 136
+                <div className="consultant-card__body">
+                  <h3>Speak to Our Group Charter Specialist</h3>
+                  <p>Our dedicated group coordinators are ready to discuss your requirements and deliver a tailored proposal.</p>
+                  <a href="tel:+254724878136" className="btn-primary-gov" style={{ width: '100%', justifyContent: 'center' }}>
+                    <i className="bi bi-telephone"></i> Call Now
                   </a>
-                  <a
-                    href="mailto:info@nairobijethouse.com"
-                    className="btn-outline-gov btn-sm"
-                    style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
-                  >
-                    <i className="bi bi-envelope" /> info@nairobijethouse.com
+                  <a href="mailto:nairobijethouse@gmail.com" className="btn-outline-gov" style={{ width: '100%', color: 'white', justifyContent: 'center', marginTop: '0.6rem' }}>
+                    <i className="bi bi-envelope"></i> nairobijethouse@gmail.com
                   </a>
                 </div>
               </div>
 
+              {/* Quick Stats */}
+              <div className="consultant-card" style={{ background: 'var(--color-navy-dark, #06142e)' }}>
+                <div className="consultant-card__body" style={{ marginTop: 0 }}>
+                  <h3 style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>Why Groups Choose Us</h3>
+                  {GROUP_STATS.map((s, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>{s.label}</span>
+                      <span style={{ color: 'var(--color-gold)', fontWeight: 700, fontSize: '0.95rem' }}>{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ============ WHY CHOOSE GROUP CHARTER ============ */}
+      <section className="section-padding why-us" style={{ background: 'var(--color-white)' }}>
+        <div className="container">
+          <h2 className="section-title text-center">Why Choose NairobiJetHouse for Group Charters?</h2>
+          <div className="why-us__grid">
+            <div className="why-us__image">
+              <img
+                src="https://images.unsplash.com/photo-1628354215124-dd0ab72828ac?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDJ8fGFpcmNyYWZ0fGVufDB8fDB8fHww"
+                alt="Group charter team meeting"
+              />
+            </div>
+            <div className="why-us__props">
+              {GROUP_VALUE_PROPS.map((vp, i) => (
+                <div key={i} className="why-us__prop">
+                  <div className="why-us__prop-icon"><i className={`bi ${vp.icon}`}></i></div>
+                  <div>
+                    <strong>{vp.title}</strong>
+                    <p>{vp.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ GROUP USE CASES GRID ============ */}
+      <section className="service-categories">
+        <div className="service-categories__grid">
+          {GROUP_USE_CASES.map((cat, i) => (
+            cat.isCta ? (
+              <button
+                key={i}
+                onClick={scrollToForm}
+                className="svc-cat-tile svc-cat-tile--cta"
+              >
+                <span className="svc-cat-tile__cta-label">{cat.label}</span>
+                <span className="svc-cat-tile__cta-arrow">→</span>
+              </button>
+            ) : (
+              <div key={i} className="svc-cat-tile">
+                <img src={cat.img} alt={cat.label} className="svc-cat-tile__bg" />
+                <div className="svc-cat-tile__overlay" />
+                <div className="svc-cat-tile__content">
+                  <span className="svc-cat-tile__label">{cat.label}</span>
+                  <span className="svc-cat-tile__arrow">→</span>
+                </div>
+              </div>
+            )
+          ))}
+        </div>
+      </section>
+
+      {/* ============ CABIN GALLERY BANNER ============ */}
+      <section className="cabin-gallery">
+        <img
+          src="https://chapmanfreeborn.aero/wp-content/uploads/2023/05/home-page-section-7.webp"
+          alt="Luxury private jet cabin interior for groups"
+        />
+      </section>
+
+      {/* ============ ABOUT + STATS SPLIT ============ */}
+      <section className="section-padding about-stats" style={{ background: 'var(--color-off-white)' }}>
+        <div className="container about-stats__grid">
+          <div className="about-stats__image" style={{ backgroundImage: 'url(https://plus.unsplash.com/premium_photo-1679758629409-83446005843c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDV8fGFpcmNyYWZ0fGVufDB8fDB8fHww)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div className="about-stats__stats-overlay" style={{ background: 'rgba(11,29,58,0.75)' }}>
+              {GROUP_STATS.map((s, i) => (
+                <div key={i} className="about-stat">
+                  <div className="about-stat__value">{s.value}</div>
+                  <div className="about-stat__label">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="about-stats__text">
+            <span className="section-label">Group Charter Experts</span>
+            <h2 className="section-title">The Ultimate Group Travel Experience</h2>
+            <p>From corporate retreats to destination weddings, we've coordinated group charters for some of the most demanding clients in East Africa and beyond. Our team understands the nuances of group travel — from managing multiple passengers to coordinating ground logistics.</p>
+            <p>We work with a carefully vetted network of operators to ensure your group travels together, arrives together, and experiences the luxury of private aviation from start to finish.</p>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1.5rem' }}>
+              <button onClick={scrollToForm} className="btn-primary-gov">
+                <i className="bi bi-send"></i> Request a Quote
+              </button>
+              <Link to="/contact" className="btn-outline-gov">
+                <i className="bi bi-chat"></i> Talk to a Specialist
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ POPULAR GROUP DESTINATIONS ============ */}
+      <section className="section-padding destinations-section">
+        <div className="container">
+          <h2 className="section-title text-center">Popular Group Charter Destinations</h2>
+          <div className="destinations-grid">
+            {GROUP_DESTINATIONS.map((d, i) => (
+              <Link to="/group-charter" key={i} className="destination-card" onClick={scrollToForm}>
+                <img src={d.img} alt={`${d.city}, ${d.country}`} />
+                <div className="destination-card__overlay" />
+                <div className="destination-card__content">
+                  <span className="destination-card__country">{d.country}</span>
+                  <strong>{d.city}</strong>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ REQUEST A QUOTE BANNER ============ */}
+      <section className="quote-banner">
+        <div className="container quote-banner__inner">
+          <div>
+            <h2>Ready to Book Your Group Charter?</h2>
+            <p>Let our specialists handle every detail of your group's private aviation experience — from aircraft selection to ground logistics.</p>
+          </div>
+          <button onClick={scrollToForm} className="btn-primary-gov btn-lg">
+            <i className="bi bi-send"></i> Get a Quote
+          </button>
+        </div>
+      </section>
+
+      {/* ============ FAQs ============ */}
+      <section className="section-padding faq-section">
+        <div className="container faq-section__grid">
+          <div className="faq-section__left">
+            <span className="section-label">Common Questions</span>
+            <h2 className="section-title">Group Charter FAQs</h2>
+            <p style={{ color: 'var(--color-mid-gray)', marginTop: '0.75rem' }}>
+              Find answers to the most common questions about group charter services. If you have additional questions, our specialists are ready to help.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1.5rem' }}>
+              <button onClick={scrollToForm} className="btn-primary-gov">
+                <i className="bi bi-send"></i> Get a Quote
+              </button>
+              <Link to="/contact" className="btn-outline-gov">
+                <i className="bi bi-chat"></i> Contact Us
+              </Link>
+            </div>
+          </div>
+          <div className="faq-section__right">
+            {GROUP_FAQS.map((faq, i) => (
+              <div key={i} className={`faq-item${openFaq === i ? ' open' : ''}`}>
+                <button
+                  className="faq-item__q"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span>{faq.q}</span>
+                  <i className={`bi bi-${openFaq === i ? 'dash' : 'plus'}`}></i>
+                </button>
+                {openFaq === i && (
+                  <div className="faq-item__a">{faq.a}</div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -745,14 +921,77 @@ function SuccessStyles() {
 function PageStyles() {
   return (
     <style>{`
-      /* ── Layout ── */
-      .booking-layout {
-        display: grid; grid-template-columns: 1fr 320px;
-        gap: 2rem; align-items: start;
+      /* ── Hero Section ── */
+      .group-hero {
+        padding: 3rem 0 2.5rem;
+        background: var(--color-off-white);
       }
-      .booking-form-col { min-width: 0; }
-      .booking-sidebar  { position: sticky; top: 100px; }
+      .group-hero__title {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        color: var(--color-navy);
+        margin: 0.4rem 0 0.75rem;
+        font-family: var(--font-serif, Georgia, serif);
+      }
+      .group-hero__subtitle {
+        font-size: 1.05rem;
+        color: var(--color-mid-gray);
+        max-width: 600px;
+        line-height: 1.6;
+        margin-bottom: 1.75rem;
+      }
+      .group-hero__layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 2rem;
+        align-items: start;
+      }
+      .group-hero__form-col { min-width: 0; }
+      .group-hero__side { 
+        position: sticky; 
+        top: 100px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 1.5rem; 
+      }
 
+      /* ── Consultant Card ── */
+      .consultant-card {
+        background: var(--color-navy);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      }
+      .consultant-card__image {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+      }
+      .consultant-card__image img {
+        width: 100%; height: 100%; object-fit: cover;
+      }
+      .consultant-card__overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom, rgba(10,20,40,0.1) 0%, var(--color-navy) 100%);
+      }
+      .consultant-card__body {
+        padding: 1.5rem;
+        margin-top: -1.5rem;
+        position: relative;
+      }
+      .consultant-card__body h3 {
+        color: var(--color-white);
+        font-size: 1.05rem;
+        margin-bottom: 0.5rem;
+        font-family: var(--font-serif, Georgia, serif);
+      }
+      .consultant-card__body p {
+        color: rgba(255,255,255,0.75);
+        font-size: 0.85rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+      }
+
+      /* ── Booking Card ── */
       .booking-card {
         background: var(--color-white);
         border: 1px solid var(--color-light-gray);
@@ -768,43 +1007,131 @@ function PageStyles() {
       .booking-card__header i { color: var(--color-gold); font-size: 1rem; }
       .booking-card__body { padding: 1.5rem; }
 
-      .booking-sidebar-card {
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem 1.5rem;
+      }
+      .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+      .form-label-gov {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--color-dark-gray);
+        letter-spacing: 0.3px;
+      }
+      .form-label-gov .required { color: #e53e3e; margin-left: 2px; }
+      .form-input-gov {
+        padding: 0.6rem 0.85rem;
+        border: 1.5px solid var(--color-light-gray);
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
         background: var(--color-white);
-        border: 1px solid var(--color-light-gray);
-        border-radius: var(--radius-md); overflow: hidden;
-        margin-bottom: 1.5rem;
+        color: var(--color-navy);
+        width: 100%;
+        font-family: inherit;
       }
-      .booking-sidebar-card__header {
-        background: var(--color-navy); color: var(--color-white);
-        padding: 0.85rem 1.25rem;
-        font-family: var(--font-label); font-size: 0.8rem;
-        font-weight: 700; letter-spacing: 0.5px;
-        display: flex; align-items: center; gap: 0.5rem;
+      .form-input-gov:focus {
+        outline: none;
+        border-color: var(--color-navy);
+        box-shadow: 0 0 0 3px rgba(11,29,58,0.08);
       }
-      .booking-sidebar-card__header i { color: var(--color-gold); font-size: 0.9rem; }
-      .booking-sidebar-card__body { padding: 1.25rem; }
-
-      .booking-tip-item {
-        display: flex; gap: 0.75rem;
-        margin-bottom: 1rem; padding-bottom: 1rem;
-        border-bottom: 1px solid var(--color-light-gray);
+      .form-hint {
+        font-size: 0.7rem;
+        color: var(--color-mid-gray);
+        margin-top: 0.15rem;
       }
-      .booking-tip-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-      .booking-tip-item i { font-size: 1.2rem; color: var(--color-gold); flex-shrink: 0; }
-      .booking-tip-item strong { display: block; font-size: 0.85rem; color: var(--color-navy); margin-bottom: 0.2rem; }
-      .booking-tip-item p { font-size: 0.75rem; color: var(--color-mid-gray); margin: 0; line-height: 1.4; }
-
-      .aircraft-sidebar-item {
-        margin-bottom: 1rem; padding-bottom: 1rem;
-        border-bottom: 1px solid var(--color-light-gray);
-      }
-      .aircraft-sidebar-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-      .aircraft-sidebar-info strong { display: block; font-size: 0.85rem; color: var(--color-navy); margin-bottom: 0.25rem; }
-      .aircraft-sidebar-info p { font-size: 0.72rem; color: var(--color-mid-gray); margin: 0; line-height: 1.4; }
-
       .checkbox-group { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-      .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem; color: var(--color-dark-gray); }
-      .checkbox-label input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--color-navy); cursor: pointer; }
+      .checkbox-label { 
+        display: flex; 
+        align-items: center; 
+        gap: 0.5rem; 
+        cursor: pointer; 
+        font-size: 0.875rem; 
+        color: var(--color-dark-gray); 
+      }
+      .checkbox-label input[type="checkbox"] { 
+        width: 17px; 
+        height: 17px; 
+        accent-color: var(--color-navy); 
+        cursor: pointer; 
+      }
+
+      /* ── Buttons ── */
+      .btn-primary-gov {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        background: var(--color-navy);
+        color: var(--color-white);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: var(--font-label, sans-serif);
+        text-decoration: none;
+        line-height: 1.4;
+      }
+      .btn-primary-gov:hover:not(:disabled) {
+        background: var(--color-navy-light);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(11,29,58,0.2);
+      }
+      .btn-primary-gov:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-primary-gov.btn-lg { padding: 0.8rem 2rem; font-size: 0.95rem; }
+      .btn-outline-gov {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        background: transparent;
+        color: var(--color-navy);
+        border: 1.5px solid var(--color-navy);
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: var(--font-label, sans-serif);
+        text-decoration: none;
+        line-height: 1.4;
+      }
+      .btn-outline-gov:hover {
+        background: var(--color-navy);
+        color: var(--color-white);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(11,29,58,0.15);
+      }
+      .btn-outline-gov.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+
+      .spinner-gov {
+        width: 18px; height: 18px;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: inline-block;
+      }
+      .spinner-gov.spinner-sm { width: 16px; height: 16px; border-width: 2px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .alert-error {
+        background: #FFF5F5;
+        border: 1px solid #FEB2B2;
+        border-radius: var(--radius-sm);
+        padding: 0.75rem 1rem;
+        color: #C53030;
+        font-size: 0.875rem;
+      }
+
+      .text-center { text-align: center; }
 
       /* ── Step Indicator ── */
       .gc-stepper {
@@ -866,7 +1193,6 @@ function PageStyles() {
       .gc-review-key { color: var(--color-mid-gray); flex-shrink: 0; margin-right: 1rem; }
       .gc-review-val { font-weight: 500; text-align: right; word-break: break-word; color: var(--color-navy); }
 
-      /* Edit button inside card header */
       .gc-edit-btn {
         margin-left: auto; background: rgba(255,255,255,0.12);
         border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
@@ -878,16 +1204,303 @@ function PageStyles() {
       .gc-edit-btn:hover { background: rgba(255,255,255,0.22); }
       .gc-edit-btn i { font-size: 0.65rem; }
 
+      /* ── Why Us ── */
+      .why-us__grid {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 3rem;
+        align-items: center;
+        margin-top: 2.5rem;
+      }
+      .why-us__image img {
+        width: 100%; height: 460px;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+      }
+      .why-us__props {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      .why-us__prop { display: flex; gap: 0.85rem; }
+      .why-us__prop-icon {
+        width: 42px; height: 42px; flex-shrink: 0;
+        border-radius: 50%;
+        background: var(--color-off-white);
+        border: 1px solid var(--color-light-gray);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--color-gold);
+        font-size: 1.1rem;
+      }
+      .why-us__prop strong { display: block; color: var(--color-navy); font-size: 0.95rem; margin-bottom: 0.25rem; }
+      .why-us__prop p { font-size: 0.82rem; color: var(--color-mid-gray); line-height: 1.6; margin: 0; }
+
+      /* ── Service Categories / Use Cases Grid ── */
+      .service-categories__grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .svc-cat-tile {
+        position: relative;
+        height: 220px;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-end;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+      .svc-cat-tile:hover {
+        transform: scale(1.02);
+        z-index: 2;
+      }
+      .svc-cat-tile__bg {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+      }
+      .svc-cat-tile:hover .svc-cat-tile__bg { transform: scale(1.08); }
+      .svc-cat-tile__overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(10,20,40,0.85) 0%, rgba(10,20,40,0.2) 60%);
+        z-index: 1;
+      }
+      .svc-cat-tile__content {
+        position: relative; z-index: 2;
+        padding: 1.25rem 1.5rem;
+        color: var(--color-white);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-family: var(--font-label, sans-serif);
+      }
+      .svc-cat-tile__label {
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      .svc-cat-tile__arrow {
+        color: var(--color-gold);
+        font-size: 1.4rem;
+        transition: transform 0.3s ease;
+        display: inline-block;
+        font-weight: 300;
+      }
+      .svc-cat-tile:hover .svc-cat-tile__arrow {
+        transform: translateX(6px);
+      }
+
+      /* CTA Tile (Request a Quote) */
+      .svc-cat-tile--cta {
+        background: var(--color-gold);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: var(--color-navy);
+        font-family: var(--font-label, sans-serif);
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        height: 220px;
+        position: relative;
+      }
+      .svc-cat-tile--cta:hover {
+        background: #e8c55a;
+        transform: scale(1.02);
+        z-index: 2;
+      }
+      .svc-cat-tile__cta-label {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--color-navy);
+      }
+      .svc-cat-tile__cta-arrow {
+        font-size: 1.8rem;
+        font-weight: 300;
+        color: var(--color-navy);
+        transition: transform 0.3s ease;
+        display: inline-block;
+      }
+      .svc-cat-tile--cta:hover .svc-cat-tile__cta-arrow {
+        transform: translateX(6px);
+      }
+
+      /* ── Cabin Gallery ── */
+      .cabin-gallery { width: 100%; line-height: 0; }
+      .cabin-gallery img {
+        width: 100%; height: 420px;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* ── About Stats ── */
+      .about-stats__grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+      }
+      .about-stats__image {
+        border-radius: var(--radius-md);
+        min-height: 420px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        background-size: cover;
+        background-position: center;
+      }
+      .about-stats__stats-overlay {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        border-radius: var(--radius-md);
+      }
+      .about-stat { text-align: center; }
+      .about-stat__value {
+        font-size: 2.4rem; font-weight: 700;
+        color: var(--color-gold);
+        font-family: var(--font-label, sans-serif);
+        line-height: 1;
+      }
+      .about-stat__label {
+        font-size: 0.75rem; color: rgba(255,255,255,0.75);
+        text-transform: uppercase; letter-spacing: 1px;
+        margin-top: 0.5rem;
+      }
+      .about-stats__text p { color: var(--color-mid-gray); line-height: 1.75; margin-bottom: 0.75rem; }
+
+      /* ── Destinations ── */
+      .destinations-section { background: var(--color-off-white); }
+      .destinations-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.25rem;
+        margin-top: 2rem;
+      }
+      .destination-card {
+        position: relative;
+        height: 260px;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        display: block;
+        text-decoration: none;
+      }
+      .destination-card img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 0.4s ease;
+      }
+      .destination-card:hover img { transform: scale(1.07); }
+      .destination-card__overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(10,20,40,0.85) 0%, rgba(10,20,40,0.1) 60%);
+      }
+      .destination-card__content {
+        position: absolute; bottom: 1rem; left: 1rem; right: 1rem;
+        color: var(--color-white);
+      }
+      .destination-card__country {
+        display: block;
+        font-size: 0.65rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--color-gold);
+        margin-bottom: 0.2rem;
+      }
+      .destination-card__content strong { font-size: 1.1rem; }
+
+      /* ── Quote Banner ── */
+      .quote-banner {
+        background: var(--color-navy-dark, var(--color-navy));
+        padding: 3.5rem 0;
+      }
+      .quote-banner__inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+      .quote-banner h2 { color: var(--color-white); margin-bottom: 0.5rem; font-family: var(--font-serif, Georgia, serif); }
+      .quote-banner p { color: rgba(255,255,255,0.75); max-width: 520px; margin: 0; line-height: 1.6; }
+
+      /* ── FAQs ── */
+      .faq-section__grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 4rem;
+        align-items: flex-start;
+      }
+      .faq-item { border-bottom: 1px solid var(--color-light-gray); }
+      .faq-item__q {
+        width: 100%;
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 1rem;
+        padding: 1.1rem 0;
+        background: none; border: none; cursor: pointer;
+        text-align: left;
+        font-size: 0.95rem; font-weight: 600;
+        color: var(--color-navy);
+        font-family: var(--font-label, sans-serif);
+      }
+      .faq-item__q i { flex-shrink: 0; color: var(--color-gold); font-size: 1.1rem; }
+      .faq-item__a { padding: 0 0 1.1rem; font-size: 0.9rem; color: var(--color-mid-gray); line-height: 1.75; }
+
       /* ── Responsive ── */
       @media (max-width: 1024px) {
-        .booking-layout { grid-template-columns: 1fr; }
-        .booking-sidebar { position: static; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .booking-sidebar-card { margin-bottom: 0; }
+        .group-hero__layout { grid-template-columns: 1fr; }
+        .group-hero__side {
+          position: static;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.25rem;
+        }
+        .consultant-card { grid-column: 1 / -1; }
+        .why-us__grid { grid-template-columns: 1fr; }
+        .why-us__image img { height: 320px; }
+        .about-stats__grid { grid-template-columns: 1fr; gap: 2rem; }
+        .about-stats__image { order: -1; min-height: 320px; }
+        .service-categories__grid { grid-template-columns: repeat(2, 1fr); }
+        .destinations-grid { grid-template-columns: repeat(3, 1fr); }
+        .faq-section__grid { grid-template-columns: 1fr; gap: 2rem; }
       }
+
       @media (max-width: 768px) {
+        .group-hero__side { grid-template-columns: 1fr; }
+        .form-row { grid-template-columns: 1fr; }
+        .why-us__props { grid-template-columns: 1fr; }
+        .service-categories__grid { grid-template-columns: 1fr; }
+        .destinations-grid { grid-template-columns: repeat(2, 1fr); }
+        .about-stats__stats-overlay { gap: 1.25rem; padding: 1.5rem; }
+        .about-stat__value { font-size: 1.8rem; }
+        .cabin-gallery img { height: 280px; }
+        .quote-banner__inner { flex-direction: column; text-align: center; }
+        .gc-stepper { flex-wrap: wrap; gap: 0.5rem; }
+        .gc-step { flex: 0 0 auto; }
+        .gc-step-line { display: none; }
+        .svc-cat-tile { height: 180px; }
+        .svc-cat-tile--cta { height: 180px; }
+      }
+
+      @media (max-width: 480px) {
+        .destinations-grid { grid-template-columns: 1fr; }
         .booking-card__body { padding: 1rem; }
-        .booking-sidebar { grid-template-columns: 1fr; }
         .checkbox-group { flex-direction: column; gap: 0.75rem; }
+        .gc-review-row { flex-direction: column; gap: 0.15rem; }
+        .gc-review-val { text-align: left; }
+        .svc-cat-tile { height: 160px; }
+        .svc-cat-tile--cta { height: 160px; }
+        .svc-cat-tile__label { font-size: 0.85rem; }
+        .svc-cat-tile__cta-label { font-size: 1rem; }
       }
     `}</style>
   )
