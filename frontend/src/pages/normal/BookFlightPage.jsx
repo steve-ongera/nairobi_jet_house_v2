@@ -766,13 +766,46 @@ function FleetAircraftCard({ ac, onBook }) {
 
         <div className="fleet-aircraft-card__divider"></div>
 
-        <button
-          className="btn-primary-gov"
-          style={{ width: '100%', justifyContent: 'center' }}
-          onClick={() => onBook(ac)}
-        >
-          <i className="bi bi-airplane"></i> Book This Aircraft
-        </button>
+        {/* Button Row - Book This Aircraft & View Details */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.75rem',
+          width: '100%'
+        }}>
+          <button
+            className="btn-primary-gov"
+            style={{ 
+              flex: '1 1 0',
+              minWidth: 0,
+              padding: '0.6rem 0.5rem',
+              justifyContent: 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.75rem'
+            }}
+            onClick={() => onBook(ac)}
+          >
+            <i className="bi bi-airplane"></i> Book This Aircraft
+          </button>
+          <Link
+            to={`/fleet/${ac.id}`}
+            className="btn-outline-gov"
+            style={{ 
+              flex: '1 1 0',
+              minWidth: 0,
+              padding: '0.6rem 0.5rem',
+              justifyContent: 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.75rem',
+              textDecoration: 'none'
+            }}
+          >
+            <i className="bi bi-eye"></i> View Details
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -2135,6 +2168,17 @@ function PageStyles() {
         height: 1px;
         background: var(--color-off-white);
         margin-bottom: 1.1rem;
+      }
+
+      /* Responsive button row */
+      @media (max-width: 480px) {
+        .fleet-aircraft-card__body > div:last-child {
+          flex-direction: column;
+        }
+        .fleet-aircraft-card__body > div:last-child button,
+        .fleet-aircraft-card__body > div:last-child a {
+          width: 100%;
+        }
       }
 
 
