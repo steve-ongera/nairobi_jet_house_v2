@@ -1029,7 +1029,7 @@ export default function BookFlightPage() {
       <section className="booking-hero" id="booking-form-top">
         <div className="container">
           <span className="section-label" style={{ color: 'var(--color-gold)' }}>
-            <i className="bi bi-airplane"></i> Charter a Private Jet
+            Charter a Private Jet
           </span>
           <h1 className="booking-hero__title">An Enquiry to a Full Charter</h1>
 
