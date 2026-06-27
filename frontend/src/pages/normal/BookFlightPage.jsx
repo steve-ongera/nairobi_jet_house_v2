@@ -75,19 +75,6 @@ const COMPANY_STATS = [
   { value: '24/7', label: 'Support' },
 ];
 
-// Fleet carousel (hardcoded, matches CATEGORY_NAMES vocabulary)
-const FLEET_AIRCRAFT = [
-  { name: 'Citation CJ3+',        category: 'light',          seats: 8,  img: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Learjet 75',           category: 'light',          seats: 8,  img: 'https://images.unsplash.com/photo-1556388158-f8b8d2e9f1f9?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Citation XLS+',        category: 'midsize',        seats: 9,  img: 'https://images.unsplash.com/photo-1474302770737-173ee21bab63?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Hawker 900XP',         category: 'super_midsize',  seats: 8,  img: 'https://images.unsplash.com/photo-1559070169-a3077159ee16?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Challenger 650',       category: 'heavy',          seats: 12, img: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Gulfstream G650',      category: 'ultra_long',      seats: 14, img: 'https://images.unsplash.com/photo-1569629743817-70d8db6c323b?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Embraer Lineage 1000', category: 'vip_airliner',    seats: 19, img: 'https://images.unsplash.com/photo-1610642372651-fe6e7bc3a2a1?w=500&auto=format&fit=crop&q=60' },
-  { name: 'Pilatus PC-12',        category: 'turboprop',       seats: 8,  img: 'https://images.unsplash.com/photo-1542296332-2e4473faf563?w=500&auto=format&fit=crop&q=60' },
-  { name: 'AW139 Helicopter',     category: 'helicopter',      seats: 6,  img: 'https://images.unsplash.com/photo-1534321238895-da9ad7059d4f?w=500&auto=format&fit=crop&q=60' },
-];
-
 // Popular destinations
 const DESTINATIONS = [
   { city: 'Nairobi',     country: 'Kenya',         img: 'https://images.unsplash.com/photo-1643913224222-17cc6adb2dfc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fE5haXJvYml8ZW58MHx8MHx8fDA%3D' },
@@ -280,6 +267,517 @@ function AirportCombobox({ airports, airportsLoading, value, onChange, placehold
     </div>
   );
 }
+
+// ── Modal Shell (matches HomePage.jsx modal styling) ────────────────────────
+function Modal({ open, onClose, title, subtitle, icon, children, maxWidth = 680 }) {
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  useEffect(() => {
+    const h = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  if (!open) return null;
+
+  return (
+    <>
+      <style>{`@keyframes modalPop{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}`}</style>
+      <div
+        onClick={e => e.target === e.currentTarget && onClose()}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 1200,
+          background: 'rgba(11,29,58,0.60)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem',
+        }}
+      >
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          width: '100%', maxWidth,
+          maxHeight: '92vh',
+          display: 'flex', flexDirection: 'column',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+          animation: 'modalPop 0.25s ease',
+          border: '1px solid #e2e8f0',
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '1.4rem 1.75rem',
+            borderBottom: '1px solid #f0f4f8',
+            display: 'flex', alignItems: 'flex-start',
+            justifyContent: 'space-between', gap: '1rem',
+            flexShrink: 0,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                width: 44, height: 44, background: '#FDF3D9',
+                borderRadius: '10px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <i className={`bi ${icon}`} style={{ fontSize: '1.2rem', color: '#C9A84C' }} />
+              </div>
+              <div>
+                <div style={{
+                  fontFamily: 'Georgia, serif', fontSize: '1.2rem',
+                  fontWeight: 600, color: '#0B1D3A', lineHeight: 1.2,
+                }}>
+                  {title}
+                </div>
+                {subtitle && (
+                  <div style={{ fontSize: '0.78rem', color: '#718096', marginTop: 3 }}>
+                    {subtitle}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#a0aec0', fontSize: '1.2rem',
+                padding: '0.25rem', lineHeight: 1, flexShrink: 0,
+                borderRadius: '6px',
+              }}
+            >
+              <i className="bi bi-x-lg" />
+            </button>
+          </div>
+          {/* Body */}
+          <div style={{ overflowY: 'auto', padding: '1.6rem 1.75rem', flex: 1 }}>
+            {children}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Success state inside modal ───────────────────────────────────────────────
+function ModalSuccessState({ title, message, reference, onNew, onClose }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+      <div style={{
+        width: 64, height: 64, background: '#EBF7F1', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 1.25rem', fontSize: '1.75rem', color: '#1a7f5a',
+      }}>
+        <i className="bi bi-check-lg" />
+      </div>
+      <h3 style={{ marginBottom: '0.6rem', color: '#0B1D3A' }}>{title}</h3>
+      <p style={{ lineHeight: 1.8, maxWidth: 400, margin: '0 auto 1.5rem', color: '#4a5568' }}>
+        {message}
+      </p>
+      {reference && (
+        <div style={{
+          background: '#f7fafc', border: '1px solid #e2e8f0',
+          borderRadius: '8px', padding: '1rem 1.25rem',
+          marginBottom: '1.75rem', textAlign: 'left',
+        }}>
+          <div style={{
+            fontSize: '0.64rem', fontWeight: 700,
+            letterSpacing: '0.16em', textTransform: 'uppercase',
+            color: '#C9A84C', marginBottom: '0.4rem',
+          }}>
+            Reference Number
+          </div>
+          <div style={{
+            fontFamily: 'monospace', fontSize: '0.87rem',
+            color: '#0B1D3A', wordBreak: 'break-all', fontWeight: 600,
+          }}>
+            {reference}
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#718096', marginTop: '0.35rem' }}>
+            Save this to track your booking at <strong>/track</strong>
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button type="button" className="btn-outline-gov" onClick={onNew}>
+          <i className="bi bi-arrow-counterclockwise" /> New Request
+        </button>
+        <button type="button" className="btn-primary-gov" onClick={onClose}>
+          <i className="bi bi-x" /> Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ModalAssetBanner({ asset }) {
+  if (!asset) return null;
+  const hourly = asset.display_hourly_rate ?? asset.hourly_rate_usd;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '1rem',
+      background: '#EBF2FF',
+      border: '1px solid #BED1EF',
+      borderRadius: '8px', padding: '0.9rem 1.1rem', marginBottom: '1.6rem',
+    }}>
+      <i className="bi bi-airplane-fill" style={{ fontSize: '1.3rem', color: '#0B1D3A', flexShrink: 0 }} />
+      <div>
+        <div style={{ fontWeight: 600, color: '#0B1D3A', fontSize: '0.92rem' }}>
+          {asset.name}
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#4a5568', marginTop: 2 }}>
+          {asset.category_display || CATEGORY_NAMES[asset.category] || asset.category}
+          {asset.passenger_capacity ? ` · ${asset.passenger_capacity} passengers` : ''}
+          {asset.range_km ? ` · ${Number(asset.range_km).toLocaleString()} km range` : ''}
+          {hourly ? ` · $${parseInt(hourly).toLocaleString()}/hr` : ''}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalFormSection({ icon, children }) {
+  return (
+    <div style={{
+      fontWeight: 600, fontSize: '0.8rem', color: '#0B1D3A',
+      marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem',
+    }}>
+      <i className={`bi ${icon}`} style={{ color: '#C9A84C' }} />
+      {children}
+    </div>
+  );
+}
+
+function ModalErrorAlert({ error }) {
+  if (!error) return null;
+  return (
+    <div style={{
+      marginBottom: '1.25rem', padding: '0.75rem 1rem',
+      background: '#FFF5F5', border: '1px solid #FEB2B2',
+      borderRadius: '8px', color: '#C53030',
+      display: 'flex', alignItems: 'center', gap: '0.5rem',
+      fontSize: '0.875rem',
+    }}>
+      <i className="bi bi-exclamation-triangle" /><span>{error}</span>
+    </div>
+  );
+}
+
+function parseModalApiError(err) {
+  if (err.response?.data) {
+    console.error('[NJH API Error]', err.response.status, JSON.stringify(err.response.data));
+  }
+  const detail = err.response?.data;
+  if (!detail) return 'Something went wrong. Please try again.';
+  if (typeof detail === 'string') return detail;
+  if (typeof detail === 'object') {
+    if (detail.detail) return detail.detail;
+    return Object.entries(detail)
+      .map(([field, errs]) => {
+        const msg = Array.isArray(errs) ? errs.join(' ') : String(errs);
+        const label = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return `${label}: ${msg}`;
+      })
+      .join(' · ');
+  }
+  return 'Something went wrong. Please try again.';
+}
+
+function ModalSubmitRow({ loading, onClose, label = 'Submit' }) {
+  return (
+    <div style={{ display: 'flex', gap: '0.75rem' }}>
+      <button type="button" className="btn-outline-gov" onClick={onClose} style={{ flex: '0 0 auto' }}>
+        Cancel
+      </button>
+      <button type="submit" className="btn-primary-gov" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+        {loading
+          ? <><div className="spinner-gov spinner-sm" style={{ borderTopColor: 'white' }}></div>&nbsp; Submitting…</>
+          : <><i className="bi bi-send" /> {label}</>}
+      </button>
+    </div>
+  );
+}
+
+// ── Book This Aircraft Modal ─────────────────────────────────────────────────
+// Self-contained booking modal for a specific fleet aircraft, mirrors the
+// BookFlightModal pattern from HomePage.jsx. Reuses the page's already-fetched
+// `airports` list rather than re-fetching, and is fully separate from the
+// main multi-step booking form/flow further up the page (no shared state).
+function FleetBookModal({ open, onClose, aircraft, airports, airportsLoading }) {
+  const blank = () => ({
+    guest_name: '', guest_email: '', guest_phone: '',
+    trip_type: 'one_way', passenger_count: 1,
+    departure_date: '', departure_time: '', return_date: '',
+    catering_requested: false, ground_transport_requested: false,
+    special_requests: '',
+  });
+
+  const [form, setForm]     = useState(blank);
+  const [origin, setOrigin] = useState('');
+  const [dest, setDest]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [error, setError]     = useState(null);
+
+  // Reset form whenever a new aircraft is opened
+  useEffect(() => {
+    if (open) {
+      setForm(blank());
+      setOrigin('');
+      setDest('');
+      setSuccess(null);
+      setError(null);
+    }
+  }, [open, aircraft]);
+
+  const set   = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const reset = ()     => { setForm(blank()); setOrigin(''); setDest(''); setSuccess(null); setError(null); };
+  const close = ()     => { reset(); onClose(); };
+
+  const submit = async e => {
+    e.preventDefault();
+
+    if (!origin || !dest) {
+      setError('Please select both origin and destination airports from the dropdown.');
+      return;
+    }
+    if (String(origin) === String(dest)) {
+      setError('Origin and destination airports cannot be the same.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        guest_name:      form.guest_name,
+        guest_email:     form.guest_email,
+        trip_type:       form.trip_type,
+        origin:          origin,
+        destination:     dest,
+        departure_date:  form.departure_date,
+        passenger_count: form.passenger_count,
+        catering_requested:         form.catering_requested,
+        ground_transport_requested: form.ground_transport_requested,
+      };
+
+      if (form.guest_phone?.trim())      payload.guest_phone      = form.guest_phone.trim();
+      if (form.departure_time)           payload.departure_time   = form.departure_time;
+      if (form.special_requests?.trim()) payload.special_requests = form.special_requests.trim();
+      if (aircraft?.id)                  payload.operator_aircraft = aircraft.id;
+      if (form.trip_type === 'round_trip' && form.return_date) payload.return_date = form.return_date;
+
+      const { data } = await bookingAPI.create(payload);
+      setSuccess(data);
+    } catch (err) {
+      setError(parseModalApiError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open} onClose={close} icon="bi-airplane"
+      title={aircraft ? `Book — ${aircraft.name}` : 'Book a Flight'}
+      subtitle={aircraft ? `${aircraft.category_display || CATEGORY_NAMES[aircraft.category] || ''} · up to ${aircraft.passenger_capacity} passengers` : ''}
+      maxWidth={700}
+    >
+      {success ? (
+        <ModalSuccessState
+          title="Flight Request Submitted"
+          message={success.message || 'Our specialists will contact you within 2–4 hours.'}
+          reference={success.booking?.reference}
+          onNew={reset}
+          onClose={close}
+        />
+      ) : (
+        <form onSubmit={submit}>
+          <ModalAssetBanner asset={aircraft} />
+          <ModalErrorAlert error={error} />
+
+          <ModalFormSection icon="bi-person">Your Details</ModalFormSection>
+          <div className="form-row" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group">
+              <label className="form-label-gov">Full Name <span className="required">*</span></label>
+              <input className="form-input-gov" required value={form.guest_name}
+                onChange={e => set('guest_name', e.target.value)} placeholder="John Smith" />
+            </div>
+            <div className="form-group">
+              <label className="form-label-gov">Email <span className="required">*</span></label>
+              <input className="form-input-gov" type="email" required value={form.guest_email}
+                onChange={e => set('guest_email', e.target.value)} placeholder="john@company.com" />
+            </div>
+            <div className="form-group">
+              <label className="form-label-gov">Phone</label>
+              <input className="form-input-gov" value={form.guest_phone}
+                onChange={e => set('guest_phone', e.target.value)} placeholder="+254 724 878 136" />
+            </div>
+            <div className="form-group">
+              <label className="form-label-gov">Passengers <span className="required">*</span></label>
+              <input className="form-input-gov" type="number" min={1}
+                max={aircraft?.passenger_capacity || 400} required
+                value={form.passenger_count}
+                onChange={e => set('passenger_count', parseInt(e.target.value) || 1)} />
+              {aircraft && <div className="form-hint">Max {aircraft.passenger_capacity} on this aircraft</div>}
+            </div>
+          </div>
+
+          <ModalFormSection icon="bi-map">Route &amp; Schedule</ModalFormSection>
+          <div className="tabs-gov" style={{ marginBottom: '1rem' }}>
+            {TRIP_TYPES.map(([v, l]) => (
+              <button key={v} type="button"
+                className={`tab-btn ${form.trip_type === v ? 'active' : ''}`}
+                onClick={() => set('trip_type', v)}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          <div className="form-row" style={{ marginBottom: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label-gov">From <span className="required">*</span></label>
+              <AirportCombobox
+                airports={airports} airportsLoading={airportsLoading}
+                value={origin} onChange={setOrigin}
+                placeholder="Type city or airport code…" required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label-gov">To <span className="required">*</span></label>
+              <AirportCombobox
+                airports={airports} airportsLoading={airportsLoading}
+                value={dest} onChange={setDest}
+                placeholder="Type city or airport code…" required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label-gov">Departure Date <span className="required">*</span></label>
+              <input className="form-input-gov" type="date" required value={form.departure_date}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => set('departure_date', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label-gov">Preferred Time</label>
+              <input className="form-input-gov" type="time" value={form.departure_time}
+                onChange={e => set('departure_time', e.target.value)} />
+            </div>
+          </div>
+
+          {form.trip_type === 'round_trip' && (
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label-gov">Return Date <span className="required">*</span></label>
+              <input className="form-input-gov" type="date" required value={form.return_date}
+                min={form.departure_date || new Date().toISOString().split('T')[0]}
+                onChange={e => set('return_date', e.target.value)} />
+            </div>
+          )}
+
+          <ModalFormSection icon="bi-stars">Add-ons</ModalFormSection>
+          <div className="checkbox-group" style={{ marginBottom: '1.5rem' }}>
+            {[
+              ['catering_requested', 'bi-cup-hot', 'In-Flight Catering'],
+              ['ground_transport_requested', 'bi-car-front', 'Ground Transport'],
+            ].map(([k, icon, label]) => (
+              <label key={k} className="checkbox-label">
+                <input type="checkbox" checked={form[k]} onChange={e => set(k, e.target.checked)} />
+                <i className={`bi ${icon}`} style={{ color: 'var(--color-gold)' }}></i>
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+
+          <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+            <label className="form-label-gov">Special Requests</label>
+            <textarea className="form-input-gov" rows={3}
+              value={form.special_requests}
+              onChange={e => set('special_requests', e.target.value)}
+              placeholder="Dietary requirements, seating preferences, special occasions…" />
+          </div>
+
+          <ModalSubmitRow loading={loading} onClose={close} label="Submit Flight Request" />
+        </form>
+      )}
+    </Modal>
+  );
+}
+
+// ── Fleet Aircraft Card (styled to match HomePage's featured-aircraft cards) ─
+function FleetAircraftCard({ ac, onBook }) {
+  const clientHourlyRate = ac.display_hourly_rate ?? ac.hourly_rate_usd;
+  const categoryLabel = ac.category_display || CATEGORY_NAMES[ac.category] || ac.category;
+
+  return (
+    <div
+      className="fleet-aircraft-card"
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = '0 8px 32px rgba(11,29,58,0.13)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = '0 2px 12px rgba(11,29,58,0.06)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+    >
+      {/* Image */}
+      <div className="fleet-aircraft-card__image">
+        {ac.image_url ? (
+          <img src={ac.image_url} alt={`${ac.name} private jet`} loading="lazy" />
+        ) : (
+          <div className="fleet-aircraft-card__image-fallback">
+            <i className="bi bi-airplane"></i>
+          </div>
+        )}
+
+        {categoryLabel && (
+          <div className="fleet-aircraft-card__badge fleet-aircraft-card__badge--category">
+            {categoryLabel}
+          </div>
+        )}
+
+        {clientHourlyRate != null && (
+          <div className="fleet-aircraft-card__badge fleet-aircraft-card__badge--rate">
+            ${parseInt(clientHourlyRate).toLocaleString()}<span>/hr</span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="fleet-aircraft-card__body">
+        <div className="fleet-aircraft-card__name">{ac.name}</div>
+
+        <div className="fleet-aircraft-card__specs">
+          {[
+            { icon: 'bi-people',           label: 'Passengers',   value: ac.passenger_capacity ? `${ac.passenger_capacity} pax` : '—' },
+            { icon: 'bi-arrow-left-right', label: 'Range',        value: ac.range_km ? `${Number(ac.range_km).toLocaleString()} km` : '—' },
+            { icon: 'bi-speedometer2',     label: 'Cruise Speed', value: ac.cruise_speed_kmh ? `${Number(ac.cruise_speed_kmh).toLocaleString()} km/h` : '—' },
+            { icon: ac.wifi_available ? 'bi-wifi' : 'bi-wifi-off', label: 'Wi-Fi', value: ac.wifi_available ? 'Available' : 'Not Available', dim: !ac.wifi_available },
+          ].map(({ icon, label, value, dim }) => (
+            <div key={label} className="fleet-aircraft-card__spec">
+              <div className="fleet-aircraft-card__spec-label">
+                <i className={`bi ${icon}`} style={{ color: dim ? '#cbd5e1' : 'var(--color-gold)' }}></i>
+                {label}
+              </div>
+              <div className="fleet-aircraft-card__spec-value" style={dim ? { color: '#94a3b8' } : undefined}>
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="fleet-aircraft-card__divider"></div>
+
+        <button
+          className="btn-primary-gov"
+          style={{ width: '100%', justifyContent: 'center' }}
+          onClick={() => onBook(ac)}
+        >
+          <i className="bi bi-airplane"></i> Book This Aircraft
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function BookFlightPage() {
   const [airports, setAirports]               = useState([]);
@@ -307,6 +805,11 @@ export default function BookFlightPage() {
   const [openFaq, setOpenFaq] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('all');
 
+  // ── Real fleet data (matches HomePage's catalogAPI.opAircraft pattern) ───
+  const [fleetAircraft, setFleetAircraft] = useState([]);
+  const [fleetLoading, setFleetLoading]   = useState(true);
+  const [fleetError, setFleetError]       = useState('');
+
   // ── Fetch ALL airports once on mount (unchanged) ──────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -333,12 +836,45 @@ export default function BookFlightPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // ── Fetch real approved aircraft for the fleet carousel ──────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFleet = async () => {
+      setFleetLoading(true);
+      setFleetError('');
+      try {
+        const r = await catalogAPI.opAircraft({ page_size: 24, is_approved: true });
+        if (!cancelled) {
+          setFleetAircraft(r.data?.results || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Fleet fetch failed:', err.response?.data || err.message);
+          setFleetError('Could not load the fleet right now. Please try again shortly.');
+        }
+      } finally {
+        if (!cancelled) setFleetLoading(false);
+      }
+    };
+
+    loadFleet();
+    return () => { cancelled = true; };
+  }, []);
+
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const scrollToForm = () => {
     const el = document.getElementById('booking-form-top');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Opens a dedicated popup modal for booking a specific fleet aircraft —
+  // separate from the main multi-step form above, just like the HomePage
+  // aircraft cards open their own BookFlightModal.
+  const [fleetModalAircraft, setFleetModalAircraft] = useState(null);
+  const bookThisAircraft = (ac) => setFleetModalAircraft(ac);
+  const closeFleetModal  = () => setFleetModalAircraft(null);
 
   // Per-step validation before advancing — step 0 mirrors the original
   // required fields on the Flight Details card; step 1 mirrors Contact Information.
@@ -399,8 +935,8 @@ export default function BookFlightPage() {
   };
 
   const filteredFleet = fleetFilter === 'all'
-    ? FLEET_AIRCRAFT
-    : FLEET_AIRCRAFT.filter(a => a.category === fleetFilter);
+    ? fleetAircraft
+    : fleetAircraft.filter(a => a.category === fleetFilter);
 
   // ── Success screen (unchanged) ────────────────────────────────────────────
   if (success) {
@@ -963,20 +1499,32 @@ export default function BookFlightPage() {
             ))}
           </div>
 
-          <div className="fleet-carousel">
-            {filteredFleet.map((ac, i) => (
-              <div key={i} className="fleet-card">
-                <div className="fleet-card__image">
-                  <img src={ac.img} alt={ac.name} />
-                </div>
-                <div className="fleet-card__body">
-                  <strong>{ac.name}</strong>
-                  <span className="fleet-card__category">{CATEGORY_NAMES[ac.category]}</span>
-                  <span className="fleet-card__seats"><i className="bi bi-people"></i> Up to {ac.seats} passengers</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {fleetLoading ? (
+            <div className="fleet-status">
+              <div className="spinner-gov" style={{ margin: '0 auto 0.75rem' }}></div>
+              Loading fleet…
+            </div>
+          ) : fleetError ? (
+            <div className="alert-warn" style={{
+              textAlign: 'center', display: 'block',
+              background: '#fffbeb', border: '1px solid #f59e0b',
+              borderRadius: 'var(--radius-sm)', padding: '0.9rem 1rem',
+              fontSize: '0.875rem', color: '#92400e',
+            }}>
+              <i className="bi bi-exclamation-triangle"></i> {fleetError}
+            </div>
+          ) : filteredFleet.length === 0 ? (
+            <div className="fleet-status">
+              <i className="bi bi-airplane" style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'block', color: 'var(--color-light-gray)' }}></i>
+              No aircraft found in this category right now.
+            </div>
+          ) : (
+            <div className="fleet-aircraft-grid">
+              {filteredFleet.map(ac => (
+                <FleetAircraftCard key={ac.id} ac={ac} onBook={bookThisAircraft} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -1066,6 +1614,15 @@ export default function BookFlightPage() {
 
       <PublicFooter />
       <PageStyles />
+
+      {/* ── Book This Aircraft Modal ── */}
+      <FleetBookModal
+        open={!!fleetModalAircraft}
+        onClose={closeFleetModal}
+        aircraft={fleetModalAircraft}
+        airports={airports}
+        airportsLoading={airportsLoading}
+      />
     </>
   );
 }
@@ -1438,6 +1995,7 @@ function PageStyles() {
       .about-stats__text p { color: var(--color-mid-gray); line-height: 1.75; margin-bottom: 0.75rem; }
 
 
+      /* ============ FLEET SECTION (matches HomePage featured-aircraft cards) ===== */
       .fleet-filters {
         display: flex; gap: 0.6rem; flex-wrap: wrap;
         justify-content: center;
@@ -1459,28 +2017,125 @@ function PageStyles() {
         background: var(--color-navy);
         color: var(--color-white);
       }
-      .fleet-carousel {
+
+      .fleet-status {
+        text-align: center;
+        padding: 2.5rem 0;
+        color: var(--color-mid-gray);
+        font-size: 0.9rem;
+      }
+
+      .fleet-aircraft-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1.25rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
       }
-      .fleet-card {
+
+      .fleet-aircraft-card {
         background: var(--color-white);
-        border: 1px solid var(--color-light-gray);
-        border-radius: var(--radius-md);
+        border-radius: 12px;
+        border: 1px solid #e8edf4;
         overflow: hidden;
-        transition: box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 12px rgba(11,29,58,0.06);
+        transition: box-shadow 0.2s, transform 0.2s;
       }
-      .fleet-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-      .fleet-card__image { height: 140px; overflow: hidden; }
-      .fleet-card__image img { width: 100%; height: 100%; object-fit: cover; }
-      .fleet-card__body { padding: 1rem; display: flex; flex-direction: column; gap: 0.3rem; }
-      .fleet-card__body strong { color: var(--color-navy); font-size: 0.9rem; }
-      .fleet-card__category {
-        font-size: 0.7rem; color: var(--color-gold); font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.5px;
+
+      .fleet-aircraft-card__image {
+        position: relative;
+        height: 210px;
+        overflow: hidden;
+        flex-shrink: 0;
       }
-      .fleet-card__seats { font-size: 0.75rem; color: var(--color-mid-gray); display: flex; align-items: center; gap: 0.3rem; }
+      .fleet-aircraft-card__image img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .fleet-aircraft-card__image-fallback {
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-light, #1a3460) 100%);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .fleet-aircraft-card__image-fallback i {
+        font-size: 3rem;
+        color: rgba(201,168,76,0.4);
+      }
+
+      .fleet-aircraft-card__badge {
+        position: absolute;
+        top: 14px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+      .fleet-aircraft-card__badge--category {
+        left: 14px;
+        background: rgba(11,29,58,0.82);
+        backdrop-filter: blur(6px);
+        color: var(--color-gold);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: 1px solid rgba(201,168,76,0.3);
+      }
+      .fleet-aircraft-card__badge--rate {
+        right: 14px;
+        background: var(--color-gold);
+        color: var(--color-navy);
+      }
+      .fleet-aircraft-card__badge--rate span {
+        font-weight: 500;
+        font-size: 0.6rem;
+      }
+
+      .fleet-aircraft-card__body {
+        padding: 1.35rem 1.4rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .fleet-aircraft-card__name {
+        font-family: var(--font-serif, Georgia, serif);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-navy);
+        margin-bottom: 0.9rem;
+        line-height: 1.25;
+      }
+
+      .fleet-aircraft-card__specs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        margin-bottom: 1.1rem;
+      }
+      .fleet-aircraft-card__spec {
+        background: var(--color-off-white);
+        border-radius: 7px;
+        padding: 0.55rem 0.7rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .fleet-aircraft-card__spec-label {
+        display: flex; align-items: center; gap: 0.3rem;
+        font-size: 0.62rem; font-weight: 600;
+        color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em;
+      }
+      .fleet-aircraft-card__spec-value {
+        font-size: 0.82rem; font-weight: 600;
+        color: var(--color-navy);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+
+      .fleet-aircraft-card__divider {
+        height: 1px;
+        background: var(--color-off-white);
+        margin-bottom: 1.1rem;
+      }
 
 
       .destinations-section { background: var(--color-off-white); }
@@ -1618,6 +2273,7 @@ function PageStyles() {
         .service-categories__grid { grid-template-columns: repeat(2, 1fr); }
         .destinations-grid { grid-template-columns: repeat(3, 1fr); }
         .related-grid { grid-template-columns: repeat(2, 1fr); }
+        .fleet-aircraft-grid { grid-template-columns: repeat(2, 1fr); }
       }
 
       @media (max-width: 768px) {
@@ -1633,6 +2289,7 @@ function PageStyles() {
         .quote-banner__inner { flex-direction: column; text-align: center; }
         .booking-step-nav { flex-direction: column; align-items: stretch; }
         .booking-step-nav button { width: 100%; justify-content: center; }
+        .fleet-aircraft-grid { grid-template-columns: 1fr; }
       }
 
       @media (max-width: 600px) {
