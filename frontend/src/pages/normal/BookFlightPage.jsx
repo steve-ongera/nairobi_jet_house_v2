@@ -1474,7 +1474,7 @@ export default function BookFlightPage() {
       {/* ============ CABIN GALLERY BANNER ============ */}
       <section className="cabin-gallery">
         <img
-          src="https://plus.unsplash.com/premium_photo-1755238861327-5759aecea5e4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8THV4dXJ5JTIwcHJpdmF0ZSUyMGpldCUyMGNhYmluJTIwaW50ZXJpb3J8ZW58MHx8MHx8fDA%3D"
+          src="https://chapmanfreeborn.aero/wp-content/uploads/2023/05/Group-Air-secondary.jpg.webp"
           alt="Luxury private jet cabin interior"
         />
       </section>
