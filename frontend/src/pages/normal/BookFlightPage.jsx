@@ -56,14 +56,14 @@ const OFFSET_PRICING = [
 
 // Use-case / service category tiles
 const SERVICE_CATEGORIES = [
-  { label: 'Business Aviation',   icon: 'bi-briefcase',        img: 'https://images.unsplash.com/photo-1583535231135-a18b58cd2c14?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Medevac',             icon: 'bi-heart-pulse',      img: 'https://images.unsplash.com/photo-1587502536575-d2293041b9ee?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Hospitality & Events',icon: 'bi-stars',            img: 'https://images.unsplash.com/photo-1519167758481-83f29c8e8d65?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Music Tours',         icon: 'bi-music-note-beamed',img: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Sports Events',       icon: 'bi-trophy',           img: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Luxury Travel',       icon: 'bi-gem',               img: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Movie & Production',  icon: 'bi-camera-reels',     img: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600&auto=format&fit=crop&q=60' },
-  { label: 'Empty Leg Flights',   icon: 'bi-arrow-left-right', img: 'https://images.unsplash.com/photo-1474302770737-173ee21bab63?w=600&auto=format&fit=crop&q=60' },
+  { label: 'Business Aviation',   icon: 'bi-briefcase',        img: 'https://plus.unsplash.com/premium_photo-1683121196780-90e1c01ec74f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8QnVzaW5lc3MlMjBBdmlhdGlvbnxlbnwwfHwwfHx8MA%3D%3D' },
+  { label: 'Medevac',             icon: 'bi-heart-pulse',      img: 'https://plus.unsplash.com/premium_photo-1664303503818-a6fab2dcfd91?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bWVkZXZhY3xlbnwwfHwwfHx8MA%3D%3D' },
+  { label: 'Hospitality & Events',icon: 'bi-stars',            img: 'https://plus.unsplash.com/premium_photo-1722168614154-60badae538c1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8SG9zcGl0YWxpdHklMjAlMjYlMjBFdmVudHN8ZW58MHx8MHx8fDA%3D' },
+  { label: 'Music Tours',         icon: 'bi-music-note-beamed',img: 'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fE11c2ljJTIwVG91cnN8ZW58MHx8MHx8fDA%3D' },
+  { label: 'Sports Events',       icon: 'bi-trophy',           img: 'https://images.unsplash.com/photo-1569863959165-56dae551d4fc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8U3BvcnRzJTIwRXZlbnRzfGVufDB8fDB8fHww' },
+  { label: 'Luxury Travel',       icon: 'bi-gem',               img: 'https://images.unsplash.com/photo-1661954864180-e61dea14208a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fEx1eHVyeSUyMFRyYXZlbHxlbnwwfHwwfHx8MA%3D%3D' },
+  { label: 'Movie & Production',  icon: 'bi-camera-reels',     img: 'https://images.unsplash.com/photo-1515634928627-2a4e0dae3ddf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8TW92aWUlMjAlMjYlMjBQcm9kdWN0aW9ufGVufDB8fDB8fHww' },
+  { label: 'Empty Leg Flights',   icon: 'bi-arrow-left-right', img: 'https://images.unsplash.com/photo-1519666336592-e225a99dcd2f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fEVtcHR5JTIwTGVnJTIwRmxpZ2h0c3xlbnwwfHwwfHx8MA%3D%3D' },
   { label: 'Request a Quote',     icon: 'bi-send',             img: null, isCta: true },
 ];
 
@@ -90,11 +90,11 @@ const FLEET_AIRCRAFT = [
 
 // Popular destinations
 const DESTINATIONS = [
-  { city: 'Nairobi',     country: 'Kenya',         img: 'https://images.unsplash.com/photo-1611348586804-61bf6c080437?w=500&auto=format&fit=crop&q=60' },
-  { city: 'Dubai',       country: 'UAE',           img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=500&auto=format&fit=crop&q=60' },
-  { city: 'London',      country: 'United Kingdom',img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=500&auto=format&fit=crop&q=60' },
-  { city: 'Cape Town',   country: 'South Africa',  img: 'https://images.unsplash.com/photo-1576485375217-d6a95e34d043?w=500&auto=format&fit=crop&q=60' },
-  { city: 'Mombasa',     country: 'Kenya',         img: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=500&auto=format&fit=crop&q=60' },
+  { city: 'Nairobi',     country: 'Kenya',         img: 'https://images.unsplash.com/photo-1643913224222-17cc6adb2dfc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fE5haXJvYml8ZW58MHx8MHx8fDA%3D' },
+  { city: 'Dubai',       country: 'UAE',           img: 'https://media.istockphoto.com/id/454222161/photo/dubai-madinat-jumeirah.webp?a=1&b=1&s=612x612&w=0&k=20&c=6Ck16ZlHKkarnYW5irrlD9ALoU3E9xnWxnj7k3Kop9w=' },
+  { city: 'London',      country: 'United Kingdom',img: 'https://images.unsplash.com/photo-1529180184525-78f99adb8e98?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHVuaXRlZCUyMGtpbmdkb218ZW58MHx8MHx8fDA%3D' },
+  { city: 'Cape Town',   country: 'South Africa',  img: 'https://images.unsplash.com/photo-1585061528750-3baca2cb6a10?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FwZSUyMHRvd258ZW58MHx8MHx8fDA%3D' },
+  { city: 'Mombasa',     country: 'Kenya',         img: 'https://images.unsplash.com/photo-1579005318686-5a86bbb3bf03?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bW9tYmFzYXxlbnwwfHwwfHx8MA%3D%3D' },
 ];
 
 const FAQS = [
@@ -109,10 +109,10 @@ const FAQS = [
 ];
 
 const RELATED_POSTS = [
-  { tag: 'GUIDES',  title: 'VIPs & Pets: Travelling with Your Animals',     img: 'https://images.unsplash.com/photo-1450778869180-41d0801376ad?w=400&auto=format&fit=crop&q=60' },
-  { tag: 'NEWS',    title: '5 Places You Can\u2019t Miss Near Nairobi',     img: 'https://images.unsplash.com/photo-1611348586804-61bf6c080437?w=400&auto=format&fit=crop&q=60' },
-  { tag: 'PRESS',   title: 'NairobiJetHouse Wins Best Air Charter Award',   img: 'https://images.unsplash.com/photo-1556388158-f8b8d2e9f1f9?w=400&auto=format&fit=crop&q=60' },
-  { tag: 'GUIDES',  title: 'Private Jet Classifications and Capabilities',  img: 'https://images.unsplash.com/photo-1583416750470-965b2707b355?w=400&auto=format&fit=crop&q=60' },
+  { tag: 'GUIDES',  title: 'VIPs & Pets: Travelling with Your Animals',     img: 'https://plus.unsplash.com/premium_photo-1773417399842-14c757e7dcd8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8UGV0cyUyMGFlcm9wbGFuZXxlbnwwfHwwfHx8MA%3D%3D' },
+  { tag: 'NEWS',    title: '5 Places You Can\u2019t Miss Near Nairobi',     img: 'https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fE5FV1N8ZW58MHx8MHx8fDA%3D' },
+  { tag: 'PRESS',   title: 'NairobiJetHouse Wins Best Air Charter Award',   img: 'https://plus.unsplash.com/premium_photo-1689701711439-e54f039f8d97?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8UFJFU1N8ZW58MHx8MHx8fDA%3D' },
+  { tag: 'GUIDES',  title: 'Private Jet Classifications and Capabilities',  img: 'https://images.unsplash.com/photo-1504607798333-52a30db54a5d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8R1VJREVTfGVufDB8fDB8fHww' },
 ];
 
 const STRUCTURED_DATA = {
@@ -784,8 +784,8 @@ export default function BookFlightPage() {
                   <a href="tel:+254724878136" className="btn-primary-gov" style={{ width: '100%', justifyContent: 'center' }}>
                     <i className="bi bi-telephone"></i> Call Now
                   </a>
-                  <a href="mailto:info@nairobijethouse.com" className="btn-outline-gov" style={{ width: '100%', justifyContent: 'center', marginTop: '0.6rem' }}>
-                    <i className="bi bi-envelope"></i> info@nairobijethouse.com
+                  <a href="mailto:nairobijethouse@gmail.com" className="btn-outline-gov" style={{ width: '100%',color: 'white', justifyContent: 'center', marginTop: '0.6rem' }}>
+                    <i className="bi bi-envelope"></i> nairobijethouse@gmail.com
                   </a>
                 </div>
               </div>
@@ -805,7 +805,7 @@ export default function BookFlightPage() {
           <div className="why-us__grid">
             <div className="why-us__image">
               <img
-                src="https://images.unsplash.com/photo-1583416750470-965b2707b355?w=700&auto=format&fit=crop&q=60"
+                src="https://images.unsplash.com/photo-1681157405319-3040bcf2be39?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjB8fHdoeSUyMGNob29zZSUyMHVzJTIwYWlycGxhbmV8ZW58MHx8MHx8fDA%3D"
                 alt="Private jet on tarmac at golden hour"
               />
             </div>
@@ -905,7 +905,7 @@ export default function BookFlightPage() {
       {/* ============ CABIN GALLERY BANNER ============ */}
       <section className="cabin-gallery">
         <img
-          src="https://images.unsplash.com/photo-1583515839297-78ac1c789a17?w=1400&auto=format&fit=crop&q=70"
+          src="https://plus.unsplash.com/premium_photo-1755238861327-5759aecea5e4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8THV4dXJ5JTIwcHJpdmF0ZSUyMGpldCUyMGNhYmluJTIwaW50ZXJpb3J8ZW58MHx8MHx8fDA%3D"
           alt="Luxury private jet cabin interior"
         />
       </section>
@@ -933,7 +933,7 @@ export default function BookFlightPage() {
               <Link to="/about" className="btn-primary-gov">
                 <i className="bi bi-info-circle"></i> More About Us
               </Link>
-              <Link to="/contact" className="btn-outline-gov">
+              <Link to="/careers" className="btn-outline-gov">
                 <i className="bi bi-envelope"></i> Careers
               </Link>
             </div>
@@ -1211,7 +1211,7 @@ function PageStyles() {
       }
       .consultant-card__image {
         position: relative;
-        height: 160px;
+        height: 260px;
         overflow: hidden;
       }
       .consultant-card__image img {
