@@ -1245,7 +1245,8 @@ function PageStyles() {
         height: 220px;
         overflow: hidden;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
         transition: transform 0.3s ease;
       }
@@ -1270,9 +1271,12 @@ function PageStyles() {
         padding: 1.25rem 1.5rem;
         color: var(--color-white);
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
+        justify-content: center;
         align-items: center;
+        gap: 0.5rem;
         width: 100%;
+        text-align: center;
         font-family: var(--font-label, sans-serif);
       }
       .svc-cat-tile__label {
