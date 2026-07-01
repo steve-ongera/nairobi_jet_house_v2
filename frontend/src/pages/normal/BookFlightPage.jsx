@@ -54,17 +54,41 @@ const OFFSET_PRICING = [
   { category: 'VIP Airliner',      price: 69, pct: 100 },
 ];
 
-// Use-case / service category tiles
+// ── Use-case / service category tiles (updated to match GROUP_USE_CASES styling) ──
 const SERVICE_CATEGORIES = [
-  { label: 'Business Aviation',   icon: 'bi-briefcase',        img: 'https://plus.unsplash.com/premium_photo-1683121196780-90e1c01ec74f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8QnVzaW5lc3MlMjBBdmlhdGlvbnxlbnwwfHwwfHx8MA%3D%3D' },
-  { label: 'Medevac',             icon: 'bi-heart-pulse',      img: 'https://plus.unsplash.com/premium_photo-1664303503818-a6fab2dcfd91?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bWVkZXZhY3xlbnwwfHwwfHx8MA%3D%3D' },
-  { label: 'Hospitality & Events',icon: 'bi-stars',            img: 'https://plus.unsplash.com/premium_photo-1722168614154-60badae538c1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8SG9zcGl0YWxpdHklMjAlMjYlMjBFdmVudHN8ZW58MHx8MHx8fDA%3D' },
-  { label: 'Music Tours',         icon: 'bi-music-note-beamed',img: 'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fE11c2ljJTIwVG91cnN8ZW58MHx8MHx8fDA%3D' },
-  { label: 'Sports Events',       icon: 'bi-trophy',           img: 'https://images.unsplash.com/photo-1569863959165-56dae551d4fc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8U3BvcnRzJTIwRXZlbnRzfGVufDB8fDB8fHww' },
-  { label: 'Luxury Travel',       icon: 'bi-gem',               img: 'https://images.unsplash.com/photo-1661954864180-e61dea14208a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fEx1eHVyeSUyMFRyYXZlbHxlbnwwfHwwfHx8MA%3D%3D' },
-  { label: 'Movie & Production',  icon: 'bi-camera-reels',     img: 'https://images.unsplash.com/photo-1515634928627-2a4e0dae3ddf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8TW92aWUlMjAlMjYlMjBQcm9kdWN0aW9ufGVufDB8fDB8fHww' },
-  { label: 'Empty Leg Flights',   icon: 'bi-arrow-left-right', img: 'https://images.unsplash.com/photo-1519666336592-e225a99dcd2f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fEVtcHR5JTIwTGVnJTIwRmxpZ2h0c3xlbnwwfHwwfHx8MA%3D%3D' },
-  { label: 'Request a Quote',     icon: 'bi-send',             img: null, isCta: true },
+  {
+    label: 'Business Aviation',
+    img: 'https://plus.unsplash.com/premium_photo-1683121196780-90e1c01ec74f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8QnVzaW5lc3MlMjBBdmlhdGlvbnxlbnwwfHwwfHx8MA%3D%3D'
+  },
+  {
+    label: 'Medevac',
+    img: 'https://plus.unsplash.com/premium_photo-1664303503818-a6fab2dcfd91?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bWVkZXZhY3xlbnwwfHwwfHx8MA%3D%3D'
+  },
+  {
+    label: 'Hospitality & Events',
+    img: 'https://plus.unsplash.com/premium_photo-1722168614154-60badae538c1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8SG9zcGl0YWxpdHklMjAlMjYlMjBFdmVudHN8ZW58MHx8MHx8fDA%3D'
+  },
+  {
+    label: 'Sports Events',
+    img: 'https://images.unsplash.com/photo-1569863959165-56dae551d4fc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8U3BvcnRzJTIwRXZlbnRzfGVufDB8fDB8fHww'
+  },
+  {
+    label: 'Luxury Travel',
+    img: 'https://images.unsplash.com/photo-1661954864180-e61dea14208a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fEx1eHVyeSUyMFRyYXZlbHxlbnwwfHwwfHx8MA%3D%3D'
+  },
+  {
+    label: 'Movie & Production',
+    img: 'https://images.unsplash.com/photo-1515634928627-2a4e0dae3ddf?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8TW92aWUlMjAlMjYlMjBQcm9kdWN0aW9ufGVufDB8fDB8fHww'
+  },
+  {
+    label: 'Empty Leg Flights',
+    img: 'https://images.unsplash.com/photo-1519666336592-e225a99dcd2f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fEVtcHR5JTIwTGVnJTIwRmxpZ2h0c3xlbnwwfHwwfHx8MA%3D%3D'
+  },
+  {
+    label: 'Request a Quote',
+    img: null,
+    isCta: true
+  },
 ];
 
 // Stats strip
@@ -1453,17 +1477,16 @@ export default function BookFlightPage() {
                 onClick={scrollToForm}
                 className="svc-cat-tile svc-cat-tile--cta"
               >
-                <i className={`bi ${cat.icon}`}></i>
-                <span>{cat.label}</span>
-                <i className="bi bi-arrow-right"></i>
+                <span className="svc-cat-tile__cta-label">{cat.label}</span>
+                <span className="svc-cat-tile__cta-arrow">→</span>
               </button>
             ) : (
               <div key={i} className="svc-cat-tile">
                 <img src={cat.img} alt={cat.label} className="svc-cat-tile__bg" />
                 <div className="svc-cat-tile__overlay" />
                 <div className="svc-cat-tile__content">
-                  <i className={`bi ${cat.icon}`}></i>
-                  <span>{cat.label}</span>
+                  <span className="svc-cat-tile__label">{cat.label}</span>
+                  <span className="svc-cat-tile__arrow">→</span>
                 </div>
               </div>
             )
@@ -1932,16 +1955,24 @@ function PageStyles() {
       .offset-section__text p { color: var(--color-mid-gray); line-height: 1.75; margin-bottom: 0.75rem; }
 
 
+      /* ============ SERVICE CATEGORIES GRID (updated to match GROUP_USE_CASES) ============ */
       .service-categories__grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
       }
       .svc-cat-tile {
         position: relative;
-        height: 200px;
+        height: 220px;
         overflow: hidden;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+      .svc-cat-tile:hover {
+        transform: scale(1.02);
+        z-index: 2;
       }
       .svc-cat-tile__bg {
         position: absolute; inset: 0;
@@ -1949,35 +1980,78 @@ function PageStyles() {
         object-fit: cover;
         transition: transform 0.4s ease;
       }
-      .svc-cat-tile:hover .svc-cat-tile__bg { transform: scale(1.06); }
+      .svc-cat-tile:hover .svc-cat-tile__bg { transform: scale(1.08); }
       .svc-cat-tile__overlay {
         position: absolute; inset: 0;
-        background: linear-gradient(to top, rgba(10,20,40,0.85) 0%, rgba(10,20,40,0.2) 70%);
+        background: linear-gradient(to top, rgba(10,20,40,0.85) 0%, rgba(10,20,40,0.2) 60%);
         z-index: 1;
       }
       .svc-cat-tile__content {
         position: relative; z-index: 2;
-        padding: 1.25rem;
+        padding: 1.25rem 1.5rem;
         color: var(--color-white);
-        display: flex; align-items: center; gap: 0.6rem;
-        font-size: 0.95rem; font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        text-align: center;
         font-family: var(--font-label, sans-serif);
       }
-      .svc-cat-tile__content i { color: var(--color-gold); font-size: 1.1rem; }
+      .svc-cat-tile__label {
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      .svc-cat-tile__arrow {
+        color: var(--color-gold);
+        font-size: 1.4rem;
+        transition: transform 0.3s ease;
+        display: inline-block;
+        font-weight: 300;
+      }
+      .svc-cat-tile:hover .svc-cat-tile__arrow {
+        transform: translateX(6px);
+      }
+
+      /* CTA Tile (Request a Quote) */
       .svc-cat-tile--cta {
         background: var(--color-gold);
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         gap: 0.5rem;
-        color: var(--color-navy); font-weight: 700; font-size: 1rem;
+        color: var(--color-navy);
         font-family: var(--font-label, sans-serif);
-        border: none; cursor: pointer;
-        transition: background 0.2s;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
         width: 100%;
+        height: 220px;
+        position: relative;
       }
-      .svc-cat-tile--cta:hover { background: #e8c55a; }
-      .svc-cat-tile--cta i { font-size: 1.4rem; color: var(--color-navy); }
-      .svc-cat-tile--cta span { color: var(--color-navy); }
+      .svc-cat-tile--cta:hover {
+        background: #e8c55a;
+        transform: scale(1.02);
+        z-index: 2;
+      }
+      .svc-cat-tile__cta-label {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--color-navy);
+      }
+      .svc-cat-tile__cta-arrow {
+        font-size: 1.8rem;
+        font-weight: 300;
+        color: var(--color-navy);
+        transition: transform 0.3s ease;
+        display: inline-block;
+      }
+      .svc-cat-tile--cta:hover .svc-cat-tile__cta-arrow {
+        transform: translateX(6px);
+      }
 
 
       .cabin-gallery { width: 100%; line-height: 0; }
@@ -2295,6 +2369,7 @@ function PageStyles() {
         margin: 0;
       }
 
+      /* ============ RESPONSIVE UPDATES ============ */
       @media (max-width: 1024px) {
         .booking-hero__layout { grid-template-columns: 1fr; }
         .booking-hero__side {
@@ -2318,6 +2393,8 @@ function PageStyles() {
         .destinations-grid { grid-template-columns: repeat(3, 1fr); }
         .related-grid { grid-template-columns: repeat(2, 1fr); }
         .fleet-aircraft-grid { grid-template-columns: repeat(2, 1fr); }
+        .svc-cat-tile { height: 200px; }
+        .svc-cat-tile--cta { height: 200px; }
       }
 
       @media (max-width: 768px) {
@@ -2334,6 +2411,8 @@ function PageStyles() {
         .booking-step-nav { flex-direction: column; align-items: stretch; }
         .booking-step-nav button { width: 100%; justify-content: center; }
         .fleet-aircraft-grid { grid-template-columns: 1fr; }
+        .svc-cat-tile { height: 180px; }
+        .svc-cat-tile--cta { height: 180px; }
       }
 
       @media (max-width: 600px) {
@@ -2341,6 +2420,13 @@ function PageStyles() {
         .related-grid { grid-template-columns: 1fr; }
         .offset-bar-row { grid-template-columns: 90px 1fr 32px; gap: 0.5rem; }
         .offset-bar-row__label { font-size: 0.68rem; }
+      }
+
+      @media (max-width: 480px) {
+        .svc-cat-tile { height: 160px; }
+        .svc-cat-tile--cta { height: 160px; }
+        .svc-cat-tile__label { font-size: 0.85rem; }
+        .svc-cat-tile__cta-label { font-size: 1rem; }
       }
     `}</style>
   );
