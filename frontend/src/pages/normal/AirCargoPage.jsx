@@ -670,8 +670,8 @@ export default function AirCargoPage() {
                 <img src={cat.img} alt={cat.label} className="ac-cat-tile__bg" />
                 <div className="ac-cat-tile__overlay" />
                 <div className="ac-cat-tile__content">
-                  <i className={`bi ${cat.icon}`}></i>
                   <span>{cat.label}</span>
+                  <i className="bi bi-arrow-right"></i>
                 </div>
               </div>
             )
@@ -1116,7 +1116,8 @@ export default function AirCargoPage() {
           height: 200px;
           overflow: hidden;
           display: flex;
-          align-items: flex-end;
+          align-items: center;
+          justify-content: center;
         }
         .ac-cat-tile__bg {
           position: absolute;
@@ -1141,11 +1142,14 @@ export default function AirCargoPage() {
           padding: 1.25rem;
           color: var(--color-white);
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 0.6rem;
+          justify-content: center;
+          gap: 0.5rem;
           font-size: 0.95rem;
           font-weight: 600;
           font-family: var(--font-label, sans-serif);
+          text-align: center;
         }
         .ac-cat-tile__content i {
           color: var(--color-gold);
