@@ -1068,6 +1068,102 @@ function AircraftBadge({ booking, operatorAircraftMap, catalogAircraftMap, opera
   return <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Not assigned</span>
 }
 
+// ── Actions Dropdown Component ───────────────────────────────────────────────
+function ActionsDropdown({ booking, onEdit, onPrice, onRFQ, onInvoice, onDetail }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const actionItems = [
+    { label: 'Edit', icon: 'bi-pencil', color: '#0a2540', onClick: onEdit },
+    { label: 'Set Price', icon: 'bi-currency-dollar', color: '#0a2540', onClick: onPrice },
+    { label: 'Send RFQ', icon: 'bi-send', color: '#0a2540', onClick: onRFQ },
+    { label: 'Invoice', icon: 'bi-file-earmark-pdf', color: '#c8a245', onClick: onInvoice },
+    { label: 'View Details', icon: 'bi-eye', color: '#6b7c93', onClick: onDetail },
+  ]
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          padding: '0.3rem 0.6rem',
+          background: 'transparent',
+          border: '1px solid #e8edf2',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          color: '#6b7c93',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#0a2540' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#e8edf2' }}
+        aria-label="Actions"
+      >
+        <i className="bi bi-three-dots-vertical" style={{ fontSize: '1rem' }}></i>
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: '100%',
+          marginTop: '0.25rem',
+          minWidth: '160px',
+          background: '#ffffff',
+          border: '1px solid #e8edf2',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 100,
+          overflow: 'hidden',
+          padding: '0.25rem 0',
+        }}>
+          {actionItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setIsOpen(false)
+                item.onClick()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.4rem 1rem',
+                width: '100%',
+                border: 'none',
+                background: 'transparent',
+                color: '#0a2540',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className={`bi ${item.icon}`} style={{ color: item.color, fontSize: '0.9rem' }}></i>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ══ Main Component ════════════════════════════════════════════════════════════
 export default function AdminFlightBookingsPage() {
   const [bookings, setBookings]         = useState([])
@@ -1356,7 +1452,7 @@ export default function AdminFlightBookingsPage() {
     }
   }
 
-  // ══ Existing price / RFQ / invoice flows (unchanged) ════════════════════════
+  // ══ Existing price / RFQ / invoice flows ════════════════════════════════════
 
   const openPrice = (b) => {
     setSelected(b)
@@ -1535,7 +1631,7 @@ export default function AdminFlightBookingsPage() {
             font-size: 0.75rem !important;
           }
           .booking-table .actions-cell {
-            min-width: 120px;
+            min-width: 50px;
           }
         }
         
@@ -1679,33 +1775,14 @@ export default function AdminFlightBookingsPage() {
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#0a2540' }} className="hide-phone">{fmt(b.quoted_price_usd)}</td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}><Badge status={b.status} /></td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }} className="actions-cell">
-                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button title="Edit booking"
-                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#0a2540', border: '1px solid #0a2540', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openEdit(b)}>
-                          <i className="bi bi-pencil"></i>
-                        </button>
-                        <button title="Set price"
-                          style={{ padding: '0.3rem 0.6rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openPrice(b)}>
-                          <i className="bi bi-currency-dollar"></i>
-                        </button>
-                        <button title="Send RFQ"
-                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#0a2540', border: '1px solid #0a2540', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openRFQ(b)}>
-                          <i className="bi bi-send"></i>
-                        </button>
-                        <button title="Generate Invoice"
-                          style={{ padding: '0.3rem 0.6rem', background: '#c8a245', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
-                          onClick={() => openInvoice(b)}>
-                          <i className="bi bi-file-earmark-pdf"></i>
-                        </button>
-                        <button title="View details"
-                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#6b7c93', border: '1px solid #e8edf2', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openDetail(b)}>
-                          <i className="bi bi-eye"></i>
-                        </button>
-                      </div>
+                      <ActionsDropdown
+                        booking={b}
+                        onEdit={() => openEdit(b)}
+                        onPrice={() => openPrice(b)}
+                        onRFQ={() => openRFQ(b)}
+                        onInvoice={() => openInvoice(b)}
+                        onDetail={() => openDetail(b)}
+                      />
                     </td>
                   </tr>
                 ))}
