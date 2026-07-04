@@ -267,6 +267,7 @@ export const adminAPI = {
   assignOperator: (id, d) => api.post(`/admin/flight-bookings/${id}/assign_operator/`, d),
   sendRFQ:        (id, d) => api.post(`/admin/flight-bookings/${id}/send_rfq/`, d),
   revenue:        ()      => api.get('/admin/flight-bookings/revenue/'),
+  airports: (params = {}) => fetchAllPages('/airports/', params),
 
   // Yacht charters
   charters:        params  => api.get('/admin/yacht-charters/', { params }),

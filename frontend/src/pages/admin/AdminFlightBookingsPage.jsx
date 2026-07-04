@@ -1084,6 +1084,7 @@ export default function AdminFlightBookingsPage() {
   const [catalogAircraftOptions, setCatalogAircraftOptions]   = useState([])
   const [charterOperators, setCharterOperators]       = useState([])
   const [refDataErr, setRefDataErr]                   = useState('')
+  const [refDataLoading, setRefDataLoading]           = useState(true)
 
   // ── Create / Edit booking form ───────────────────────────────────────────────
   const [bookingForm, setBookingForm]         = useState(emptyBookingForm())
@@ -1140,6 +1141,7 @@ export default function AdminFlightBookingsPage() {
   // ── Load reference data once (airports + aircraft, catalog + operator + operators) ──
   useEffect(() => {
     (async () => {
+      setRefDataLoading(true)
       try {
         const calls = [
           adminAPI.airports ? adminAPI.airports() : Promise.resolve(null),
@@ -1150,29 +1152,62 @@ export default function AdminFlightBookingsPage() {
         ]
         const [airportsRes, opAcRes, acRes, allOpAcRes, opsRes] = await Promise.all(calls)
 
+        // ── Airports ──────────────────────────────────────────────────────────────
         if (airportsRes) {
           const d = airportsRes?.data || airportsRes
-          setAirports(d?.results || d || [])
+          // Handle both paginated and non-paginated responses
+          let airportsData = d?.results || d
+          if (!Array.isArray(airportsData)) {
+            airportsData = []
+          }
+          console.log('✅ Loaded airports:', airportsData.length, airportsData)
+          setAirports(airportsData)
+        } else {
+          console.warn('⚠️ No airports data received')
         }
+
+        // ── Operator Aircraft (available only) ──────────────────────────────────
         if (opAcRes) {
           const d = opAcRes?.data || opAcRes
-          setOperatorAircraftOptions(d?.results || d || [])
+          let data = d?.results || d
+          if (!Array.isArray(data)) data = []
+          console.log('✅ Loaded available operator aircraft:', data.length)
+          setOperatorAircraftOptions(data)
         }
+
+        // ── Catalog Aircraft ──────────────────────────────────────────────────────
         if (acRes) {
           const d = acRes?.data || acRes
-          setCatalogAircraftOptions(d?.results || d || [])
+          let data = d?.results || d
+          if (!Array.isArray(data)) data = []
+          console.log('✅ Loaded catalog aircraft:', data.length)
+          setCatalogAircraftOptions(data)
         }
+
+        // ── All Operator Aircraft (every status) ──────────────────────────────────
         if (allOpAcRes) {
           const d = allOpAcRes?.data || allOpAcRes
-          setAllOperatorAircraftOptions(d?.results || d || [])
+          let data = d?.results || d
+          if (!Array.isArray(data)) data = []
+          console.log('✅ Loaded ALL operator aircraft:', data.length)
+          setAllOperatorAircraftOptions(data)
         }
+
+        // ── Charter Operators ─────────────────────────────────────────────────────
         if (opsRes) {
           const d = opsRes?.data || opsRes
-          setCharterOperators(d?.results || d || [])
+          let data = d?.results || d
+          if (!Array.isArray(data)) data = []
+          console.log('✅ Loaded charter operators:', data.length)
+          setCharterOperators(data)
         }
+
+        setRefDataErr('')
       } catch (err) {
-        console.error('Failed to load reference data:', err)
-        setRefDataErr('Some dropdowns (airports / aircraft / operators) could not be loaded — check adminAPI wiring.')
+        console.error('❌ Failed to load reference data:', err)
+        setRefDataErr('Some dropdowns (airports / aircraft / operators) could not be loaded — check adminAPI wiring and backend connectivity.')
+      } finally {
+        setRefDataLoading(false)
       }
     })()
   }, [])
@@ -1475,6 +1510,40 @@ export default function AdminFlightBookingsPage() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         @import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css');
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        
+        /* ── Responsive Table Styles ── */
+        .table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          width: 100%;
+        }
+        
+        .booking-table {
+          width: 100%;
+          min-width: 1000px;
+          border-collapse: collapse;
+          font-size: 0.875rem;
+        }
+        
+        /* Mobile responsive: hide less important columns on small screens */
+        @media (max-width: 768px) {
+          .booking-table .hide-mobile {
+            display: none;
+          }
+          .booking-table td, .booking-table th {
+            padding: 0.5rem 0.6rem !important;
+            font-size: 0.75rem !important;
+          }
+          .booking-table .actions-cell {
+            min-width: 120px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .booking-table .hide-phone {
+            display: none;
+          }
+        }
       `}</style>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -1484,7 +1553,7 @@ export default function AdminFlightBookingsPage() {
           </h2>
           <p style={{ color: '#6b7c93', fontSize: '0.875rem' }}>Manage all flight booking requests, aircraft assignment, RFQs and invoices</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <button onClick={openCreate}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
             <i className="bi bi-plus-lg"></i> New Booking
@@ -1501,6 +1570,12 @@ export default function AdminFlightBookingsPage() {
       {refDataErr && (
         <div style={{ marginBottom: '1rem', padding: '0.6rem 1rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '6px', color: '#92400e', fontSize: '0.78rem' }}>
           <i className="bi bi-exclamation-triangle-fill"></i> {refDataErr}
+        </div>
+      )}
+
+      {refDataLoading && (
+        <div style={{ marginBottom: '1rem', padding: '0.6rem 1rem', background: 'rgba(10,37,64,0.04)', border: '1px solid rgba(10,37,64,0.12)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#0a2540', fontSize: '0.78rem' }}>
+          <Spinner size={14} color="#0a2540" /> Loading reference data (airports, aircraft, operators)...
         </div>
       )}
 
@@ -1537,8 +1612,15 @@ export default function AdminFlightBookingsPage() {
         )}
       </div>
 
-      <div style={{ background: '#ffffff', border: '1px solid #e8edf2', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div style={{ overflowX: 'auto' }}>
+      {/* ── Table with improved responsive wrapper ── */}
+      <div style={{ 
+        background: '#ffffff', 
+        border: '1px solid #e8edf2', 
+        borderRadius: '12px', 
+        overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+      }}>
+        <div className="table-responsive">
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
               <div style={{ width: '40px', height: '40px', margin: '0 auto 1rem', border: '3px solid #e8edf2', borderTopColor: '#0a2540', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -1550,12 +1632,18 @@ export default function AdminFlightBookingsPage() {
               <p style={{ color: '#6b7c93' }}>No bookings found.</p>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table className="booking-table">
               <thead>
                 <tr style={{ borderBottom: '1px solid #e8edf2', background: '#f8fafc' }}>
-                  {['Reference', 'Guest', 'Route', 'Date', 'Aircraft', 'Pax', 'Quoted', 'Status', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '0.75rem 1rem', textAlign: h === 'Pax' || h === 'Status' || h === 'Actions' ? 'center' : h === 'Quoted' ? 'right' : 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>{h}</th>
-                  ))}
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Ref</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Guest</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }} className="hide-mobile">Route</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }} className="hide-mobile">Date</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Aircraft</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }} className="hide-phone">Pax</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }} className="hide-phone">Quoted</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Status</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1570,7 +1658,7 @@ export default function AdminFlightBookingsPage() {
                       <div style={{ fontWeight: 500, color: '#0a2540' }}>{b.guest_name || '—'}</div>
                       <div style={{ fontSize: '0.7rem', color: '#6b7c93' }}>{b.guest_email || '—'}</div>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
+                    <td style={{ padding: '0.75rem 1rem' }} className="hide-mobile">
                       <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#0a2540' }}>
                         {b.origin_detail?.code || b.origin || '—'} <i className="bi bi-arrow-right"></i> {b.destination_detail?.code || b.destination || '—'}
                       </div>
@@ -1578,7 +1666,7 @@ export default function AdminFlightBookingsPage() {
                         {b.origin_detail?.city || ''}{b.destination_detail?.city ? ` → ${b.destination_detail.city}` : ''}
                       </div>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#2a3a4e' }}>{b.departure_date || '—'}</td>
+                    <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#2a3a4e' }} className="hide-mobile">{b.departure_date || '—'}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <AircraftBadge
                         booking={b}
@@ -1587,10 +1675,10 @@ export default function AdminFlightBookingsPage() {
                         operatorsMap={operatorsMap}
                       />
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#2a3a4e' }}>{b.passenger_count || 1}</td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#0a2540' }}>{fmt(b.quoted_price_usd)}</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#2a3a4e' }} className="hide-phone">{b.passenger_count || 1}</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#0a2540' }} className="hide-phone">{fmt(b.quoted_price_usd)}</td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}><Badge status={b.status} /></td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }} className="actions-cell">
                       <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <button title="Edit booking"
                           style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#0a2540', border: '1px solid #0a2540', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
@@ -1666,14 +1754,27 @@ export default function AdminFlightBookingsPage() {
                 {label('Origin Airport', true)}
                 <select {...inp()} value={bookingForm.origin} onChange={e => setBookingForm(f => ({ ...f, origin: e.target.value }))} required>
                   <option value="">Select origin…</option>
-                  {airports.map(a => <option key={a.id} value={a.id}>{a.code} — {a.city}</option>)}
+                  {Array.isArray(airports) && airports.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.code} — {a.city}{a.country ? `, ${a.country}` : ''}
+                    </option>
+                  ))}
                 </select>
+                {airports.length === 0 && !refDataLoading && (
+                  <div style={{ fontSize: '0.7rem', color: '#f59e0b', marginTop: '0.3rem' }}>
+                    <i className="bi bi-exclamation-triangle"></i> No airports loaded. Check API connection.
+                  </div>
+                )}
               </div>
               <div>
                 {label('Destination Airport', true)}
                 <select {...inp()} value={bookingForm.destination} onChange={e => setBookingForm(f => ({ ...f, destination: e.target.value }))} required>
                   <option value="">Select destination…</option>
-                  {airports.map(a => <option key={a.id} value={a.id}>{a.code} — {a.city}</option>)}
+                  {Array.isArray(airports) && airports.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.code} — {a.city}{a.country ? `, ${a.country}` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -1893,7 +1994,7 @@ export default function AdminFlightBookingsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button type="button" onClick={handlePreviewPDF} disabled={pdfLoading}
                     style={{
                       padding: '0.6rem 1.1rem',
@@ -1923,7 +2024,7 @@ export default function AdminFlightBookingsPage() {
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => setModal(null)}
                     style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
                     Cancel
@@ -2132,7 +2233,7 @@ export default function AdminFlightBookingsPage() {
               </>
             )}
 
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', flexWrap: 'wrap' }}>
               <button onClick={() => { setModal(null); openEdit(selected) }}
                 style={{ padding: '0.6rem 1.2rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                 <i className="bi bi-pencil"></i> Edit Booking
