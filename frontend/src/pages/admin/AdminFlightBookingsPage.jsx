@@ -1,8 +1,39 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { adminAPI } from '../../services/api'
 
 // ── npm install jspdf html2canvas qrcode ──────────────────────────────────────────────
 import QRCode from 'qrcode'
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NOTE — API METHODS THIS PAGE EXPECTS ON `adminAPI`
+   ════════════════════════════════════════════════════════════════════════════
+   Everything below already exists in your codebase:
+     adminAPI.bookings(params)              -> GET  /api/admin/flight-bookings/
+     adminAPI.setPrice(id, data)            -> POST /api/admin/flight-bookings/<id>/set_price/
+     adminAPI.sendRFQ(id, data)             -> POST /api/admin/flight-bookings/<id>/send_rfq/
+     adminAPI.sendEmail(data)               -> POST /api/admin/send-email/
+     adminAPI.createFlightBooking(data)     -> POST  /api/admin/flight-bookings/
+     adminAPI.updateFlightBooking(id, data) -> PATCH /api/admin/flight-bookings/<id>/
+     adminAPI.airports()                    -> GET   /api/airports/                 (AirportViewSet)
+     adminAPI.aircraftCatalog()             -> GET   /api/aircraft/                 (AircraftViewSet)
+     adminAPI.getAircraft(id)               -> GET   /api/aircraft/<id>/
+     adminAPI.operatorAircraft(params)      -> GET   /api/admin/operator-aircraft/  (available only — used for assignment dropdown)
+     adminAPI.allOperatorAircraft(params)   -> GET   /api/admin/operator-aircraft/  (ALL statuses — used to resolve already-assigned aircraft)
+     adminAPI.getOperatorAircraft(id)       -> GET   /api/admin/operator-aircraft/<id>/
+     adminAPI.operators(params)             -> GET   /api/admin/operators/          (AdminCharterOperatorViewSet)
+     adminAPI.availabilityBlocks(params)    -> GET   /api/availability-blocks/       (AvailabilityBlockViewSet)
+
+   WHY THIS FILE CHANGED
+   ────────────────────────────────────────────────────────────────────────────
+   The admin flight-booking serializer only returns raw foreign-key IDs for
+   `operator_aircraft`, `aircraft` and `assigned_operator` — it does not nest
+   full aircraft/operator objects. Previously the table just printed those
+   IDs ("Operator Aircraft #14"). Instead of guessing or adding N+1 per-row
+   API calls, we fetch the full aircraft + operator lists ONCE (already
+   wired up below) and build lookup maps, so every row resolves the real
+   aircraft name, registration, category and operator — all sourced from
+   the backend, never invented client-side.
+   ════════════════════════════════════════════════════════════════════════════ */
 
 const STATUS_OPTIONS = ['inquiry', 'rfq_sent', 'quoted', 'confirmed', 'in_flight', 'completed', 'cancelled']
 const STATUS_COLOR = {
@@ -17,6 +48,19 @@ const STATUS_COLOR = {
 const STATUS_LABEL = {
   inquiry: 'Inquiry', rfq_sent: 'RFQ Sent', quoted: 'Quoted',
   confirmed: 'Confirmed', in_flight: 'In Flight', completed: 'Completed', cancelled: 'Cancelled'
+}
+const TRIP_TYPE_OPTIONS = [
+  { value: 'one_way', label: 'One Way' },
+  { value: 'round_trip', label: 'Round Trip' },
+  { value: 'multi_leg', label: 'Multi-Leg' },
+]
+const CATEGORY_OPTIONS = [
+  'light', 'midsize', 'super_midsize', 'heavy', 'ultra_long', 'vip_airliner', 'turboprop', 'helicopter'
+]
+const CATEGORY_LABEL = {
+  light: 'Light Jet', midsize: 'Midsize Jet', super_midsize: 'Super Midsize Jet',
+  heavy: 'Heavy Jet', ultra_long: 'Ultra Long Range', vip_airliner: 'VIP Airliner',
+  turboprop: 'Turboprop', helicopter: 'Helicopter'
 }
 
 // ── NJH Company Data ──────────────────────────────────────────────────────────
@@ -35,6 +79,24 @@ const NJH = {
     branch: 'Upper Hill Branch',
   },
   mpesa: 'Paybill: 400200 | Account: NJH-CHARTER',
+}
+
+function emptyBookingForm() {
+  return {
+    guest_name: '', guest_email: '', guest_phone: '', company: '',
+    trip_type: 'one_way',
+    origin: '', destination: '',
+    departure_date: '', departure_time: '', return_date: '',
+    passenger_count: 1,
+    aircraft: '', operator_aircraft: '', assigned_operator: '',
+    preferred_category: '',
+    special_requests: '',
+    catering_requested: false,
+    ground_transport_requested: false,
+    concierge_requested: false,
+    operator_cost_usd: '', quoted_price_usd: '', commission_pct: '15',
+    status: 'inquiry',
+  }
 }
 
 // ── Professional QR Code Generator ────────────────────────────────────────────
@@ -793,7 +855,7 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
 </html>`
 }
 
-// ── PDF Generation with Real QR Code ─────────────────────────────────────────
+// ── PDF Generation with Real QR Code — locked to a single A4 page ────────────
 async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
     import('jspdf'),
@@ -837,11 +899,11 @@ async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
   await new Promise(r => setTimeout(r, 800))
 
   const invoiceEl = iframe.contentDocument.querySelector('.invoice-container')
-  
+
   if (invoiceEl) {
     const logoImg = invoiceEl.querySelector('.logo-img')
     const stampImg = invoiceEl.querySelector('.stamp-img')
-    
+
     if (logoImg && !logoImg.complete) {
       await new Promise(resolve => { logoImg.onload = resolve; setTimeout(resolve, 1000) })
     }
@@ -849,6 +911,10 @@ async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
       await new Promise(resolve => { stampImg.onload = resolve; setTimeout(resolve, 1000) })
     }
   }
+
+  const naturalHeight = invoiceEl ? invoiceEl.scrollHeight : 1300
+  iframe.style.height = `${naturalHeight}px`
+  await new Promise(r => setTimeout(r, 50))
 
   const canvas = await html2canvas(invoiceEl || iframe.contentDocument.body, {
     scale: 2.5,
@@ -866,15 +932,17 @@ async function generateInvoicePDF(booking, invoiceForm, mode = 'download') {
 
   const pdfW = pdf.internal.pageSize.getWidth()
   const pdfH = pdf.internal.pageSize.getHeight()
-  const ratio = pdfW / canvas.width
-  const scaledH = canvas.height * ratio
 
-  let yOffset = 0
-  while (yOffset < scaledH) {
-    if (yOffset > 0) pdf.addPage()
-    pdf.addImage(imgData, 'JPEG', 0, -yOffset, pdfW, scaledH)
-    yOffset += pdfH
-  }
+  const widthRatio = pdfW / canvas.width
+  const heightRatio = pdfH / canvas.height
+  const ratio = Math.min(widthRatio, heightRatio)
+
+  const renderW = canvas.width * ratio
+  const renderH = canvas.height * ratio
+  const xOffset = (pdfW - renderW) / 2
+  const yOffset = (pdfH - renderH) / 2
+
+  pdf.addImage(imgData, 'JPEG', xOffset, yOffset, renderW, renderH)
 
   const filename = `NJH-Invoice-${invoiceForm.invoice_no || booking.id}.pdf`
 
@@ -906,7 +974,7 @@ function Badge({ status }) {
 
 function Modal({ open, onClose, title, children, size = 'lg' }) {
   if (!open) return null
-  const maxW = size === 'xl' ? '900px' : size === 'lg' ? '640px' : size === 'md' ? '480px' : '360px'
+  const maxW = size === 'xl' ? '960px' : size === 'lg' ? '640px' : size === 'md' ? '480px' : '360px'
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(10,37,64,0.65)',
@@ -938,6 +1006,68 @@ function Modal({ open, onClose, title, children, size = 'lg' }) {
   )
 }
 
+// ── Aircraft mini-card used inside the booking table ──────────────────────────
+// Resolves the REAL aircraft (and operator) object from the lookup maps built
+// from backend data — falls back to a plain ID label only while that
+// reference data is still loading.
+function AircraftBadge({ booking, operatorAircraftMap, catalogAircraftMap, operatorsMap }) {
+  if (booking.operator_aircraft) {
+    const ac = operatorAircraftMap?.[booking.operator_aircraft]
+    const operatorName = ac?.operator_name
+      || operatorsMap?.[booking.assigned_operator]?.name
+      || operatorsMap?.[booking.assigned_operator]?.trading_name
+
+    if (ac) {
+      return (
+        <div>
+          <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#0a2540', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <i className="bi bi-airplane-fill" style={{ color: '#c8a245' }}></i>
+            {ac.name}
+            <span style={{ color: '#94a3b8', fontWeight: 400 }}>({ac.registration_number})</span>
+          </div>
+          <div style={{ fontSize: '0.68rem', color: '#6b7c93' }}>
+            {CATEGORY_LABEL[ac.category] || ac.category}
+            {operatorName ? ` · ${operatorName}` : ''}
+          </div>
+        </div>
+      )
+    }
+    // Reference data not loaded yet — show ID as a temporary placeholder only
+    return (
+      <div>
+        <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#0a2540', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <i className="bi bi-airplane-fill" style={{ color: '#c8a245' }}></i>
+          Operator Aircraft #{booking.operator_aircraft}
+        </div>
+        {operatorName && (
+          <div style={{ fontSize: '0.68rem', color: '#6b7c93' }}>{operatorName}</div>
+        )}
+      </div>
+    )
+  }
+
+  if (booking.aircraft) {
+    const ac = catalogAircraftMap?.[booking.aircraft] || booking.aircraft_detail
+    if (ac) {
+      return (
+        <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#0a2540', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <i className="bi bi-airplane" style={{ color: '#6b7c93' }}></i>
+          {ac.name}
+          <span style={{ color: '#94a3b8', fontWeight: 400 }}>({CATEGORY_LABEL[ac.category] || ac.category_display || ac.category})</span>
+        </div>
+      )
+    }
+    return (
+      <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#0a2540', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+        <i className="bi bi-airplane" style={{ color: '#6b7c93' }}></i>
+        Catalog Aircraft #{booking.aircraft}
+      </div>
+    )
+  }
+
+  return <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Not assigned</span>
+}
+
 // ══ Main Component ════════════════════════════════════════════════════════════
 export default function AdminFlightBookingsPage() {
   const [bookings, setBookings]         = useState([])
@@ -946,6 +1076,25 @@ export default function AdminFlightBookingsPage() {
   const [status, setStatus]             = useState('')
   const [selected, setSelected]         = useState(null)
   const [modal, setModal]               = useState(null)
+
+  // ── Reference data for dropdowns AND for resolving real names in the table ──
+  const [airports, setAirports]                       = useState([])
+  const [operatorAircraftOptions, setOperatorAircraftOptions] = useState([])       // available-only, used for the assignment dropdown
+  const [allOperatorAircraftOptions, setAllOperatorAircraftOptions] = useState([]) // every status, used to resolve already-assigned aircraft
+  const [catalogAircraftOptions, setCatalogAircraftOptions]   = useState([])
+  const [charterOperators, setCharterOperators]       = useState([])
+  const [refDataErr, setRefDataErr]                   = useState('')
+
+  // ── Create / Edit booking form ───────────────────────────────────────────────
+  const [bookingForm, setBookingForm]         = useState(emptyBookingForm())
+  const [bookingFormMode, setBookingFormMode] = useState('create') // 'create' | 'edit'
+  const [bookingFormLoading, setBookingFormLoading] = useState(false)
+  const [bookingFormErr, setBookingFormErr]   = useState('')
+
+  // ── Rich detail view: aircraft + availability ────────────────────────────────
+  const [aircraftDetail, setAircraftDetail]           = useState(null)   // { type: 'operator'|'catalog', data }
+  const [aircraftDetailLoading, setAircraftDetailLoading] = useState(false)
+  const [availabilityBlocks, setAvailabilityBlocks]   = useState([])
 
   const [priceForm, setPriceForm]       = useState({
     quoted_price_usd: '', operator_cost_usd: '', commission_pct: '15',
@@ -987,6 +1136,192 @@ export default function AdminFlightBookingsPage() {
   }, [search, status])
 
   useEffect(() => { load() }, [load])
+
+  // ── Load reference data once (airports + aircraft, catalog + operator + operators) ──
+  useEffect(() => {
+    (async () => {
+      try {
+        const calls = [
+          adminAPI.airports ? adminAPI.airports() : Promise.resolve(null),
+          adminAPI.operatorAircraft ? adminAPI.operatorAircraft({ status: 'available' }) : Promise.resolve(null),
+          adminAPI.aircraftCatalog ? adminAPI.aircraftCatalog() : Promise.resolve(null),
+          adminAPI.allOperatorAircraft ? adminAPI.allOperatorAircraft() : Promise.resolve(null),
+          adminAPI.operators ? adminAPI.operators() : Promise.resolve(null),
+        ]
+        const [airportsRes, opAcRes, acRes, allOpAcRes, opsRes] = await Promise.all(calls)
+
+        if (airportsRes) {
+          const d = airportsRes?.data || airportsRes
+          setAirports(d?.results || d || [])
+        }
+        if (opAcRes) {
+          const d = opAcRes?.data || opAcRes
+          setOperatorAircraftOptions(d?.results || d || [])
+        }
+        if (acRes) {
+          const d = acRes?.data || acRes
+          setCatalogAircraftOptions(d?.results || d || [])
+        }
+        if (allOpAcRes) {
+          const d = allOpAcRes?.data || allOpAcRes
+          setAllOperatorAircraftOptions(d?.results || d || [])
+        }
+        if (opsRes) {
+          const d = opsRes?.data || opsRes
+          setCharterOperators(d?.results || d || [])
+        }
+      } catch (err) {
+        console.error('Failed to load reference data:', err)
+        setRefDataErr('Some dropdowns (airports / aircraft / operators) could not be loaded — check adminAPI wiring.')
+      }
+    })()
+  }, [])
+
+  // ══ LOOKUP MAPS — resolve real backend objects instead of raw IDs ══════════
+
+  // Merge the "available only" dropdown list with the "all statuses" list so
+  // that an aircraft already assigned to a booking (even if no longer
+  // available) still resolves correctly, both in the table and in the
+  // edit form's dropdown.
+  const combinedOperatorAircraft = useMemo(() => {
+    const map = {}
+    ;[...operatorAircraftOptions, ...allOperatorAircraftOptions].forEach(a => { map[a.id] = a })
+    return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+  }, [operatorAircraftOptions, allOperatorAircraftOptions])
+
+  const operatorAircraftMap = useMemo(() => {
+    const map = {}
+    combinedOperatorAircraft.forEach(a => { map[a.id] = a })
+    return map
+  }, [combinedOperatorAircraft])
+
+  const catalogAircraftMap = useMemo(() => {
+    const map = {}
+    catalogAircraftOptions.forEach(a => { map[a.id] = a })
+    return map
+  }, [catalogAircraftOptions])
+
+  const operatorsMap = useMemo(() => {
+    const map = {}
+    charterOperators.forEach(o => { map[o.id] = o })
+    return map
+  }, [charterOperators])
+
+  // ══ CREATE / EDIT BOOKING ══════════════════════════════════════════════════
+
+  const openCreate = () => {
+    setBookingFormMode('create')
+    setBookingForm(emptyBookingForm())
+    setBookingFormErr('')
+    setModal('bookingForm')
+  }
+
+  const openEdit = (b) => {
+    setBookingFormMode('edit')
+    setSelected(b)
+    setBookingForm({
+      guest_name: b.guest_name || '',
+      guest_email: b.guest_email || '',
+      guest_phone: b.guest_phone || '',
+      company: b.company || '',
+      trip_type: b.trip_type || 'one_way',
+      origin: b.origin_detail?.id || b.origin || '',
+      destination: b.destination_detail?.id || b.destination || '',
+      departure_date: b.departure_date || '',
+      departure_time: b.departure_time || '',
+      return_date: b.return_date || '',
+      passenger_count: b.passenger_count || 1,
+      aircraft: b.aircraft || '',
+      operator_aircraft: b.operator_aircraft || '',
+      assigned_operator: b.assigned_operator || '',
+      preferred_category: b.preferred_category || '',
+      special_requests: b.special_requests || '',
+      catering_requested: !!b.catering_requested,
+      ground_transport_requested: !!b.ground_transport_requested,
+      concierge_requested: !!b.concierge_requested,
+      operator_cost_usd: b.operator_cost_usd || '',
+      quoted_price_usd: b.quoted_price_usd || '',
+      commission_pct: b.commission_pct || '15',
+      status: b.status || 'inquiry',
+    })
+    setBookingFormErr('')
+    setModal('bookingForm')
+  }
+
+  // Picking an operator aircraft auto-fills the assigned operator + preferred category
+  const onSelectOperatorAircraft = (id) => {
+    const ac = combinedOperatorAircraft.find(a => String(a.id) === String(id))
+    setBookingForm(f => ({
+      ...f,
+      operator_aircraft: id,
+      aircraft: '', // mutually exclusive with legacy catalog aircraft
+      assigned_operator: ac?.operator || f.assigned_operator,
+      preferred_category: ac?.category || f.preferred_category,
+    }))
+  }
+
+  const onSelectCatalogAircraft = (id) => {
+    setBookingForm(f => ({ ...f, aircraft: id, operator_aircraft: '', assigned_operator: '' }))
+  }
+
+  const submitBookingForm = async (e) => {
+    e.preventDefault()
+    setBookingFormLoading(true); setBookingFormErr('')
+    try {
+      const payload = { ...bookingForm }
+      // Strip empty optional FK / numeric fields so DRF doesn't choke on ''
+      ;['aircraft', 'operator_aircraft', 'assigned_operator', 'operator_cost_usd', 'quoted_price_usd', 'return_date', 'departure_time'].forEach(f => {
+        if (payload[f] === '' || payload[f] === null || payload[f] === undefined) delete payload[f]
+      })
+
+      if (bookingFormMode === 'create') {
+        if (!adminAPI.createFlightBooking) throw new Error('adminAPI.createFlightBooking is not wired up yet.')
+        await adminAPI.createFlightBooking(payload)
+      } else {
+        if (!adminAPI.updateFlightBooking) throw new Error('adminAPI.updateFlightBooking is not wired up yet.')
+        await adminAPI.updateFlightBooking(selected.id, payload)
+      }
+      await load()
+      setModal(null)
+    } catch (err) {
+      const d = err?.response?.data
+      setBookingFormErr(d ? JSON.stringify(d) : (err?.message || 'Failed to save booking'))
+    } finally { setBookingFormLoading(false) }
+  }
+
+  // ══ DETAIL VIEW — aircraft + availability ═══════════════════════════════════
+
+  const openDetail = async (b) => {
+    setSelected(b)
+    setModal('detail')
+    setAircraftDetail(null)
+    setAvailabilityBlocks([])
+
+    if (!b.operator_aircraft && !b.aircraft) return
+
+    setAircraftDetailLoading(true)
+    try {
+      if (b.operator_aircraft && adminAPI.getOperatorAircraft) {
+        const res = await adminAPI.getOperatorAircraft(b.operator_aircraft)
+        setAircraftDetail({ type: 'operator', data: res?.data || res })
+
+        if (adminAPI.availabilityBlocks) {
+          const avRes = await adminAPI.availabilityBlocks()
+          const all = avRes?.data?.results || avRes?.data || avRes || []
+          setAvailabilityBlocks(all.filter(x => String(x.aircraft) === String(b.operator_aircraft)))
+        }
+      } else if (b.aircraft && adminAPI.getAircraft) {
+        const res = await adminAPI.getAircraft(b.aircraft)
+        setAircraftDetail({ type: 'catalog', data: res?.data || res })
+      }
+    } catch (err) {
+      console.error('Failed to load aircraft detail:', err)
+    } finally {
+      setAircraftDetailLoading(false)
+    }
+  }
+
+  // ══ Existing price / RFQ / invoice flows (unchanged) ════════════════════════
 
   const openPrice = (b) => {
     setSelected(b)
@@ -1123,6 +1458,16 @@ export default function AdminFlightBookingsPage() {
     }} />
   )
 
+  const selectedAircraftLabel = (() => {
+    if (!bookingForm.operator_aircraft && !bookingForm.aircraft) return null
+    if (bookingForm.operator_aircraft) {
+      const ac = operatorAircraftMap[bookingForm.operator_aircraft]
+      return ac ? `${ac.name} (${ac.registration_number}) — ${ac.operator_name || 'Operator'}` : `Operator aircraft #${bookingForm.operator_aircraft}`
+    }
+    const ac = catalogAircraftMap[bookingForm.aircraft]
+    return ac ? `${ac.name} — ${CATEGORY_LABEL[ac.category] || ac.category}` : `Catalog aircraft #${bookingForm.aircraft}`
+  })()
+
   return (
     <div style={{ padding: '1rem', maxWidth: '1600px', margin: '0 auto' }}>
       <style>{`
@@ -1135,18 +1480,29 @@ export default function AdminFlightBookingsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: '#0a2540', marginBottom: '0.25rem', letterSpacing: '-0.3px' }}>
-            
             Flight Bookings
           </h2>
-          <p style={{ color: '#6b7c93', fontSize: '0.875rem' }}>Manage all flight booking requests, RFQs and invoices</p>
+          <p style={{ color: '#6b7c93', fontSize: '0.875rem' }}>Manage all flight booking requests, aircraft assignment, RFQs and invoices</p>
         </div>
-        <button onClick={load}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#0a2540'; e.currentTarget.style.color = '#ffffff' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#0a2540' }}>
-          <i className="bi bi-arrow-clockwise"></i> Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button onClick={openCreate}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+            <i className="bi bi-plus-lg"></i> New Booking
+          </button>
+          <button onClick={load}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#0a2540'; e.currentTarget.style.color = '#ffffff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#0a2540' }}>
+            <i className="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
       </div>
+
+      {refDataErr && (
+        <div style={{ marginBottom: '1rem', padding: '0.6rem 1rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '6px', color: '#92400e', fontSize: '0.78rem' }}>
+          <i className="bi bi-exclamation-triangle-fill"></i> {refDataErr}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, minWidth: '200px' }}>
@@ -1197,7 +1553,7 @@ export default function AdminFlightBookingsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #e8edf2', background: '#f8fafc' }}>
-                  {['Reference', 'Guest', 'Route', 'Date', 'Pax', 'Quoted', 'Status', 'Actions'].map(h => (
+                  {['Reference', 'Guest', 'Route', 'Date', 'Aircraft', 'Pax', 'Quoted', 'Status', 'Actions'].map(h => (
                     <th key={h} style={{ padding: '0.75rem 1rem', textAlign: h === 'Pax' || h === 'Status' || h === 'Actions' ? 'center' : h === 'Quoted' ? 'right' : 'left', fontWeight: 600, color: '#0a2540', whiteSpace: 'nowrap', fontSize: '0.75rem', letterSpacing: '0.5px' }}>{h}</th>
                   ))}
                 </tr>
@@ -1223,11 +1579,24 @@ export default function AdminFlightBookingsPage() {
                       </div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#2a3a4e' }}>{b.departure_date || '—'}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <AircraftBadge
+                        booking={b}
+                        operatorAircraftMap={operatorAircraftMap}
+                        catalogAircraftMap={catalogAircraftMap}
+                        operatorsMap={operatorsMap}
+                      />
+                    </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#2a3a4e' }}>{b.passenger_count || 1}</td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#0a2540' }}>{fmt(b.quoted_price_usd)}</td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}><Badge status={b.status} /></td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button title="Edit booking"
+                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#0a2540', border: '1px solid #0a2540', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                          onClick={() => openEdit(b)}>
+                          <i className="bi bi-pencil"></i>
+                        </button>
                         <button title="Set price"
                           style={{ padding: '0.3rem 0.6rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
                           onClick={() => openPrice(b)}>
@@ -1245,7 +1614,7 @@ export default function AdminFlightBookingsPage() {
                         </button>
                         <button title="View details"
                           style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#6b7c93', border: '1px solid #e8edf2', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => { setSelected(b); setModal('detail') }}>
+                          onClick={() => openDetail(b)}>
                           <i className="bi bi-eye"></i>
                         </button>
                       </div>
@@ -1264,7 +1633,159 @@ export default function AdminFlightBookingsPage() {
         </div>
       )}
 
-      {/* INVOICE MODAL */}
+      {/* ═══════════════ CREATE / EDIT BOOKING MODAL ═══════════════ */}
+      <Modal open={modal === 'bookingForm'} onClose={() => setModal(null)} size="xl"
+        title={<><i className={`bi ${bookingFormMode === 'create' ? 'bi-plus-circle' : 'bi-pencil-square'}`} style={{ color: '#c8a245' }}></i> {bookingFormMode === 'create' ? 'New Flight Booking' : `Edit Booking — ${selected?.guest_name || ''}`}</>}>
+        <form onSubmit={submitBookingForm}>
+          {bookingFormErr && (
+            <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#dc2626', fontSize: '0.8rem', wordBreak: 'break-word' }}>
+              <i className="bi bi-exclamation-triangle-fill"></i> {bookingFormErr}
+            </div>
+          )}
+
+          {/* Guest details */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-person"></i> Guest Details
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>{label('Guest Name', true)}<input {...inp()} value={bookingForm.guest_name} onChange={e => setBookingForm(f => ({ ...f, guest_name: e.target.value }))} required /></div>
+              <div>{label('Guest Email', true)}<input type="email" {...inp()} value={bookingForm.guest_email} onChange={e => setBookingForm(f => ({ ...f, guest_email: e.target.value }))} required /></div>
+              <div>{label('Guest Phone')}<input {...inp()} value={bookingForm.guest_phone} onChange={e => setBookingForm(f => ({ ...f, guest_phone: e.target.value }))} placeholder="+254 7xx xxx xxx" /></div>
+              <div>{label('Company')}<input {...inp()} value={bookingForm.company} onChange={e => setBookingForm(f => ({ ...f, company: e.target.value }))} /></div>
+            </div>
+          </div>
+
+          {/* Route & schedule */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-signpost-split"></i> Route & Schedule
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div>
+                {label('Origin Airport', true)}
+                <select {...inp()} value={bookingForm.origin} onChange={e => setBookingForm(f => ({ ...f, origin: e.target.value }))} required>
+                  <option value="">Select origin…</option>
+                  {airports.map(a => <option key={a.id} value={a.id}>{a.code} — {a.city}</option>)}
+                </select>
+              </div>
+              <div>
+                {label('Destination Airport', true)}
+                <select {...inp()} value={bookingForm.destination} onChange={e => setBookingForm(f => ({ ...f, destination: e.target.value }))} required>
+                  <option value="">Select destination…</option>
+                  {airports.map(a => <option key={a.id} value={a.id}>{a.code} — {a.city}</option>)}
+                </select>
+              </div>
+              <div>
+                {label('Trip Type', true)}
+                <select {...inp()} value={bookingForm.trip_type} onChange={e => setBookingForm(f => ({ ...f, trip_type: e.target.value }))}>
+                  {TRIP_TYPE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
+              <div>{label('Departure Date', true)}<input type="date" {...inp()} value={bookingForm.departure_date} onChange={e => setBookingForm(f => ({ ...f, departure_date: e.target.value }))} required /></div>
+              <div>{label('Departure Time')}<input type="time" {...inp()} value={bookingForm.departure_time} onChange={e => setBookingForm(f => ({ ...f, departure_time: e.target.value }))} /></div>
+              <div>{label('Return Date', bookingForm.trip_type === 'round_trip')}<input type="date" {...inp()} value={bookingForm.return_date} onChange={e => setBookingForm(f => ({ ...f, return_date: e.target.value }))} required={bookingForm.trip_type === 'round_trip'} /></div>
+              <div>{label('Passengers', true)}<input type="number" min="1" {...inp()} value={bookingForm.passenger_count} onChange={e => setBookingForm(f => ({ ...f, passenger_count: e.target.value }))} required /></div>
+            </div>
+          </div>
+
+          {/* Aircraft assignment */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-airplane-engines"></i> Aircraft Assignment
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div>
+                {label('Operator Aircraft (V2 fleet)')}
+                <select {...inp()} value={bookingForm.operator_aircraft} onChange={e => onSelectOperatorAircraft(e.target.value)}>
+                  <option value="">— Not assigned —</option>
+                  {combinedOperatorAircraft.map(a => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.registration_number}) — {a.operator_name || 'Operator'}{a.status && a.status !== 'available' ? ` [${a.status_display || a.status}]` : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                {label('Catalog Aircraft (legacy)')}
+                <select {...inp()} value={bookingForm.aircraft} onChange={e => onSelectCatalogAircraft(e.target.value)}>
+                  <option value="">— Not assigned —</option>
+                  {catalogAircraftOptions.map(a => (
+                    <option key={a.id} value={a.id}>{a.name} — {CATEGORY_LABEL[a.category] || a.category}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {selectedAircraftLabel && (
+              <div style={{ padding: '0.5rem 0.75rem', background: '#f8fafc', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.78rem', color: '#0a2540' }}>
+                <i className="bi bi-check-circle-fill" style={{ color: '#22c55e' }}></i> Assigned: {selectedAircraftLabel}
+              </div>
+            )}
+            <div style={{ marginTop: '0.6rem' }}>
+              {label('Preferred Category (if no specific aircraft yet)')}
+              <select {...inp()} value={bookingForm.preferred_category} onChange={e => setBookingForm(f => ({ ...f, preferred_category: e.target.value }))}>
+                <option value="">Any / Open</option>
+                {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Preferences */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-stars"></i> Preferences
+            </div>
+            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+              {[
+                ['catering_requested', 'Catering'],
+                ['ground_transport_requested', 'Ground Transport'],
+                ['concierge_requested', 'Concierge'],
+              ].map(([key, lbl]) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#2a3a4e', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={bookingForm[key]} onChange={e => setBookingForm(f => ({ ...f, [key]: e.target.checked }))} style={{ width: '15px', height: '15px' }} />
+                  {lbl}
+                </label>
+              ))}
+            </div>
+            <div>
+              {label('Special Requests')}
+              <textarea rows={2} {...inp({ resize: 'vertical' })} value={bookingForm.special_requests} onChange={e => setBookingForm(f => ({ ...f, special_requests: e.target.value }))} />
+            </div>
+          </div>
+
+          {/* Pricing & status (create/edit both from admin side) */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-cash-stack"></i> Pricing & Status
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem' }}>
+              <div>{label('Operator Cost (USD)')}<input type="number" step="0.01" {...inp()} value={bookingForm.operator_cost_usd} onChange={e => setBookingForm(f => ({ ...f, operator_cost_usd: e.target.value }))} /></div>
+              <div>{label('Client Price (USD)')}<input type="number" step="0.01" {...inp()} value={bookingForm.quoted_price_usd} onChange={e => setBookingForm(f => ({ ...f, quoted_price_usd: e.target.value }))} /></div>
+              <div>{label('Commission %')}<input type="number" step="0.01" {...inp()} value={bookingForm.commission_pct} onChange={e => setBookingForm(f => ({ ...f, commission_pct: e.target.value }))} /></div>
+              <div>
+                {label('Status')}
+                <select {...inp()} value={bookingForm.status} onChange={e => setBookingForm(f => ({ ...f, status: e.target.value }))}>
+                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                </select>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+              Tip: for guest-facing quote emails, use the dedicated <strong>Set Price</strong> action from the table instead — it sends a branded email automatically.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={bookingFormLoading} style={{ padding: '0.6rem 1.3rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              {bookingFormLoading
+                ? <><Spinner /> Saving...</>
+                : <><i className="bi bi-check-lg"></i> {bookingFormMode === 'create' ? 'Create Booking' : 'Save Changes'}</>}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ═══════════════ INVOICE MODAL ═══════════════ */}
       <Modal open={modal === 'invoice'} onClose={() => setModal(null)} size="xl"
         title={<><i className="bi bi-file-earmark-pdf" style={{ color: '#c8a245' }}></i> Generate PDF Invoice — {selected?.guest_name}</>}>
         {selected && (
@@ -1420,7 +1941,7 @@ export default function AdminFlightBookingsPage() {
         )}
       </Modal>
 
-      {/* Price Modal */}
+      {/* ═══════════════ PRICE MODAL ═══════════════ */}
       <Modal open={modal === 'price'} onClose={() => setModal(null)} title={<><i className="bi bi-currency-dollar"></i> Set Price — {selected?.guest_name}</>}>
         <form onSubmit={submitPrice}>
           {priceErr && <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#dc2626', fontSize: '0.875rem' }}><i className="bi bi-exclamation-triangle-fill"></i> {priceErr}</div>}
@@ -1447,7 +1968,7 @@ export default function AdminFlightBookingsPage() {
         </form>
       </Modal>
 
-      {/* RFQ Modal */}
+      {/* ═══════════════ RFQ MODAL ═══════════════ */}
       <Modal open={modal === 'rfq'} onClose={() => setModal(null)} title={<><i className="bi bi-send"></i> Send RFQ — {selected?.guest_name}</>}>
         <form onSubmit={submitRFQ}>
           {rfqErr && <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#dc2626', fontSize: '0.875rem' }}><i className="bi bi-exclamation-triangle-fill"></i> {rfqErr}</div>}
@@ -1460,6 +1981,11 @@ export default function AdminFlightBookingsPage() {
           <div style={{ marginBottom: '1.25rem' }}>
             {label('Operator IDs', true)}
             <input value={rfqIds} onChange={e => setRfqIds(e.target.value)} placeholder="e.g. 1, 3, 7" required {...inp()} />
+            {charterOperators.length > 0 && (
+              <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.4rem' }}>
+                Available operators: {charterOperators.map(o => `${o.name} (#${o.id})`).join(', ')}
+              </p>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
             <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
@@ -1470,41 +1996,147 @@ export default function AdminFlightBookingsPage() {
         </form>
       </Modal>
 
-      {/* Detail Modal */}
-      <Modal open={modal === 'detail'} onClose={() => setModal(null)} title={<><i className="bi bi-airplane"></i> Booking Details</>} size="lg">
+      {/* ═══════════════ DETAIL MODAL — full booking + aircraft + availability ═══════════════ */}
+      <Modal open={modal === 'detail'} onClose={() => setModal(null)} title={<><i className="bi bi-airplane"></i> Booking Details</>} size="xl">
         {selected && (
           <div>
+            {/* Booking core info */}
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>
+              <i className="bi bi-clipboard-data"></i> Booking
+            </div>
             {[
               ['Reference', selected.reference || selected.id],
               ['Guest', `${selected.guest_name || '—'} — ${selected.guest_email || '—'}`],
               ['Phone', selected.guest_phone || '—'],
+              ['Company', selected.company || '—'],
               ['Route', `${selected.origin_detail?.code || selected.origin} → ${selected.destination_detail?.code || selected.destination}`],
               ['Date & Time', `${selected.departure_date || '—'}${selected.departure_time ? ` at ${selected.departure_time}` : ''}`],
               ['Passengers', selected.passenger_count || 1],
               ['Trip Type', `${(selected.trip_type || 'one_way').replace(/_/g, ' ')}${selected.return_date ? ` (Return: ${selected.return_date})` : ''}`],
+              ['Assigned Operator', selected.assigned_operator
+                ? (operatorsMap[selected.assigned_operator]?.name || operatorsMap[selected.assigned_operator]?.trading_name || `Operator #${selected.assigned_operator}`)
+                : '—'],
               ['Catering', selected.catering_requested ? 'Yes' : 'No'],
               ['Ground Transport', selected.ground_transport_requested ? 'Yes' : 'No'],
+              ['Concierge', selected.concierge_requested ? 'Yes' : 'No'],
               ['Special Requests', selected.special_requests || '—'],
               ['Submitted', new Date(selected.created_at).toLocaleString()],
             ].map(([k, v]) => (
-              <div key={k} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '0.75rem', padding: '0.5rem 0', borderBottom: '1px solid #e8edf2' }}>
-                <div style={{ fontWeight: 600, color: '#0a2540' }}>{k}</div>
-                <div style={{ color: '#2a3a4e' }}>{v}</div>
+              <div key={k} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid #e8edf2' }}>
+                <div style={{ fontWeight: 600, color: '#0a2540', fontSize: '0.82rem' }}>{k}</div>
+                <div style={{ color: '#2a3a4e', fontSize: '0.82rem' }}>{v}</div>
               </div>
             ))}
-            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '0.75rem', padding: '0.5rem 0', borderBottom: '1px solid #e8edf2' }}>
-              <div style={{ fontWeight: 600, color: '#0a2540' }}>Status</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid #e8edf2' }}>
+              <div style={{ fontWeight: 600, color: '#0a2540', fontSize: '0.82rem' }}>Status</div>
               <div><Badge status={selected.status} /></div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '0.75rem', padding: '0.5rem 0' }}>
-              <div style={{ fontWeight: 600, color: '#0a2540' }}>Pricing</div>
-              <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '0.5rem', marginBottom: '1.5rem', padding: '0.4rem 0' }}>
+              <div style={{ fontWeight: 600, color: '#0a2540', fontSize: '0.82rem' }}>Pricing</div>
+              <div style={{ fontSize: '0.82rem' }}>
                 <div>Quoted: {fmt(selected.quoted_price_usd)}</div>
                 <div>Operator Cost: {fmt(selected.operator_cost_usd)}</div>
                 <div>Commission: {fmt(selected.commission_usd)} ({selected.commission_pct}%)</div>
+                <div>Net Revenue: {fmt(selected.net_revenue_usd)}</div>
               </div>
             </div>
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+
+            {/* Aircraft & operator section */}
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-airplane-fill"></i> Assigned Aircraft
+            </div>
+
+            {!selected.operator_aircraft && !selected.aircraft ? (
+              <div style={{ padding: '0.75rem 1rem', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', fontSize: '0.82rem', color: '#6b7c93', marginBottom: '1.5rem' }}>
+                <i className="bi bi-info-circle"></i> No aircraft assigned yet. Use <strong>Edit</strong> to assign an operator aircraft or catalog aircraft, or <strong>Send RFQ</strong> to request operator bids.
+              </div>
+            ) : aircraftDetailLoading ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: '#6b7c93', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                <Spinner size={18} color="#0a2540" /> Loading aircraft details…
+              </div>
+            ) : aircraftDetail ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem', marginBottom: '1.5rem', background: '#f8fafc', border: '1px solid #e8edf2', borderRadius: '10px', padding: '1rem' }}>
+                <div>
+                  {aircraftDetail.data?.image_url ? (
+                    <img src={aircraftDetail.data.image_url} alt={aircraftDetail.data.name}
+                      style={{ width: '100%', height: '130px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e8edf2' }}
+                      onError={e => { e.currentTarget.style.display = 'none' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8edf2', borderRadius: '8px', color: '#94a3b8', fontSize: '2rem' }}>
+                      <i className="bi bi-airplane"></i>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#0a2540', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                    {aircraftDetail.data?.name || '—'}
+                    {aircraftDetail.type === 'operator' && (
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.68rem', fontWeight: 600, color: '#c8a245', border: '1px solid #c8a24540', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>
+                        OPERATOR FLEET
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#6b7c93', marginBottom: '0.5rem' }}>
+                    {aircraftDetail.data?.model} · {CATEGORY_LABEL[aircraftDetail.data?.category] || aircraftDetail.data?.category}
+                    {aircraftDetail.data?.registration_number ? ` · Reg: ${aircraftDetail.data.registration_number}` : ''}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.78rem', marginBottom: '0.5rem' }}>
+                    <div><span style={{ color: '#6b7c93' }}>Capacity:</span> {aircraftDetail.data?.passenger_capacity || '—'} pax</div>
+                    <div><span style={{ color: '#6b7c93' }}>Range:</span> {aircraftDetail.data?.range_km || '—'} km</div>
+                    <div><span style={{ color: '#6b7c93' }}>Speed:</span> {aircraftDetail.data?.cruise_speed_kmh || '—'} km/h</div>
+                  </div>
+                  {aircraftDetail.type === 'operator' && (
+                    <>
+                      <div style={{ fontSize: '0.78rem', marginBottom: '0.5rem' }}>
+                        <span style={{ color: '#6b7c93' }}>Hourly rate to NJH:</span> {fmt(aircraftDetail.data?.hourly_rate_usd)} &nbsp;
+                        <span style={{ color: '#6b7c93' }}>Client display rate:</span> {fmt(aircraftDetail.data?.display_hourly_rate)}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', marginBottom: '0.5rem' }}>
+                        <span style={{ color: '#6b7c93' }}>Operator:</span> {aircraftDetail.data?.operator_name || '—'} &nbsp;
+                        <span style={{ color: '#6b7c93' }}>Status:</span>{' '}
+                        <span style={{ fontWeight: 600, color: aircraftDetail.data?.status === 'available' ? '#22c55e' : '#f59e0b' }}>
+                          {aircraftDetail.data?.status_display || aircraftDetail.data?.status}
+                        </span>
+                      </div>
+                      {aircraftDetail.data?.maintenance_due && (
+                        <div style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 600 }}>
+                          <i className="bi bi-exclamation-triangle-fill"></i> Maintenance due
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Availability blocks */}
+            {selected.operator_aircraft && (
+              <>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>
+                  <i className="bi bi-calendar-x"></i> Availability Blocks (this aircraft)
+                </div>
+                {availabilityBlocks.length === 0 ? (
+                  <div style={{ padding: '0.6rem 0.9rem', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '6px', color: '#166534', fontSize: '0.78rem', marginBottom: '1.5rem' }}>
+                    <i className="bi bi-check-circle-fill"></i> No blackout / maintenance blocks on record for this aircraft.
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    {availabilityBlocks.map(block => (
+                      <div key={block.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: '#fef9e6', border: '1px solid #f5e0a3', borderRadius: '6px', marginBottom: '0.4rem', fontSize: '0.78rem' }}>
+                        <span><strong>{block.block_type_display || block.block_type}</strong> — {block.notes || 'No notes'}</span>
+                        <span style={{ color: '#6b7c93' }}>{block.start_date} → {block.end_date}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+              <button onClick={() => { setModal(null); openEdit(selected) }}
+                style={{ padding: '0.6rem 1.2rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="bi bi-pencil"></i> Edit Booking
+              </button>
               <button onClick={() => { setModal(null); openInvoice(selected) }}
                 style={{ padding: '0.6rem 1.2rem', background: '#c8a245', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                 <i className="bi bi-file-earmark-pdf"></i> Generate PDF Invoice
