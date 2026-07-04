@@ -1,5 +1,5 @@
 // src/pages/admin/AdminGroupCharterInquiryPage.jsx
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { adminAPI } from '../../services/api'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -13,15 +13,17 @@ const STATUS_META = {
   cancelled: { label: 'Cancelled', color: '#ef4444', icon: 'bi-x-circle' },
 }
 
-const GROUP_TYPE_LABELS = {
-  corporate:    'Corporate & Business',
-  sports_team:  'Sports Team',
-  entertainment:'Entertainment / Film',
-  incentive:    'Incentive Group',
-  wedding:      'Wedding Party',
-  government:   'Government & Diplomatic',
-  other:        'Other',
-}
+const GROUP_TYPE_OPTIONS = [
+  { value: 'corporate',    label: 'Corporate & Business' },
+  { value: 'sports_team',  label: 'Sports Team' },
+  { value: 'entertainment', label: 'Entertainment / Film' },
+  { value: 'incentive',    label: 'Incentive Group' },
+  { value: 'wedding',      label: 'Wedding Party' },
+  { value: 'government',   label: 'Government & Diplomatic' },
+  { value: 'other',        label: 'Other' },
+]
+
+const GROUP_TYPE_LABELS = Object.fromEntries(GROUP_TYPE_OPTIONS.map(o => [o.value, o.label]))
 
 const NJH = {
   name:    'Nairobi Jet House',
@@ -139,6 +141,102 @@ function Field({ label, value }) {
   )
 }
 
+// ── Actions Dropdown Component ───────────────────────────────────────────────
+function ActionsDropdown({ inquiry, onView, onReply, onStatus, onEdit, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const actionItems = [
+    { label: 'View Details', icon: 'bi-eye', color: '#0a2540', onClick: onView },
+    { label: 'Send Proposal', icon: 'bi-envelope-paper', color: '#c8a245', onClick: onReply },
+    { label: 'Update Status', icon: 'bi-pencil-square', color: '#3b82f6', onClick: onStatus },
+    { label: 'Edit Inquiry', icon: 'bi-pencil', color: '#0a2540', onClick: onEdit },
+    { label: 'Delete', icon: 'bi-trash3', color: '#ef4444', onClick: onDelete },
+  ]
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          padding: '0.3rem 0.6rem',
+          background: 'transparent',
+          border: '1px solid #e8edf2',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          color: '#6b7c93',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#0a2540' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#e8edf2' }}
+        aria-label="Actions"
+      >
+        <i className="bi bi-three-dots-vertical" style={{ fontSize: '1rem' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: '100%',
+          marginTop: '0.25rem',
+          minWidth: '170px',
+          background: '#ffffff',
+          border: '1px solid #e8edf2',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 100,
+          overflow: 'hidden',
+          padding: '0.25rem 0',
+        }}>
+          {actionItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setIsOpen(false)
+                item.onClick()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.4rem 1rem',
+                width: '100%',
+                border: 'none',
+                background: 'transparent',
+                color: '#0a2540',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className={`bi ${item.icon}`} style={{ color: item.color, fontSize: '0.9rem' }} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Input helpers ─────────────────────────────────────────────────────────────
 const inp = (extra = {}) => ({
   style: {
@@ -157,6 +255,28 @@ const lbl = (text, required) => (
   </label>
 )
 
+function emptyForm() {
+  return {
+    contact_name: '',
+    email: '',
+    phone: '',
+    company: '',
+    group_type: 'corporate',
+    group_size: 1,
+    origin_description: '',
+    destination_description: '',
+    departure_date: '',
+    return_date: '',
+    is_round_trip: false,
+    preferred_aircraft_category: '',
+    catering_required: false,
+    ground_transport_required: false,
+    budget_range: '',
+    additional_notes: '',
+    status: 'pending',
+  }
+}
+
 // ══ Main Component ════════════════════════════════════════════════════════════
 export default function AdminGroupCharterInquiryPage() {
   const [inquiries, setInquiries]       = useState([])
@@ -165,7 +285,13 @@ export default function AdminGroupCharterInquiryPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [groupFilter, setGroupFilter]   = useState('')
   const [selected, setSelected]         = useState(null)
-  const [modal, setModal]               = useState(null) // 'detail' | 'reply' | 'status'
+  const [modal, setModal]               = useState(null) // 'detail' | 'reply' | 'status' | 'create' | 'edit'
+
+  // ── Form state ──────────────────────────────────────────────────────────────
+  const [form, setForm] = useState(emptyForm())
+  const [formMode, setFormMode] = useState('create')
+  const [formLoading, setFormLoading] = useState(false)
+  const [formErr, setFormErr] = useState('')
 
   const [replyForm, setReplyForm]   = useState({ subject: '', message: '', new_status: '', quoted_price: '' })
   const [replyLoading, setReplyLoading] = useState(false)
@@ -194,6 +320,97 @@ export default function AdminGroupCharterInquiryPage() {
   }, [search, statusFilter, groupFilter])
 
   useEffect(() => { load() }, [load])
+
+  // ── Create ─────────────────────────────────────────────────────────────────
+  const openCreate = () => {
+    setFormMode('create')
+    setForm(emptyForm())
+    setFormErr('')
+    setModal('create')
+  }
+
+  // ── Edit ──────────────────────────────────────────────────────────────────
+  const openEdit = (inq) => {
+    setFormMode('edit')
+    setSelected(inq)
+    setForm({
+      contact_name: inq.contact_name || '',
+      email: inq.email || '',
+      phone: inq.phone || '',
+      company: inq.company || '',
+      group_type: inq.group_type || 'corporate',
+      group_size: inq.group_size || 1,
+      origin_description: inq.origin_description || '',
+      destination_description: inq.destination_description || '',
+      departure_date: inq.departure_date || '',
+      return_date: inq.return_date || '',
+      is_round_trip: !!inq.is_round_trip,
+      preferred_aircraft_category: inq.preferred_aircraft_category || '',
+      catering_required: !!inq.catering_required,
+      ground_transport_required: !!inq.ground_transport_required,
+      budget_range: inq.budget_range || '',
+      additional_notes: inq.additional_notes || '',
+      status: inq.status || 'pending',
+    })
+    setFormErr('')
+    setModal('edit')
+  }
+
+  // ── Submit Form ────────────────────────────────────────────────────────────
+  const submitForm = async (e) => {
+    e.preventDefault()
+    setFormLoading(true)
+    setFormErr('')
+    try {
+      const payload = { ...form }
+      // Strip empty fields
+      Object.keys(payload).forEach(k => {
+        if (payload[k] === '' || payload[k] === null || payload[k] === undefined) {
+          delete payload[k]
+        }
+      })
+
+      if (formMode === 'create') {
+        await adminAPI.createGroupInquiry?.(payload)
+          .catch(async () => {
+            // Fallback: try the generic group charter endpoint
+            await adminAPI.groupCharterAPI?.create(payload)
+            throw new Error('Create endpoint not available')
+          })
+      } else {
+        await adminAPI.updateGroupInquiry?.(selected.id, payload)
+          .catch(async () => {
+            // Fallback: try generic PATCH
+            await adminAPI.updateGroupStatus?.(selected.id, payload)
+            throw new Error('Update endpoint not available')
+          })
+      }
+      await load()
+      setModal(null)
+    } catch (err) {
+      const d = err?.response?.data
+      setFormErr(d?.detail || d?.message || JSON.stringify(d) || 'Failed to save inquiry')
+    } finally {
+      setFormLoading(false)
+    }
+  }
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  const handleDelete = async (inq) => {
+    if (!window.confirm(`Delete group charter inquiry from ${inq.contact_name || 'this contact'}?`)) return
+    try {
+      await adminAPI.deleteGroupInquiry?.(inq.id)
+        .catch(async () => {
+          // Fallback: try generic DELETE
+          await adminAPI.groupCharterAPI?.delete(inq.id)
+          throw new Error('Delete endpoint not available')
+        })
+      await load()
+    } catch (err) {
+      console.error('Failed to delete:', err)
+      alert('Failed to delete inquiry. Please try again.')
+    }
+  }
 
   // ── Open Detail ───────────────────────────────────────────────────────────
   const openDetail = (inq) => { setSelected(inq); setModal('detail') }
@@ -227,8 +444,11 @@ export default function AdminGroupCharterInquiryPage() {
       })
       // Update status if changed
       if (replyForm.new_status && replyForm.new_status !== selected.status) {
-        await adminAPI.updateGroupStatus?.(selected.id, { status: replyForm.new_status })
-          .catch(() => {}) // silent — endpoint may not exist yet
+        try {
+          await adminAPI.updateGroupStatus?.(selected.id, { status: replyForm.new_status })
+        } catch (e) {
+          console.warn('Status update failed, but email sent:', e)
+        }
       }
       setReplySent(true)
       await load()
@@ -251,10 +471,9 @@ export default function AdminGroupCharterInquiryPage() {
     e.preventDefault()
     setStatusLoading(true); setStatusErr('')
     try {
-      // PATCH /admin/group-charters/:id/  or a custom action
       await adminAPI.updateGroupStatus?.(selected.id, { status: statusForm.status })
         .catch(async () => {
-          // Fallback: try generic PATCH via groups endpoint
+          // Fallback: try generic PATCH
           throw new Error('Status update endpoint not available')
         })
       await load(); setModal(null)
@@ -290,14 +509,22 @@ export default function AdminGroupCharterInquiryPage() {
             Review, reply and manage all group charter requests
           </p>
         </div>
-        <button
-          onClick={load}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#0a2540'; e.currentTarget.style.color = '#fff' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#0a2540' }}
-        >
-          <i className="bi bi-arrow-clockwise" /> Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={openCreate}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+          >
+            <i className="bi bi-plus-lg" /> New Inquiry
+          </button>
+          <button
+            onClick={load}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#0a2540'; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#0a2540' }}
+          >
+            <i className="bi bi-arrow-clockwise" /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* ── Stats ── */}
@@ -383,7 +610,7 @@ export default function AdminGroupCharterInquiryPage() {
               <p style={{ color: '#6b7c93' }}>No group charter inquiries found.</p>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '1000px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #e8edf2', background: '#f8fafc' }}>
                   {['Reference', 'Contact', 'Group', 'Route', 'Date', 'Pax', 'Add-ons', 'Status', 'Actions'].map(h => (
@@ -404,12 +631,10 @@ export default function AdminGroupCharterInquiryPage() {
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    {/* Reference */}
                     <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.78rem', color: '#2a3a4e' }}>
                       {String(inq.reference || inq.id).slice(0, 8).toUpperCase()}…
                     </td>
 
-                    {/* Contact */}
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <div style={{ fontWeight: 500, color: '#0a2540' }}>{inq.contact_name || '—'}</div>
                       <div style={{ fontSize: '0.7rem', color: '#6b7c93' }}>{inq.email || '—'}</div>
@@ -420,12 +645,10 @@ export default function AdminGroupCharterInquiryPage() {
                       )}
                     </td>
 
-                    {/* Group Type */}
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <GroupTypeBadge type={inq.group_type} />
                     </td>
 
-                    {/* Route */}
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0a2540' }}>
                         {inq.origin_description || '—'}
@@ -436,7 +659,6 @@ export default function AdminGroupCharterInquiryPage() {
                       </div>
                     </td>
 
-                    {/* Departure Date */}
                     <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#2a3a4e' }}>
                       <div>{inq.departure_date || '—'}</div>
                       {inq.is_round_trip && inq.return_date && (
@@ -451,13 +673,11 @@ export default function AdminGroupCharterInquiryPage() {
                       )}
                     </td>
 
-                    {/* Pax */}
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                       <span style={{ fontWeight: 600, color: '#0a2540', fontSize: '0.9rem' }}>{inq.group_size || 1}</span>
                       <div style={{ fontSize: '0.65rem', color: '#6b7c93' }}>pax</div>
                     </td>
 
-                    {/* Add-ons */}
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         {inq.catering_required && (
@@ -476,39 +696,19 @@ export default function AdminGroupCharterInquiryPage() {
                       </div>
                     </td>
 
-                    {/* Status */}
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                       <Badge status={inq.status} />
                     </td>
 
-                    {/* Actions */}
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center' }}>
-                        {/* View Details */}
-                        <button
-                          title="View details"
-                          style={{ padding: '0.3rem 0.6rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openDetail(inq)}
-                        >
-                          <i className="bi bi-eye" />
-                        </button>
-                        {/* Reply / Propose */}
-                        <button
-                          title="Reply / Send proposal"
-                          style={{ padding: '0.3rem 0.6rem', background: '#c8a245', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openReply(inq)}
-                        >
-                          <i className="bi bi-envelope-paper" />
-                        </button>
-                        {/* Update Status */}
-                        <button
-                          title="Update status"
-                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: '#0a2540', border: '1px solid #0a2540', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openStatus(inq)}
-                        >
-                          <i className="bi bi-pencil" />
-                        </button>
-                      </div>
+                      <ActionsDropdown
+                        inquiry={inq}
+                        onView={() => openDetail(inq)}
+                        onReply={() => openReply(inq)}
+                        onStatus={() => openStatus(inq)}
+                        onEdit={() => openEdit(inq)}
+                        onDelete={() => handleDelete(inq)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -524,6 +724,116 @@ export default function AdminGroupCharterInquiryPage() {
           {(search || statusFilter || groupFilter) && ' with current filters'}
         </div>
       )}
+
+      {/* ══ CREATE / EDIT MODAL ══ */}
+      <Modal
+        open={modal === 'create' || modal === 'edit'}
+        onClose={() => setModal(null)}
+        size="xl"
+        title={
+          <><i className={`bi ${modal === 'create' ? 'bi-plus-circle' : 'bi-pencil-square'}`} style={{ color: '#c8a245' }} />
+            {modal === 'create' ? 'New Group Charter Inquiry' : `Edit Inquiry — ${selected?.contact_name || ''}`}
+          </>
+        }
+      >
+        <form onSubmit={submitForm}>
+          {formErr && (
+            <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#dc2626', fontSize: '0.8rem', wordBreak: 'break-word' }}>
+              <i className="bi bi-exclamation-triangle-fill" /> {formErr}
+            </div>
+          )}
+
+          {/* Contact */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-person" /> Contact Information
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>{lbl('Contact Name', true)}<input {...inp()} value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} required /></div>
+              <div>{lbl('Email', true)}<input type="email" {...inp()} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required /></div>
+              <div>{lbl('Phone')}<input {...inp()} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+              <div>{lbl('Company')}<input {...inp()} value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} /></div>
+            </div>
+          </div>
+
+          {/* Group Details */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-people" /> Group Details
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                {lbl('Group Type', true)}
+                <select {...inp()} value={form.group_type} onChange={e => setForm(f => ({ ...f, group_type: e.target.value }))} required>
+                  {GROUP_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>{lbl('Group Size', true)}<input type="number" min="1" {...inp()} value={form.group_size} onChange={e => setForm(f => ({ ...f, group_size: e.target.value }))} required /></div>
+              <div>{lbl('Budget Range')}<input {...inp()} value={form.budget_range} onChange={e => setForm(f => ({ ...f, budget_range: e.target.value }))} placeholder="e.g. $20,000 – $50,000" /></div>
+              <div>{lbl('Preferred Aircraft Category')}<input {...inp()} value={form.preferred_aircraft_category} onChange={e => setForm(f => ({ ...f, preferred_aircraft_category: e.target.value }))} /></div>
+            </div>
+          </div>
+
+          {/* Route */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-airplane" /> Flight Details
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>{lbl('From', true)}<input {...inp()} value={form.origin_description} onChange={e => setForm(f => ({ ...f, origin_description: e.target.value }))} required /></div>
+              <div>{lbl('To', true)}<input {...inp()} value={form.destination_description} onChange={e => setForm(f => ({ ...f, destination_description: e.target.value }))} required /></div>
+              <div>{lbl('Departure Date')}<input type="date" {...inp()} value={form.departure_date} onChange={e => setForm(f => ({ ...f, departure_date: e.target.value }))} /></div>
+              <div>{lbl('Return Date')}<input type="date" {...inp()} value={form.return_date} onChange={e => setForm(f => ({ ...f, return_date: e.target.value }))} /></div>
+            </div>
+            <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" id="is_round_trip" checked={form.is_round_trip} onChange={e => setForm(f => ({ ...f, is_round_trip: e.target.checked }))} style={{ width: '16px', height: '16px' }} />
+              <label htmlFor="is_round_trip" style={{ fontSize: '0.82rem', color: '#2a3a4e', cursor: 'pointer' }}>
+                <i className="bi bi-arrow-left-right" style={{ marginRight: '4px' }} /> This is a round trip
+              </label>
+            </div>
+          </div>
+
+          {/* Add-ons */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0a2540', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid #e8edf2' }}>
+              <i className="bi bi-stars" /> Add-on Services
+            </div>
+            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#2a3a4e', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.catering_required} onChange={e => setForm(f => ({ ...f, catering_required: e.target.checked }))} style={{ width: '15px', height: '15px' }} />
+                <i className="bi bi-cup-hot" style={{ color: '#c8a245' }} /> Catering Required
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#2a3a4e', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.ground_transport_required} onChange={e => setForm(f => ({ ...f, ground_transport_required: e.target.checked }))} style={{ width: '15px', height: '15px' }} />
+                <i className="bi bi-car-front" style={{ color: '#3b82f6' }} /> Ground Transport Required
+              </label>
+            </div>
+          </div>
+
+          {/* Notes & Status */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                {lbl('Status')}
+                <select {...inp()} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_META[s]?.label || s}</option>)}
+                </select>
+              </div>
+              <div>
+                {lbl('Additional Notes')}
+                <input {...inp()} value={form.additional_notes} onChange={e => setForm(f => ({ ...f, additional_notes: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={formLoading} style={{ padding: '0.6rem 1.3rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              {formLoading ? <><Spinner /> Saving...</> : <><i className="bi bi-check-lg" /> {modal === 'create' ? 'Create Inquiry' : 'Save Changes'}</>}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* ══ DETAIL MODAL ══ */}
       <Modal
@@ -598,7 +908,7 @@ export default function AdminGroupCharterInquiryPage() {
             </div>
 
             {/* Footer actions */}
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button
                 onClick={() => { setModal(null); openStatus(selected) }}
                 style={{ padding: '0.6rem 1rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
@@ -610,6 +920,12 @@ export default function AdminGroupCharterInquiryPage() {
                 style={{ padding: '0.6rem 1.2rem', background: '#c8a245', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               >
                 <i className="bi bi-envelope-paper" /> Send Proposal
+              </button>
+              <button
+                onClick={() => { setModal(null); openEdit(selected) }}
+                style={{ padding: '0.6rem 1rem', background: 'transparent', color: '#3b82f6', border: '1.5px solid #3b82f6', borderRadius: '6px', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <i className="bi bi-pencil-square" /> Edit
               </button>
             </div>
           </div>
@@ -652,71 +968,33 @@ export default function AdminGroupCharterInquiryPage() {
             )}
 
             <form onSubmit={submitReply}>
-              {/* Subject */}
               <div style={{ marginBottom: '1rem' }}>
                 {lbl('Email Subject', true)}
-                <input
-                  {...inp()}
-                  value={replyForm.subject}
-                  onChange={e => setReplyForm(f => ({ ...f, subject: e.target.value }))}
-                  required
-                />
+                <input {...inp()} value={replyForm.subject} onChange={e => setReplyForm(f => ({ ...f, subject: e.target.value }))} required />
               </div>
 
-              {/* Message */}
               <div style={{ marginBottom: '1rem' }}>
                 {lbl('Message / Proposal', true)}
-                <textarea
-                  rows={12}
-                  {...inp({ resize: 'vertical' })}
-                  value={replyForm.message}
-                  onChange={e => setReplyForm(f => ({ ...f, message: e.target.value }))}
-                  required
-                />
+                <textarea rows={12} {...inp({ resize: 'vertical' })} value={replyForm.message} onChange={e => setReplyForm(f => ({ ...f, message: e.target.value }))} required />
               </div>
 
-              {/* Status + Quoted Price */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
                 <div>
                   {lbl('Update Inquiry Status')}
-                  <select
-                    {...inp()}
-                    value={replyForm.new_status}
-                    onChange={e => setReplyForm(f => ({ ...f, new_status: e.target.value }))}
-                  >
+                  <select {...inp()} value={replyForm.new_status} onChange={e => setReplyForm(f => ({ ...f, new_status: e.target.value }))}>
                     <option value="">Keep current ({STATUS_META[selected.status]?.label || selected.status})</option>
-                    {STATUS_OPTIONS.map(s => (
-                      <option key={s} value={s}>{STATUS_META[s]?.label || s}</option>
-                    ))}
+                    {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_META[s]?.label || s}</option>)}
                   </select>
                 </div>
                 <div>
                   {lbl('Quoted Price (USD)')}
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="e.g. 45000"
-                    {...inp()}
-                    value={replyForm.quoted_price}
-                    onChange={e => setReplyForm(f => ({ ...f, quoted_price: e.target.value }))}
-                  />
+                  <input type="number" step="0.01" min="0" placeholder="e.g. 45000" {...inp()} value={replyForm.quoted_price} onChange={e => setReplyForm(f => ({ ...f, quoted_price: e.target.value }))} />
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setModal(null)}
-                  style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={replyLoading}
-                  style={{ padding: '0.6rem 1.3rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                >
+                <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={replyLoading} style={{ padding: '0.6rem 1.3rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                   {replyLoading ? <><Spinner /> Sending…</> : <><i className="bi bi-send-fill" /> Send Proposal</>}
                 </button>
               </div>
@@ -748,13 +1026,10 @@ export default function AdminGroupCharterInquiryPage() {
             <div style={{ marginBottom: '1.5rem' }}>
               {lbl('New Status', true)}
               <select {...inp()} value={statusForm.status} onChange={e => setStatusForm({ status: e.target.value })} required>
-                {STATUS_OPTIONS.map(s => (
-                  <option key={s} value={s}>{STATUS_META[s]?.label || s}</option>
-                ))}
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_META[s]?.label || s}</option>)}
               </select>
             </div>
 
-            {/* Preview next badge */}
             {statusForm.status && statusForm.status !== selected.status && (
               <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.82rem', color: '#6b7c93' }}>
                 <Badge status={selected.status} />
@@ -764,12 +1039,8 @@ export default function AdminGroupCharterInquiryPage() {
             )}
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setModal(null)}
-                style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button type="submit" disabled={statusLoading}
-                style={{ padding: '0.6rem 1.2rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={statusLoading} style={{ padding: '0.6rem 1.2rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                 {statusLoading ? <><Spinner /> Saving…</> : <><i className="bi bi-check-lg" /> Save Status</>}
               </button>
             </div>
