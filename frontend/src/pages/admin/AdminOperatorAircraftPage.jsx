@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { adminAPI, catalogAPI } from '../../services/api'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -178,6 +178,105 @@ function AircraftAvatar({ imageUrl, name, size = 40 }) {
         }}>
           {getInitials(name)}
         </span>
+      )}
+    </div>
+  )
+}
+
+// ── Actions Dropdown Component ───────────────────────────────────────────────
+function ActionsDropdown({ aircraft, onView, onEdit, onApprove, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const actionItems = [
+    { label: 'View Details', icon: 'bi-eye', color: '#0a2540', onClick: onView },
+    { label: 'Edit', icon: 'bi-pencil-square', color: '#0a2540', onClick: onEdit },
+  ]
+
+  if (!aircraft.is_approved) {
+    actionItems.push({ label: 'Approve', icon: 'bi-patch-check-fill', color: '#22c55e', onClick: onApprove })
+  }
+
+  actionItems.push({ label: 'Delete', icon: 'bi-trash3', color: '#ef4444', onClick: onDelete })
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          padding: '0.3rem 0.6rem',
+          background: 'transparent',
+          border: '1px solid #e8edf2',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          color: '#6b7c93',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#0a2540' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#e8edf2' }}
+        aria-label="Actions"
+      >
+        <i className="bi bi-three-dots-vertical" style={{ fontSize: '1rem' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: '100%',
+          marginTop: '0.25rem',
+          minWidth: '160px',
+          background: '#ffffff',
+          border: '1px solid #e8edf2',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 100,
+          overflow: 'hidden',
+          padding: '0.25rem 0',
+        }}>
+          {actionItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setIsOpen(false)
+                item.onClick()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.4rem 1rem',
+                width: '100%',
+                border: 'none',
+                background: 'transparent',
+                color: '#0a2540',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className={`bi ${item.icon}`} style={{ color: item.color, fontSize: '0.9rem' }} />
+              {item.label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )
@@ -670,6 +769,18 @@ export default function AdminOperatorAircraftPage() {
     finally { setApproveLoading(false) }
   }
 
+  const handleDelete = async (ac) => {
+    if (!window.confirm(`Delete aircraft "${ac.name}" (${ac.registration_number})? This action cannot be undone.`)) return
+    try {
+      await adminAPI.deleteOperatorAircraft(ac.id)
+      setActionMsg(`${ac.name} deleted successfully.`)
+      loadData()
+    } catch (e) {
+      console.error(e)
+      setActionMsg(`Failed to delete ${ac.name}. Please try again.`)
+    }
+  }
+
   const handleCatalogCreated = (newCat) => {
     setCatalog(prev => [...prev, newCat])
     setModal('add')
@@ -704,7 +815,6 @@ export default function AdminOperatorAircraftPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#0a2540', marginBottom: '0.2rem', letterSpacing: '-0.3px' }}>
-            
             Operator Aircraft
           </h2>
           <p style={{ color: '#6b7c93', fontSize: '0.875rem' }}>
@@ -793,7 +903,7 @@ export default function AdminOperatorAircraftPage() {
               </button>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '1000px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #e8edf2', background: '#f8fafc' }}>
                   {['Aircraft', 'Operator', 'Category', 'Registration', 'Capacity', 'Hourly Rate', 'Status', 'Approval', 'Actions'].map(h => (
@@ -831,22 +941,13 @@ export default function AdminOperatorAircraftPage() {
                       <ApprovalBadge approved={ac.is_approved} />
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', gap: '0.35rem' }}>
-                        <button title="View details" onClick={() => openDetail(ac)}
-                          style={{ padding: '0.3rem 0.55rem', background: 'transparent', color: '#0a2540', border: '1px solid #e8edf2', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}>
-                          <i className="bi bi-eye" />
-                        </button>
-                        <button title="Edit" onClick={() => openEdit(ac)}
-                          style={{ padding: '0.3rem 0.55rem', background: '#0a2540', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}>
-                          <i className="bi bi-pencil-square" />
-                        </button>
-                        {!ac.is_approved && (
-                          <button title="Quick approve" onClick={() => handleQuickApprove(ac)} 
-                            style={{ padding: '0.3rem 0.55rem', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}>
-                            <i className="bi bi-patch-check-fill" />
-                          </button>
-                        )}
-                      </div>
+                      <ActionsDropdown
+                        aircraft={ac}
+                        onView={() => openDetail(ac)}
+                        onEdit={() => openEdit(ac)}
+                        onApprove={() => handleQuickApprove(ac)}
+                        onDelete={() => handleDelete(ac)}
+                      />
                     </td>
                   </tr>
                 ))}
