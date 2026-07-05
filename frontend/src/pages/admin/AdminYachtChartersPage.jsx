@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // ADMIN YACHT CHARTERS PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { adminAPI } from '../../services/api'
 
 const STATUS_OPTIONS = ['inquiry', 'rfq_sent', 'quoted', 'confirmed', 'active', 'completed', 'cancelled']
@@ -102,14 +102,261 @@ function Modal({ open, onClose, title, children, size = 'md' }) {
   )
 }
 
+// ── Actions Dropdown Component ───────────────────────────────────────────────
+function ActionsDropdown({ charter, onView, onPrice, onEdit, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const actionItems = [
+    { label: 'View Details', icon: 'bi-eye', color: '#0a2540', onClick: onView },
+    { label: 'Set Price', icon: 'bi-currency-dollar', color: '#0a2540', onClick: onPrice },
+    { label: 'Edit', icon: 'bi-pencil', color: '#0a2540', onClick: onEdit },
+    { label: 'Delete', icon: 'bi-trash3', color: '#ef4444', onClick: onDelete },
+  ]
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          padding: '0.3rem 0.6rem',
+          background: 'transparent',
+          border: '1px solid var(--color-light-gray)',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          color: 'var(--color-mid-gray)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-off-white)'; e.currentTarget.style.borderColor = 'var(--color-navy)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--color-light-gray)' }}
+        aria-label="Actions"
+      >
+        <i className="bi bi-three-dots-vertical" style={{ fontSize: '1rem' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: '100%',
+          marginTop: '0.25rem',
+          minWidth: '160px',
+          background: '#ffffff',
+          border: '1px solid var(--color-light-gray)',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 100,
+          overflow: 'hidden',
+          padding: '0.25rem 0',
+        }}>
+          {actionItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setIsOpen(false)
+                item.onClick()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.4rem 1rem',
+                width: '100%',
+                border: 'none',
+                background: 'transparent',
+                color: '#0a2540',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-off-white)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className={`bi ${item.icon}`} style={{ color: item.color, fontSize: '0.9rem' }} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Edit Form Modal ──────────────────────────────────────────────────────────
+function CharterEditModal({ open, onClose, onSaved, charter }) {
+  const [form, setForm] = useState({
+    guest_name: '',
+    guest_email: '',
+    guest_phone: '',
+    company: '',
+    yacht: '',
+    operator_yacht: '',
+    assigned_operator: '',
+    departure_port: '',
+    destination_port: '',
+    charter_start: '',
+    charter_end: '',
+    guest_count: 1,
+    cabin_count: '',
+    itinerary_description: '',
+    special_requests: '',
+    quoted_price_usd: '',
+    operator_cost_usd: '',
+    commission_pct: '15',
+    status: 'inquiry',
+  })
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    if (open && charter) {
+      setForm({
+        guest_name: charter.guest_name || '',
+        guest_email: charter.guest_email || '',
+        guest_phone: charter.guest_phone || '',
+        company: charter.company || '',
+        yacht: charter.yacht || '',
+        operator_yacht: charter.operator_yacht || '',
+        assigned_operator: charter.assigned_operator || '',
+        departure_port: charter.departure_port || '',
+        destination_port: charter.destination_port || '',
+        charter_start: charter.charter_start || '',
+        charter_end: charter.charter_end || '',
+        guest_count: charter.guest_count || 1,
+        cabin_count: charter.cabin_count || '',
+        itinerary_description: charter.itinerary_description || '',
+        special_requests: charter.special_requests || '',
+        quoted_price_usd: charter.quoted_price_usd || '',
+        operator_cost_usd: charter.operator_cost_usd || '',
+        commission_pct: charter.commission_pct || '15',
+        status: charter.status || 'inquiry',
+      })
+      setErr('')
+    }
+  }, [open, charter])
+
+  const f = (k) => e => setForm(p => ({ ...p, [k]: e.target.value }))
+  const inp = (extra = {}) => ({
+    style: {
+      width: '100%', padding: '0.6rem 0.75rem',
+      border: '1.5px solid var(--color-light-gray)', borderRadius: '6px',
+      fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit',
+      transition: 'border-color 0.2s', background: '#fff', ...extra
+    },
+    onFocus: e => { e.currentTarget.style.borderColor = 'var(--color-navy)' },
+    onBlur:  e => { e.currentTarget.style.borderColor = 'var(--color-light-gray)' },
+  })
+  const label = (text, required) => (
+    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>
+      {text} {required && <span style={{ color: '#ef4444' }}>*</span>}
+    </label>
+  )
+
+  const handle = async (e) => {
+    e.preventDefault()
+    setLoading(true); setErr('')
+    try {
+      await adminAPI.updateYachtCharter?.(charter.id, form)
+      onSaved()
+      onClose()
+    } catch (ex) {
+      const d = ex?.response?.data
+      setErr(d?.detail || JSON.stringify(d) || 'Failed to update charter')
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={<><i className="bi bi-pencil-square" /> Edit Charter — {charter?.guest_name}</>} size="lg">
+      {err && (
+        <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', borderRadius: '6px', color: 'var(--color-error)', fontSize: '0.875rem' }}>
+          <i className="bi bi-exclamation-triangle" /> {err}
+        </div>
+      )}
+      <form onSubmit={handle}>
+        {/* Guest Details */}
+        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-navy)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <i className="bi bi-person" /> Guest Details
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div>{label('Guest Name', true)}<input {...inp()} value={form.guest_name} onChange={f('guest_name')} required /></div>
+          <div>{label('Email', true)}<input type="email" {...inp()} value={form.guest_email} onChange={f('guest_email')} required /></div>
+          <div>{label('Phone')}<input {...inp()} value={form.guest_phone} onChange={f('guest_phone')} /></div>
+          <div>{label('Company')}<input {...inp()} value={form.company} onChange={f('company')} /></div>
+        </div>
+
+        {/* Charter Details */}
+        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-navy)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <i className="bi bi-water" /> Charter Details
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div>{label('Departure Port', true)}<input {...inp()} value={form.departure_port} onChange={f('departure_port')} required /></div>
+          <div>{label('Destination Port')}<input {...inp()} value={form.destination_port} onChange={f('destination_port')} /></div>
+          <div>{label('Charter Start', true)}<input type="date" {...inp()} value={form.charter_start} onChange={f('charter_start')} required /></div>
+          <div>{label('Charter End', true)}<input type="date" {...inp()} value={form.charter_end} onChange={f('charter_end')} required /></div>
+          <div>{label('Guests', true)}<input type="number" min="1" {...inp()} value={form.guest_count} onChange={f('guest_count')} required /></div>
+          <div>{label('Cabins')}<input type="number" min="0" {...inp()} value={form.cabin_count} onChange={f('cabin_count')} /></div>
+        </div>
+
+        {/* Itinerary & Requests */}
+        <div style={{ marginBottom: '1.25rem' }}>
+          {label('Itinerary Description')}
+          <textarea rows={2} {...inp({ resize: 'vertical' })} value={form.itinerary_description} onChange={f('itinerary_description')} />
+        </div>
+        <div style={{ marginBottom: '1.25rem' }}>
+          {label('Special Requests')}
+          <textarea rows={2} {...inp({ resize: 'vertical' })} value={form.special_requests} onChange={f('special_requests')} />
+        </div>
+
+        {/* Pricing & Status */}
+        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-navy)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', paddingBottom: '0.4rem', borderBottom: '1px solid var(--color-light-gray)' }}>
+          <i className="bi bi-currency-dollar" /> Pricing & Status
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div>{label('Quoted Price (USD)')}<input type="number" step="0.01" {...inp()} value={form.quoted_price_usd} onChange={f('quoted_price_usd')} /></div>
+          <div>{label('Operator Cost (USD)')}<input type="number" step="0.01" {...inp()} value={form.operator_cost_usd} onChange={f('operator_cost_usd')} /></div>
+          <div>
+            {label('Status')}
+            <select {...inp()} value={form.status} onChange={f('status')}>
+              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s] || s.replace(/_/g, ' ')}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+          <button type="button" onClick={onClose} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
+            Cancel
+          </button>
+          <button type="submit" disabled={loading} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            {loading ? <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Saving…</> : <><i className="bi bi-check-lg" /> Save Changes</>}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
 export default function AdminYachtChartersPage() {
   const [charters, setCharters] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [selected, setSelected] = useState(null)
-  const [modal, setModal] = useState(false)
-  const [detailModal, setDetailModal] = useState(false)
+  const [modal, setModal] = useState(null) // 'price' | 'detail' | 'edit'
   const [priceForm, setPriceForm] = useState({ 
     quoted_price_usd: '', 
     operator_cost_usd: '', 
@@ -119,6 +366,7 @@ export default function AdminYachtChartersPage() {
   })
   const [saving, setSaving] = useState(false)
   const [priceErr, setPriceErr] = useState('')
+  const [actionMsg, setActionMsg] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -151,12 +399,31 @@ export default function AdminYachtChartersPage() {
       email_message: ''
     })
     setPriceErr('')
-    setModal(true)
+    setModal('price')
   }
 
   const openDetail = (c) => {
     setSelected(c)
-    setDetailModal(true)
+    setModal('detail')
+  }
+
+  const openEdit = (c) => {
+    setSelected(c)
+    setModal('edit')
+  }
+
+  const handleDelete = async (c) => {
+    if (!window.confirm(`Delete charter for "${c.guest_name}"? This action cannot be undone.`)) return
+    try {
+      await adminAPI.deleteYachtCharter?.(c.id)
+      setActionMsg('Charter deleted successfully.')
+      load()
+      setTimeout(() => setActionMsg(''), 3000)
+    } catch (err) {
+      console.error(err)
+      setActionMsg('Failed to delete charter. Please try again.')
+      setTimeout(() => setActionMsg(''), 3000)
+    }
   }
 
   const submitPrice = async (e) => {
@@ -166,7 +433,9 @@ export default function AdminYachtChartersPage() {
     try {
       await adminAPI.setCharterPrice(selected.id, priceForm)
       await load()
-      setModal(false)
+      setModal(null)
+      setActionMsg('Price updated successfully.')
+      setTimeout(() => setActionMsg(''), 3000)
     } catch (err) {
       const data = err?.response?.data
       const msg = data?.detail || data?.message || 'Failed to update price'
@@ -226,6 +495,14 @@ export default function AdminYachtChartersPage() {
           <i className="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
+
+      {/* Action Message */}
+      {actionMsg && (
+        <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: actionMsg.includes('Failed') ? 'rgba(192,57,43,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${actionMsg.includes('Failed') ? 'rgba(192,57,43,0.25)' : 'rgba(34,197,94,0.25)'}`, borderRadius: '6px', color: actionMsg.includes('Failed') ? 'var(--color-error)' : '#166534', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span><i className={`bi ${actionMsg.includes('Failed') ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'}`} /> {actionMsg}</span>
+          <button onClick={() => setActionMsg('')} style={{ background: 'none', border: 'none', color: actionMsg.includes('Failed') ? 'var(--color-error)' : '#166534', cursor: 'pointer' }}><i className="bi bi-x-lg" /></button>
+        </div>
+      )}
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -300,7 +577,7 @@ export default function AdminYachtChartersPage() {
               )}
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '1000px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-light-gray)', background: 'var(--color-off-white)' }}>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Reference</th>
@@ -358,22 +635,13 @@ export default function AdminYachtChartersPage() {
                         <Badge status={c.status} />
                       </td>
                       <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          <button 
-                            style={{ padding: '0.3rem 0.6rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                            onClick={() => openPrice(c)} 
-                            title="Set price"
-                          >
-                            <i className="bi bi-currency-dollar"></i>
-                          </button>
-                          <button 
-                            style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: 'var(--color-navy)', border: '1px solid var(--color-navy)', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                            onClick={() => openDetail(c)} 
-                            title="View details"
-                          >
-                            <i className="bi bi-eye"></i>
-                          </button>
-                        </div>
+                        <ActionsDropdown
+                          charter={c}
+                          onView={() => openDetail(c)}
+                          onPrice={() => openPrice(c)}
+                          onEdit={() => openEdit(c)}
+                          onDelete={() => handleDelete(c)}
+                        />
                       </td>
                     </tr>
                   )
@@ -393,7 +661,7 @@ export default function AdminYachtChartersPage() {
       )}
 
       {/* Price Modal */}
-      <Modal open={modal} onClose={() => setModal(false)} title={<><i className="bi bi-currency-dollar"></i> Set Price — {selected?.guest_name}</>} size="md">
+      <Modal open={modal === 'price'} onClose={() => setModal(null)} title={<><i className="bi bi-currency-dollar"></i> Set Price — {selected?.guest_name}</>} size="md">
         <form onSubmit={submitPrice}>
           {priceErr && (
             <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', borderRadius: '6px', color: 'var(--color-error)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -485,7 +753,7 @@ export default function AdminYachtChartersPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setModal(false)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
+            <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
               Cancel
             </button>
             <button type="submit" disabled={saving} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -500,7 +768,7 @@ export default function AdminYachtChartersPage() {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal open={detailModal} onClose={() => setDetailModal(false)} title={<><i className="bi bi-water"></i> Charter Details</>} size="lg">
+      <Modal open={modal === 'detail'} onClose={() => setModal(null)} title={<><i className="bi bi-water"></i> Charter Details</>} size="lg">
         {selected && (
           <div>
             {/* Yacht Info Section */}
@@ -599,6 +867,14 @@ export default function AdminYachtChartersPage() {
           </div>
         )}
       </Modal>
+
+      {/* Edit Modal */}
+      <CharterEditModal
+        open={modal === 'edit'}
+        onClose={() => setModal(null)}
+        onSaved={() => { load(); setActionMsg('Charter updated successfully.'); setTimeout(() => setActionMsg(''), 3000) }}
+        charter={selected}
+      />
     </div>
   )
 }
