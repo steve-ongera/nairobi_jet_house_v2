@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { adminAPI } from '../../services/api'
 
 const TIER_COLOR = { 
@@ -94,6 +94,109 @@ function Modal({ open, onClose, title, children, maxWidth = 580 }) {
           {children}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Actions Dropdown Component ───────────────────────────────────────────────
+function ActionsDropdown({ operator, onView, onActivate, onSuspend, onTier, onEdit, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const actionItems = [
+    { label: 'View Details', icon: 'bi-eye', color: '#0a2540', onClick: onView },
+    { label: 'Edit', icon: 'bi-pencil', color: '#0a2540', onClick: onEdit },
+    { label: 'Change Tier', icon: 'bi-stars', color: '#c9992e', onClick: onTier },
+  ]
+
+  if (operator.status !== 'active') {
+    actionItems.push({ label: 'Activate', icon: 'bi-check-circle', color: '#22c55e', onClick: onActivate })
+  }
+  if (operator.status === 'active') {
+    actionItems.push({ label: 'Suspend', icon: 'bi-pause-circle', color: '#f59e0b', onClick: onSuspend })
+  }
+  
+  actionItems.push({ label: 'Delete', icon: 'bi-trash3', color: '#ef4444', onClick: onDelete })
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          padding: '0.3rem 0.6rem',
+          background: 'transparent',
+          border: '1px solid var(--color-light-gray)',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          color: 'var(--color-mid-gray)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-off-white)'; e.currentTarget.style.borderColor = 'var(--color-navy)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--color-light-gray)' }}
+        aria-label="Actions"
+      >
+        <i className="bi bi-three-dots-vertical" style={{ fontSize: '1rem' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: '100%',
+          marginTop: '0.25rem',
+          minWidth: '170px',
+          background: '#ffffff',
+          border: '1px solid var(--color-light-gray)',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 100,
+          overflow: 'hidden',
+          padding: '0.25rem 0',
+        }}>
+          {actionItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setIsOpen(false)
+                item.onClick()
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.4rem 1rem',
+                width: '100%',
+                border: 'none',
+                background: 'transparent',
+                color: '#0a2540',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-off-white)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className={`bi ${item.icon}`} style={{ color: item.color, fontSize: '0.9rem' }} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -226,6 +329,54 @@ export default function AdminOperatorsPage() {
       setTimeout(() => setMessage({ text: '', type: '' }), 3000)
     } catch (err) {
       setMessage({ text: 'Failed to change tier.', type: 'error' })
+    }
+  }
+
+  const deleteOperator = async (op) => {
+    if (!window.confirm(`Delete operator "${op.name}"? This action cannot be undone.`)) return
+    try {
+      await adminAPI.deleteOperator?.(op.id)
+      setMessage({ text: 'Operator deleted successfully.', type: 'success' })
+      load()
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000)
+    } catch (err) {
+      setMessage({ text: 'Failed to delete operator.', type: 'error' })
+    }
+  }
+
+  const openEdit = (op) => {
+    setSelected(op)
+    setForm({
+      name: op.name || '',
+      trading_name: op.trading_name || '',
+      country: op.country || '',
+      city: op.city || '',
+      contact_email: op.contact_email || '',
+      contact_phone: op.contact_phone || '',
+      tier: op.tier || 'standard',
+      registration_no: op.registration_no || '',
+      aoc_number: op.aoc_number || '',
+      website: op.website || '',
+    })
+    setFormErr('')
+    setModal('edit')
+  }
+
+  const submitEdit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setFormErr('')
+    try {
+      await adminAPI.updateOperator(selected.id, form)
+      setMessage({ text: 'Operator updated successfully.', type: 'success' })
+      setModal(null)
+      load()
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000)
+    } catch (err) {
+      const data = err?.response?.data
+      setFormErr(data?.detail || data?.message || 'Failed to update operator')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -411,7 +562,7 @@ export default function AdminOperatorsPage() {
               )}
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '900px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-light-gray)', background: 'var(--color-off-white)' }}>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-navy)' }}>Operator</th>
@@ -453,40 +604,15 @@ export default function AdminOperatorsPage() {
                       <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>{op.contact_phone || '—'}</div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                        <button 
-                          style={{ padding: '0.3rem 0.6rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => openDetail(op)} 
-                          title="View details"
-                        >
-                          <i className="bi bi-eye"></i>
-                        </button>
-                        {op.status !== 'active' && (
-                          <button 
-                            style={{ padding: '0.3rem 0.6rem', background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                            onClick={() => activate(op)} 
-                            title="Activate"
-                          >
-                            <i className="bi bi-check-circle"></i>
-                          </button>
-                        )}
-                        {op.status === 'active' && (
-                          <button 
-                            style={{ padding: '0.3rem 0.6rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                            onClick={() => suspend(op)} 
-                            title="Suspend"
-                          >
-                            <i className="bi bi-pause-circle"></i>
-                          </button>
-                        )}
-                        <button 
-                          style={{ padding: '0.3rem 0.6rem', background: 'transparent', color: 'var(--color-navy)', border: '1px solid var(--color-navy)', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-                          onClick={() => { setSelected(op); setModal('tier') }} 
-                          title="Change tier"
-                        >
-                          <i className="bi bi-stars"></i>
-                        </button>
-                      </div>
+                      <ActionsDropdown
+                        operator={op}
+                        onView={() => openDetail(op)}
+                        onActivate={() => activate(op)}
+                        onSuspend={() => suspend(op)}
+                        onTier={() => { setSelected(op); setModal('tier') }}
+                        onEdit={() => openEdit(op)}
+                        onDelete={() => deleteOperator(op)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -799,6 +925,66 @@ export default function AdminOperatorsPage() {
             <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
             <button type="submit" disabled={saving} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
               {saving ? <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Creating…</> : <><i className="bi bi-check-lg"></i> Create Operator</>}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Operator Modal */}
+      <Modal open={modal === 'edit'} onClose={() => setModal(null)} title={<><i className="bi bi-pencil-square"></i> Edit Operator — {selected?.name}</>} maxWidth={620}>
+        <form onSubmit={submitEdit}>
+          {formErr && (
+            <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.25)', borderRadius: '6px', color: 'var(--color-error)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-exclamation-triangle"></i>
+              <span>{formErr}</span>
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Company Name <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Trading Name</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.trading_name} onChange={e => setForm(f => ({ ...f, trading_name: e.target.value }))} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Country <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>City</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Contact Email <span style={{ color: 'var(--color-error)' }}>*</span></label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} type="email" value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Contact Phone</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>AOC Number</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.aoc_number} onChange={e => setForm(f => ({ ...f, aoc_number: e.target.value }))} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Tier</label>
+              <select style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer' }} value={form.tier} onChange={e => setForm(f => ({ ...f, tier: e.target.value }))}>
+                <option value="standard">Standard</option>
+                <option value="preferred">Preferred</option>
+                <option value="exclusive">Exclusive</option>
+              </select>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Website</label>
+              <input style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }} value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://..." />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setModal(null)} style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={saving} style={{ padding: '0.6rem 1.2rem', background: 'var(--color-navy)', color: 'var(--color-white)', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              {saving ? <><span style={{ width: '16px', height: '16px', border: '2px solid var(--color-white)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.6s linear infinite' }}></span> Saving…</> : <><i className="bi bi-check-lg"></i> Save Changes</>}
             </button>
           </div>
         </form>
