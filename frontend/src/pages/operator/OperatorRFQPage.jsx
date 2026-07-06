@@ -43,7 +43,7 @@ function Badge({ status }) {
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null
-  
+
   return (
     <div style={{
       position: 'fixed',
@@ -95,6 +95,103 @@ function Modal({ open, onClose, title, children }) {
   )
 }
 
+// ── Booking summary block shown on each RFQ card ─────────────────────────────
+function BookingSummary({ bd, compact = false }) {
+  if (!bd) return null
+
+  const addOns = [
+    bd.catering_requested && 'Catering',
+    bd.ground_transport_requested && 'Ground transport',
+    bd.concierge_requested && 'Concierge',
+  ].filter(Boolean).join(', ') || 'None'
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    })
+  }
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+      gap: '0.6rem',
+      background: 'var(--color-off-white)',
+      border: '1px solid var(--color-light-gray)',
+      borderRadius: '8px',
+      padding: compact ? '0.7rem 0.85rem' : '0.85rem 1rem',
+      fontSize: '0.78rem',
+    }}>
+      <div>
+        <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Route</div>
+        <div style={{ color: 'var(--color-navy)', fontWeight: 600 }}>
+          {bd.origin?.code || '—'} <i className="bi bi-arrow-right" style={{ fontSize: '0.7rem' }}></i> {bd.destination?.code || '—'}
+        </div>
+        <div style={{ color: 'var(--color-mid-gray)' }}>
+          {bd.origin?.city}, {bd.origin?.country}
+        </div>
+      </div>
+
+      <div>
+        <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Date</div>
+        <div style={{ color: 'var(--color-navy)', fontWeight: 600 }}>{formatDate(bd.departure_date)}</div>
+        {bd.departure_time && <div style={{ color: 'var(--color-mid-gray)' }}>{bd.departure_time}</div>}
+      </div>
+
+      <div>
+        <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Trip type</div>
+        <div style={{ color: 'var(--color-navy)', fontWeight: 600 }}>{bd.trip_type_display}</div>
+        {bd.return_date && <div style={{ color: 'var(--color-mid-gray)' }}>Return {formatDate(bd.return_date)}</div>}
+      </div>
+
+      <div>
+        <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Passengers</div>
+        <div style={{ color: 'var(--color-navy)', fontWeight: 600 }}>{bd.passenger_count ?? '—'}</div>
+      </div>
+
+      <div>
+        <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Aircraft requirement</div>
+        <div style={{ color: 'var(--color-navy)', fontWeight: 600 }}>{bd.preferred_category || 'Any'}</div>
+      </div>
+
+      <div>
+        <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Add-ons</div>
+        <div style={{ color: 'var(--color-navy)' }}>{addOns}</div>
+      </div>
+
+      {bd.special_requests && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Special requests</div>
+          <div style={{ color: 'var(--color-navy)' }}>{bd.special_requests}</div>
+        </div>
+      )}
+
+      <div style={{
+        gridColumn: '1 / -1',
+        borderTop: '1px solid var(--color-light-gray)',
+        paddingTop: '0.5rem',
+        marginTop: '0.25rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.5rem'
+      }}>
+        <div>
+          <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>Guest</div>
+          <div style={{ color: 'var(--color-navy)' }}>{bd.guest_name_masked} · {bd.guest_email_masked}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ color: 'var(--color-mid-gray)', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase' }}>NairobiJetHouse contact</div>
+          <div style={{ color: 'var(--color-navy)' }}>
+            {bd.njh_contact?.email} · {bd.njh_contact?.phone}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function OperatorRFQPage() {
   const [bids, setBids] = useState([])
   const [myAircraft, setMyAircraft] = useState([])
@@ -102,7 +199,7 @@ export default function OperatorRFQPage() {
   const [activeBid, setActiveBid] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
-  
+
   const [bidForm, setBidForm] = useState({
     operator_price_usd: '',
     estimated_hours: '',
@@ -120,10 +217,10 @@ export default function OperatorRFQPage() {
         operatorAPI.rfqBids(),
         operatorAPI.myAircraft({ status: 'available', is_approved: true }),
       ])
-      
+
       const bidsData = bidsRes?.data?.results || bidsRes?.data || bidsRes || []
       const aircraftData = aircraftRes?.data?.results || aircraftRes?.data || aircraftRes || []
-      
+
       setBids(bidsData)
       setMyAircraft(aircraftData)
     } catch (err) {
@@ -180,8 +277,8 @@ export default function OperatorRFQPage() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—'
-    return new Date(dateStr).toLocaleDateString('en-US', { 
-      month: 'short', 
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     })
@@ -261,9 +358,9 @@ export default function OperatorRFQPage() {
 
       {/* Message Alert */}
       {message.text && (
-        <div style={{ 
-          marginBottom: '1rem', 
-          padding: '0.75rem 1rem', 
+        <div style={{
+          marginBottom: '1rem',
+          padding: '0.75rem 1rem',
           background: message.type === 'success' ? 'rgba(26,127,90,0.08)' : 'rgba(192,57,43,0.08)',
           border: `1px solid ${message.type === 'success' ? 'rgba(26,127,90,0.25)' : 'rgba(192,57,43,0.25)'}`,
           borderRadius: '6px',
@@ -292,50 +389,47 @@ export default function OperatorRFQPage() {
               <p style={{ color: 'var(--color-mid-gray)' }}>No open RFQs at the moment. Check back later!</p>
             </div>
           ) : (
-            openBids.map(bid => (
-              <div key={bid.id} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '1rem 1.5rem',
-                borderBottom: '1px solid var(--color-light-gray)',
-                flexWrap: 'wrap',
-                gap: '1rem'
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem' }}>
-                      Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
-                    </span>
-                    <Badge status={bid.status} />
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
-                    Your bid: {formatCurrency(bid.operator_price_usd)}
-                    {bid.valid_until && ` · Valid until ${formatDate(bid.valid_until)}`}
-                  </div>
-                  {bid.route && (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)', marginTop: '0.25rem' }}>
-                      <i className="bi bi-geo-alt"></i> {bid.route}
-                    </div>
-                  )}
-                </div>
-                <button onClick={() => openBid(bid)} style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.4rem 0.9rem',
-                  background: 'var(--color-navy)',
-                  color: 'var(--color-white)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
+            openBids.map(bid => {
+              const bd = bid.booking_detail
+              return (
+                <div key={bid.id} style={{
+                  padding: '1rem 1.5rem',
+                  borderBottom: '1px solid var(--color-light-gray)',
                 }}>
-                  <i className="bi bi-send"></i> Submit Bid
-                </button>
-              </div>
-            ))
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: bd ? '0.75rem' : 0 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.9rem' }}>
+                          Booking #{bd?.reference_short || String(bid.booking).slice(0, 8).toUpperCase()}
+                        </span>
+                        <Badge status={bid.status} />
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                        Your bid: {formatCurrency(bid.operator_price_usd)}
+                        {bid.valid_until && ` · Valid until ${formatDate(bid.valid_until)}`}
+                      </div>
+                    </div>
+                    <button onClick={() => openBid(bid)} style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      padding: '0.4rem 0.9rem',
+                      background: 'var(--color-navy)',
+                      color: 'var(--color-white)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}>
+                      <i className="bi bi-send"></i> Submit Bid
+                    </button>
+                  </div>
+
+                  <BookingSummary bd={bd} />
+                </div>
+              )
+            })
           )}
         </div>
       </div>
@@ -354,47 +448,55 @@ export default function OperatorRFQPage() {
               <p style={{ color: 'var(--color-mid-gray)' }}>No previous bids yet.</p>
             </div>
           ) : (
-            pastBids.map(bid => (
-              <div key={bid.id} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '1rem 1.5rem',
-                borderBottom: '1px solid var(--color-light-gray)',
-                flexWrap: 'wrap',
-                gap: '1rem',
-                opacity: 0.8
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem' }}>
-                      Booking: {String(bid.booking).slice(0, 8).toUpperCase()}
-                    </span>
-                    <Badge status={bid.status} />
+            pastBids.map(bid => {
+              const bd = bid.booking_detail
+              return (
+                <div key={bid.id} style={{
+                  padding: '1rem 1.5rem',
+                  borderBottom: '1px solid var(--color-light-gray)',
+                  opacity: 0.85
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: bd ? '0.75rem' : 0 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.9rem' }}>
+                          Booking #{bd?.reference_short || String(bid.booking).slice(0, 8).toUpperCase()}
+                        </span>
+                        <Badge status={bid.status} />
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                        Your bid: {formatCurrency(bid.operator_price_usd)}
+                        {bid.njh_client_price && (
+                          <span style={{ marginLeft: '0.5rem' }}>
+                            · Client price: {formatCurrency(bid.njh_client_price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
-                    Your bid: {formatCurrency(bid.operator_price_usd)}
-                    {bid.njh_client_price && (
-                      <span style={{ marginLeft: '0.5rem' }}>
-                        · Client price: {formatCurrency(bid.njh_client_price)}
-                      </span>
-                    )}
-                  </div>
+
+                  <BookingSummary bd={bd} compact />
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
 
       {/* Bid Modal */}
       <Modal open={activeBid !== null} onClose={() => setActiveBid(null)} title={<><i className="bi bi-send"></i> Submit Bid</>}>
+        {activeBid?.booking_detail && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <BookingSummary bd={activeBid.booking_detail} compact />
+          </div>
+        )}
+
         <form onSubmit={handleSubmitBid}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Assign Aircraft <span style={{ color: 'var(--color-error)' }}>*</span></label>
-              <select 
-                value={bidForm.aircraft} 
+              <select
+                value={bidForm.aircraft}
                 onChange={e => setBidForm(f => ({ ...f, aircraft: e.target.value }))}
                 required
                 style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', background: 'var(--color-white)', cursor: 'pointer', outline: 'none' }}
@@ -409,12 +511,12 @@ export default function OperatorRFQPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Your Price (USD) <span style={{ color: 'var(--color-error)' }}>*</span></label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.01"
-                value={bidForm.operator_price_usd} 
-                onChange={e => setBidForm(f => ({ ...f, operator_price_usd: e.target.value }))} 
-                required 
+                value={bidForm.operator_price_usd}
+                onChange={e => setBidForm(f => ({ ...f, operator_price_usd: e.target.value }))}
+                required
                 placeholder="25000"
                 style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
@@ -423,11 +525,11 @@ export default function OperatorRFQPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Estimated Hours</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.1"
-                value={bidForm.estimated_hours} 
-                onChange={e => setBidForm(f => ({ ...f, estimated_hours: e.target.value }))} 
+                value={bidForm.estimated_hours}
+                onChange={e => setBidForm(f => ({ ...f, estimated_hours: e.target.value }))}
                 placeholder="2.5"
                 style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
@@ -436,11 +538,11 @@ export default function OperatorRFQPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Positioning Cost (USD)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.01"
-                value={bidForm.positioning_cost} 
-                onChange={e => setBidForm(f => ({ ...f, positioning_cost: e.target.value }))} 
+                value={bidForm.positioning_cost}
+                onChange={e => setBidForm(f => ({ ...f, positioning_cost: e.target.value }))}
                 placeholder="0"
                 style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
@@ -449,11 +551,11 @@ export default function OperatorRFQPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Catering Cost (USD)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.01"
-                value={bidForm.catering_cost} 
-                onChange={e => setBidForm(f => ({ ...f, catering_cost: e.target.value }))} 
+                value={bidForm.catering_cost}
+                onChange={e => setBidForm(f => ({ ...f, catering_cost: e.target.value }))}
                 placeholder="0"
                 style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
@@ -462,11 +564,11 @@ export default function OperatorRFQPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Overnight Cost (USD)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.01"
-                value={bidForm.overnight_cost} 
-                onChange={e => setBidForm(f => ({ ...f, overnight_cost: e.target.value }))} 
+                value={bidForm.overnight_cost}
+                onChange={e => setBidForm(f => ({ ...f, overnight_cost: e.target.value }))}
                 placeholder="0"
                 style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' }}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
@@ -477,10 +579,10 @@ export default function OperatorRFQPage() {
 
           <div style={{ marginTop: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-navy)', marginBottom: '0.25rem' }}>Notes</label>
-            <textarea 
+            <textarea
               rows={3}
-              value={bidForm.notes} 
-              onChange={e => setBidForm(f => ({ ...f, notes: e.target.value }))} 
+              value={bidForm.notes}
+              onChange={e => setBidForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="Any notes for the NJH team..."
               style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1px solid var(--color-light-gray)', borderRadius: '6px', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
               onFocus={e => e.currentTarget.style.borderColor = 'var(--color-navy)'}
