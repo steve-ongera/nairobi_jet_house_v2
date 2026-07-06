@@ -879,17 +879,63 @@ class NJHCommissionRuleSerializer(serializers.ModelSerializer):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class RFQBidSerializer(serializers.ModelSerializer):
-    operator_name  = serializers.CharField(source='operator.name', read_only=True)
-    aircraft_name  = serializers.CharField(source='aircraft.name', read_only=True)
-    aircraft_reg   = serializers.CharField(source='aircraft.registration_number', read_only=True)
+    operator_name     = serializers.CharField(source='operator.name', read_only=True)
+    aircraft_name     = serializers.CharField(source='aircraft.name', read_only=True)
+    aircraft_reg      = serializers.CharField(source='aircraft.registration_number', read_only=True)
     submitted_by_name = serializers.CharField(source='submitted_by.get_full_name', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    status_display    = serializers.CharField(source='get_status_display', read_only=True)
+    booking_detail    = serializers.SerializerMethodField()
 
     class Meta:
         model  = RFQBid
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at', 'njh_client_price', 'njh_margin_usd']
 
+    @staticmethod
+    def _mask_name(name):
+        if not name:
+            return ''
+        return ' '.join(
+            (p[0] + '*' * (len(p) - 1)) if len(p) > 1 else p
+            for p in name.strip().split()
+        )
+
+    @staticmethod
+    def _mask_email(email):
+        if not email or '@' not in email:
+            return ''
+        local, domain = email.split('@', 1)
+        masked_local = local[0] + '*' * (len(local) - 1) if len(local) > 1 else local
+        return f"{masked_local}@{domain}"
+
+    def get_booking_detail(self, obj):
+        b = obj.booking
+        if not b:
+            return None
+        return {
+            'reference_short':  str(b.reference)[:8].upper(),
+            'guest_name_masked':  self._mask_name(b.guest_name),
+            'guest_email_masked': self._mask_email(b.guest_email),
+            'origin': {'code': b.origin.code, 'city': b.origin.city, 'country': b.origin.country} if b.origin else None,
+            'destination': {'code': b.destination.code, 'city': b.destination.city, 'country': b.destination.country} if b.destination else None,
+            'trip_type_display': b.get_trip_type_display(),
+            'departure_date': b.departure_date,
+            'departure_time': b.departure_time,
+            'return_date': b.return_date,
+            'passenger_count': b.passenger_count,
+            'preferred_category': b.preferred_category,
+            'special_requests': b.special_requests,
+            'catering_requested': b.catering_requested,
+            'ground_transport_requested': b.ground_transport_requested,
+            'concierge_requested': b.concierge_requested,
+            'status_display': b.get_status_display(),
+            # Static NJH contact block — swap for a settings value if you want it configurable
+            'njh_contact': {
+                'name': 'NairobiJetHouse Charter Desk',
+                'email': 'nairobijethouse@gmail.com',
+                'phone': '+254 724 878 136',
+            },
+        }
 
 class RFQBidCreateSerializer(serializers.ModelSerializer):
     """Operator submits a bid."""
