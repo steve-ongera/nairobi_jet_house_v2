@@ -1069,7 +1069,7 @@ function AircraftBadge({ booking, operatorAircraftMap, catalogAircraftMap, opera
 }
 
 // ── Actions Dropdown Component ───────────────────────────────────────────────
-function ActionsDropdown({ booking, onEdit, onPrice, onRFQ, onInvoice, onDetail }) {
+function ActionsDropdown({ booking, onEdit, onPrice, onRFQ, onBids, onInvoice, onDetail }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -1087,6 +1087,7 @@ function ActionsDropdown({ booking, onEdit, onPrice, onRFQ, onInvoice, onDetail 
     { label: 'Edit', icon: 'bi-pencil', color: '#0a2540', onClick: onEdit },
     { label: 'Set Price', icon: 'bi-currency-dollar', color: '#0a2540', onClick: onPrice },
     { label: 'Send RFQ', icon: 'bi-send', color: '#0a2540', onClick: onRFQ },
+    { label: 'View Bids', icon: 'bi-people', color: '#0a2540', onClick: onBids },
     { label: 'Invoice', icon: 'bi-file-earmark-pdf', color: '#c8a245', onClick: onInvoice },
     { label: 'View Details', icon: 'bi-eye', color: '#6b7c93', onClick: onDetail },
   ]
@@ -1203,6 +1204,16 @@ export default function AdminFlightBookingsPage() {
   const [rfqIds, setRfqIds]             = useState('')
   const [rfqLoading, setRfqLoading]     = useState(false)
   const [rfqErr, setRfqErr]             = useState('')
+
+  // ── Bids modal state ──────────────────────────────────────────────────────
+  const [bids, setBids]                 = useState([])
+  const [bidsLoading, setBidsLoading]   = useState(false)
+  const [bidsErr, setBidsErr]           = useState('')
+  const [bidActionId, setBidActionId]   = useState(null)   // id of bid currently processing
+  const [bidActionType, setBidActionType] = useState(null) // 'accept' | 'reject' | 'negotiate'
+  const [negotiatingBidId, setNegotiatingBidId] = useState(null)
+  const [negotiateForm, setNegotiateForm] = useState({ message: '', target_price: '' })
+  const [bidToast, setBidToast]         = useState({ text: '', type: '' })
 
   const [invoiceForm, setInvoiceForm]   = useState({
     invoice_no: '', invoice_date: new Date().toISOString().slice(0, 10),
@@ -1489,6 +1500,83 @@ export default function AdminFlightBookingsPage() {
       const d = err?.response?.data
       setRfqErr(d?.detail || d?.message || 'Failed to send RFQ')
     } finally { setRfqLoading(false) }
+  }
+
+  const flashToast = (text, type = 'success') => {
+    setBidToast({ text, type })
+    setTimeout(() => setBidToast({ text: '', type: '' }), 3500)
+  }
+
+  const loadBids = async (bookingId) => {
+    setBidsLoading(true); setBidsErr('')
+    try {
+      const res = await adminAPI.rfqBids({ booking: bookingId })
+      const data = res?.data?.results || res?.data || res || []
+      setBids(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setBidsErr('Failed to load bids.')
+      setBids([])
+    } finally {
+      setBidsLoading(false)
+    }
+  }
+
+  const openBids = (b) => {
+    setSelected(b)
+    setNegotiatingBidId(null)
+    setNegotiateForm({ message: '', target_price: '' })
+    setBidToast({ text: '', type: '' })
+    setModal('bids')
+    loadBids(b.id)
+  }
+
+  const handleAcceptBid = async (bid) => {
+    setBidActionId(bid.id); setBidActionType('accept')
+    try {
+      await adminAPI.acceptBid(bid.id)
+      await loadBids(selected.id)
+      await load()
+      flashToast(`Bid from ${bid.operator_name} accepted. Aircraft assigned and emails sent.`, 'success')
+    } catch (err) {
+      flashToast('Failed to accept bid.', 'error')
+    } finally {
+      setBidActionId(null); setBidActionType(null)
+    }
+  }
+
+  const handleRejectBid = async (bid) => {
+    setBidActionId(bid.id); setBidActionType('reject')
+    try {
+      await adminAPI.rejectBid(bid.id, {})
+      await loadBids(selected.id)
+      flashToast(`Bid from ${bid.operator_name} rejected and operator notified.`, 'success')
+    } catch (err) {
+      flashToast('Failed to reject bid.', 'error')
+    } finally {
+      setBidActionId(null); setBidActionType(null)
+    }
+  }
+
+  const openNegotiate = (bid) => {
+    setNegotiatingBidId(bid.id)
+    setNegotiateForm({
+      message: '',
+      target_price: bid.operator_price_usd ? String(Math.round(bid.operator_price_usd * 0.9)) : ''
+    })
+  }
+
+  const handleSendNegotiate = async (bid) => {
+    setBidActionId(bid.id); setBidActionType('negotiate')
+    try {
+      await adminAPI.negotiateBid(bid.id, negotiateForm)
+      flashToast(`Negotiation email sent to ${bid.operator_name}.`, 'success')
+      setNegotiatingBidId(null)
+      setNegotiateForm({ message: '', target_price: '' })
+    } catch (err) {
+      flashToast('Failed to send negotiation email.', 'error')
+    } finally {
+      setBidActionId(null); setBidActionType(null)
+    }
   }
 
   const openInvoice = (b) => {
@@ -1780,6 +1868,7 @@ export default function AdminFlightBookingsPage() {
                         onEdit={() => openEdit(b)}
                         onPrice={() => openPrice(b)}
                         onRFQ={() => openRFQ(b)}
+                        onBids={() => openBids(b)}
                         onInvoice={() => openInvoice(b)}
                         onDetail={() => openDetail(b)}
                       />
@@ -2172,6 +2261,127 @@ export default function AdminFlightBookingsPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* ═══════════════ BIDS MODAL ═══════════════ */}
+      <Modal open={modal === 'bids'} onClose={() => setModal(null)} size="xl"
+        title={<><i className="bi bi-people-fill" style={{ color: '#c8a245' }}></i> Operator Bids — {selected?.guest_name}</>}>
+        {selected && (
+          <div>
+            {bidToast.text && (
+              <div style={{
+                marginBottom: '1rem', padding: '0.75rem 1rem',
+                background: bidToast.type === 'success' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                border: `1px solid ${bidToast.type === 'success' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                borderRadius: '6px',
+                color: bidToast.type === 'success' ? '#166534' : '#dc2626',
+                fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+              }}>
+                <i className={`bi ${bidToast.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}`}></i>
+                {bidToast.text}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: '#f8fafc', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.8rem', color: '#0a2540' }}>
+              <strong>Route:</strong> {selected.origin_detail?.code || selected.origin} → {selected.destination_detail?.code || selected.destination} &nbsp;|&nbsp;
+              <strong>Date:</strong> {selected.departure_date} &nbsp;|&nbsp;
+              <strong>Status:</strong> <Badge status={selected.status} />
+            </div>
+
+            {bidsLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <Spinner size={20} color="#0a2540" /> <span style={{ marginLeft: '0.5rem', color: '#6b7c93' }}>Loading bids...</span>
+              </div>
+            ) : bidsErr ? (
+              <div style={{ padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#dc2626', fontSize: '0.85rem' }}>
+                <i className="bi bi-exclamation-triangle-fill"></i> {bidsErr}
+              </div>
+            ) : bids.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7c93' }}>
+                <i className="bi bi-inbox" style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem', color: '#cbd5e1' }}></i>
+                No bids yet. Use <strong>Send RFQ</strong> to invite operators.
+              </div>
+            ) : (
+              bids.map(bid => (
+                <div key={bid.id} style={{
+                  border: '1px solid #e8edf2', borderRadius: '10px', padding: '1rem', marginBottom: '0.85rem',
+                  background: bid.status === 'accepted' ? 'rgba(34,197,94,0.04)' : bid.status === 'rejected' ? 'rgba(239,68,68,0.03)' : '#ffffff'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0a2540', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <i className="bi bi-building" style={{ color: '#c8a245' }}></i>
+                        {bid.operator_name}
+                        <Badge status={bid.status} />
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#6b7c93', marginTop: '0.3rem' }}>
+                        <i className="bi bi-airplane-fill"></i> {bid.aircraft_name || 'No aircraft specified'}
+                        {bid.aircraft_reg ? ` (${bid.aircraft_reg})` : ''}
+                      </div>
+                      {bid.notes && (
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.3rem', fontStyle: 'italic' }}>
+                          "{bid.notes}"
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0a2540' }}>{fmt(bid.operator_price_usd)}</div>
+                      {bid.njh_client_price && (
+                        <div style={{ fontSize: '0.72rem', color: '#6b7c93' }}>Client price: {fmt(bid.njh_client_price)}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {bid.status !== 'accepted' && bid.status !== 'rejected' && (
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.85rem', flexWrap: 'wrap' }}>
+                      <button onClick={() => handleAcceptBid(bid)} disabled={bidActionId === bid.id}
+                        style={{ padding: '0.4rem 0.9rem', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {bidActionId === bid.id && bidActionType === 'accept' ? <Spinner size={13} /> : <i className="bi bi-check-lg"></i>} Accept
+                      </button>
+                      <button onClick={() => handleRejectBid(bid)} disabled={bidActionId === bid.id}
+                        style={{ padding: '0.4rem 0.9rem', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {bidActionId === bid.id && bidActionType === 'reject' ? <Spinner size={13} /> : <i className="bi bi-x-lg"></i>} Deny
+                      </button>
+                      <button onClick={() => openNegotiate(bid)}
+                        style={{ padding: '0.4rem 0.9rem', background: 'transparent', color: '#0a2540', border: '1.5px solid #0a2540', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <i className="bi bi-chat-dots"></i> Negotiate Price
+                      </button>
+                    </div>
+                  )}
+
+                  {negotiatingBidId === bid.id && (
+                    <div style={{ marginTop: '0.85rem', padding: '0.85rem', background: '#f8fafc', border: '1px solid #e8edf2', borderRadius: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#0a2540', display: 'block', marginBottom: '0.2rem' }}>Target Price (USD)</label>
+                          <input type="number" value={negotiateForm.target_price}
+                            onChange={e => setNegotiateForm(f => ({ ...f, target_price: e.target.value }))}
+                            style={{ width: '100%', padding: '0.45rem 0.6rem', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.8rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#0a2540', display: 'block', marginBottom: '0.2rem' }}>Message (optional — auto-generated if blank)</label>
+                          <textarea rows={2} value={negotiateForm.message}
+                            onChange={e => setNegotiateForm(f => ({ ...f, message: e.target.value }))}
+                            style={{ width: '100%', padding: '0.45rem 0.6rem', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.8rem', resize: 'vertical' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        <button onClick={() => setNegotiatingBidId(null)}
+                          style={{ padding: '0.4rem 0.8rem', background: 'transparent', border: '1px solid #e8edf2', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}>
+                          Cancel
+                        </button>
+                        <button onClick={() => handleSendNegotiate(bid)} disabled={bidActionId === bid.id}
+                          style={{ padding: '0.4rem 0.9rem', background: '#c8a245', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                          {bidActionId === bid.id && bidActionType === 'negotiate' ? <Spinner size={12} /> : <i className="bi bi-send-fill"></i>} Send Email
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </Modal>
 
       {/* ═══════════════ DETAIL MODAL — full booking + aircraft + availability ═══════════════ */}
