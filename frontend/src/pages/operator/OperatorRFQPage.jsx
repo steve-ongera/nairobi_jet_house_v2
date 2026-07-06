@@ -13,6 +13,7 @@ const STATUS_COLORS = {
 }
 
 const STATUS_LABELS = {
+  invited: 'Invited',
   submitted: 'Submitted',
   shortlisted: 'Shortlisted',
   accepted: 'Accepted',
@@ -256,7 +257,10 @@ export default function OperatorRFQPage() {
       await operatorAPI.submitBid({
         ...bidForm,
         booking: activeBid.booking,
-        operator: activeBid.operator_id,
+        // NOTE: RFQBidSerializer returns the operator FK as `operator`
+        // (there is no `operator_id` field in the API response), so we
+        // must read it from `activeBid.operator`, not `activeBid.operator_id`.
+        operator: activeBid.operator,
       })
       setMessage({ text: 'Bid submitted successfully!', type: 'success' })
       setActiveBid(null)
@@ -284,8 +288,8 @@ export default function OperatorRFQPage() {
     })
   }
 
-  const openBids = bids.filter(b => b.status === 'submitted')
-  const pastBids = bids.filter(b => b.status !== 'submitted')
+  const openBids = bids.filter(b => b.status === 'invited')
+  const pastBids = bids.filter(b => b.status !== 'invited')
 
   const stats = {
     total: bids.length,
