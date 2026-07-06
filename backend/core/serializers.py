@@ -944,6 +944,7 @@ class RFQBidCreateSerializer(serializers.ModelSerializer):
         fields = ['booking', 'operator', 'aircraft', 'operator_price_usd',
                   'estimated_hours', 'positioning_cost', 'catering_cost',
                   'overnight_cost', 'notes', 'valid_until']
+        validators = []  # disable auto UniqueTogetherValidator — perform_create() handles upsert manually
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

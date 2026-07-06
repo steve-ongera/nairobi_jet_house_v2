@@ -736,7 +736,20 @@ class RFQBidViewSet(viewsets.ModelViewSet):
         return RFQBid.objects.filter(operator_id__in=operator_ids).select_related('operator', 'aircraft', 'booking')
 
     def perform_create(self, serializer):
-        serializer.save(submitted_by=self.request.user)
+        validated = serializer.validated_data
+        booking  = validated.get('booking')
+        operator = validated.get('operator')
+
+        existing = RFQBid.objects.filter(booking=booking, operator=operator).first()
+        if existing:
+            for field, value in validated.items():
+                setattr(existing, field, value)
+            existing.status = 'submitted'
+            existing.submitted_by = self.request.user
+            existing.save()
+            serializer.instance = existing
+        else:
+            serializer.save(submitted_by=self.request.user, status='submitted')
 
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
     def accept(self, request, pk=None):
@@ -758,7 +771,8 @@ class RFQBidViewSet(viewsets.ModelViewSet):
         bid.status = 'shortlisted'
         bid.save()
         return Response(RFQBidSerializer(bid).data)
-
+    
+    
 
 class OperatorBookingViewSet(viewsets.ModelViewSet):
     """Operator-side booking dispatch records."""
