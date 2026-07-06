@@ -1192,28 +1192,22 @@ class AdminFlightBookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def send_rfq(self, request, pk=None):
-        """Send RFQ to selected operators (creates stub bids or emails)."""
         booking      = self.get_object()
         operator_ids = request.data.get('operator_ids', [])
         if not operator_ids:
             return Response({'detail': 'operator_ids required.'}, status=400)
 
         operators = CharterOperator.objects.filter(id__in=operator_ids, status='active')
-        sent      = []
+        sent = []
         for op in operators:
-            body = (
-                f"Dear {op.primary_contact or op.name},\n\n"
-                f"NairobiJetHouse is requesting a quote for the following flight:\n"
-                f"Route: {booking.origin.code} → {booking.destination.code}\n"
-                f"Date: {booking.departure_date}\n"
-                f"Passengers: {booking.passenger_count}\n"
-                f"Category: {booking.preferred_category or 'Open'}\n\n"
-                f"Please submit your bid via the operator portal. Booking ref: {booking.reference}\n\n"
-                f"NairobiJetHouse Operations"
+            # Create (or get) a stub so it shows up on the operator's dashboard
+            RFQBid.objects.get_or_create(
+                booking=booking,
+                operator=op,
+                defaults={'operator_price_usd': 0, 'status': 'submitted'}
             )
-            _send_and_log(request.user, op.contact_email, op.name,
-                          f'RFQ — {booking.origin.code}→{booking.destination.code} [{booking.reference}]',
-                          body, 'rfq', booking.id)
+            body = (...)
+            _send_and_log(request.user, op.contact_email, op.name, ..., 'rfq', booking.id)
             sent.append(op.name)
 
         booking.status = 'rfq_sent'
