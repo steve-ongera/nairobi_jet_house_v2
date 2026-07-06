@@ -343,9 +343,11 @@ export const adminAPI = {
   approveYacht:    id => api.post(`/my-yachts/${id}/approve/`),
 
   // RFQ bids
-  rfqBids:      params => api.get('/rfq-bids/', { params }),
-  acceptBid:    id     => api.post(`/rfq-bids/${id}/accept/`),
-  shortlistBid: id     => api.post(`/rfq-bids/${id}/shortlist/`),
+  rfqBids:      params  => api.get('/rfq-bids/', { params }),
+  acceptBid:    id      => api.post(`/rfq-bids/${id}/accept/`),
+  rejectBid:    (id, d) => api.post(`/rfq-bids/${id}/reject/`, d),
+  shortlistBid: id      => api.post(`/rfq-bids/${id}/shortlist/`),
+  negotiateBid: (id, d) => api.post(`/rfq-bids/${id}/negotiate/`, d),
 
   // Commission rules
   commissionRules: ()      => api.get('/admin/commission-rules/'),
