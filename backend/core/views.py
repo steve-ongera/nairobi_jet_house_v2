@@ -720,7 +720,7 @@ class AvailabilityBlockViewSet(viewsets.ModelViewSet):
 
 
 class RFQBidViewSet(viewsets.ModelViewSet):
-    """Operator submits bids on RFQs."""
+    """Operator submits bids on RFQs; NJH admin reviews, negotiates, accepts or rejects them."""
     permission_classes = [IsOperatorOrAdmin]
 
     def get_serializer_class(self):
@@ -731,7 +731,11 @@ class RFQBidViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'admin':
-            return RFQBid.objects.all().select_related('operator', 'aircraft', 'booking')
+            qs = RFQBid.objects.all().select_related('operator', 'aircraft', 'booking')
+            booking_id = self.request.query_params.get('booking')
+            if booking_id:
+                qs = qs.filter(booking_id=booking_id)
+            return qs
         operator_ids = user.charter_operators.values_list('id', flat=True)
         return RFQBid.objects.filter(operator_id__in=operator_ids).select_related('operator', 'aircraft', 'booking')
 
@@ -755,14 +759,85 @@ class RFQBidViewSet(viewsets.ModelViewSet):
     def accept(self, request, pk=None):
         bid = self.get_object()
         bid.status = 'accepted'
-        # Calculate client price using commission rule
+
         rule = NJHCommissionRule.objects.filter(is_active=True).order_by('-priority').first()
         markup = rule.markup_pct if rule else Decimal('20')
         bid.njh_client_price = (bid.operator_price_usd * (1 + markup / 100)).quantize(Decimal('0.01'), ROUND_HALF_UP)
         bid.njh_margin_usd   = (bid.njh_client_price - bid.operator_price_usd).quantize(Decimal('0.01'), ROUND_HALF_UP)
         bid.save()
-        # Mark other bids on same booking as rejected
-        RFQBid.objects.filter(booking=bid.booking).exclude(pk=bid.pk).update(status='rejected')
+
+        # Reject every other bid on the same booking, keep the operator list to notify them
+        losing_bids = RFQBid.objects.filter(booking=bid.booking).exclude(pk=bid.pk).exclude(status='rejected')
+        losing_operators = list(losing_bids.select_related('operator'))
+        losing_bids.update(status='rejected')
+
+        # Sync the winning aircraft/operator onto the booking itself
+        booking = bid.booking
+        booking.assigned_operator = bid.operator
+        booking.operator_aircraft = bid.aircraft
+        booking.operator_cost_usd = bid.operator_price_usd
+        if not booking.quoted_price_usd:
+            booking.quoted_price_usd = bid.njh_client_price
+        if booking.status in ('inquiry', 'rfq_sent'):
+            booking.status = 'quoted'
+        booking.save()
+
+        # Notify the winning operator
+        if bid.operator.contact_email:
+            _send_and_log(
+                request.user, bid.operator.contact_email, bid.operator.name,
+                f'RFQ Awarded — Booking {str(booking.reference)[:8].upper()} | NairobiJetHouse',
+                (
+                    f"Dear {bid.operator.name},\n\n"
+                    f"Congratulations — your bid of USD {bid.operator_price_usd:,.2f} has been accepted "
+                    f"for booking {str(booking.reference)[:8].upper()} "
+                    f"({booking.origin.code if booking.origin else '—'} → {booking.destination.code if booking.destination else '—'}, "
+                    f"{booking.departure_date}).\n\n"
+                    f"Please confirm aircraft readiness and reach out to our operations team to finalize logistics.\n\n"
+                    f"NairobiJetHouse Team"
+                ),
+                'general', booking.id,
+            )
+
+        # Notify the losing operators
+        for lost in losing_operators:
+            if lost.operator.contact_email:
+                _send_and_log(
+                    request.user, lost.operator.contact_email, lost.operator.name,
+                    f'RFQ Update — Booking {str(booking.reference)[:8].upper()} | NairobiJetHouse',
+                    (
+                        f"Dear {lost.operator.name},\n\n"
+                        f"Thank you for submitting a bid on booking {str(booking.reference)[:8].upper()}. "
+                        f"On this occasion we have proceeded with another operator.\n\n"
+                        f"We appreciate your participation and look forward to working with you on future requests.\n\n"
+                        f"NairobiJetHouse Team"
+                    ),
+                    'general', booking.id,
+                )
+
+        return Response(RFQBidSerializer(bid).data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def reject(self, request, pk=None):
+        bid = self.get_object()
+        bid.status = 'rejected'
+        bid.save()
+
+        if bid.operator.contact_email:
+            reason = request.data.get('reason', '').strip()
+            body = (
+                f"Dear {bid.operator.name},\n\n"
+                f"Thank you for your bid of USD {bid.operator_price_usd:,.2f} on booking "
+                f"{str(bid.booking.reference)[:8].upper()}. We will not be proceeding with this bid"
+                f"{f' — {reason}' if reason else ''}.\n\n"
+                f"We appreciate your participation and look forward to working with you on future requests.\n\n"
+                f"NairobiJetHouse Team"
+            )
+            _send_and_log(
+                request.user, bid.operator.contact_email, bid.operator.name,
+                f'RFQ Update — Booking {str(bid.booking.reference)[:8].upper()} | NairobiJetHouse',
+                body, 'general', bid.booking.id,
+            )
         return Response(RFQBidSerializer(bid).data)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
@@ -771,6 +846,32 @@ class RFQBidViewSet(viewsets.ModelViewSet):
         bid.status = 'shortlisted'
         bid.save()
         return Response(RFQBidSerializer(bid).data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def negotiate(self, request, pk=None):
+        """Send a custom price-negotiation email to this bidder without changing bid status."""
+        bid = self.get_object()
+        message = request.data.get('message', '').strip()
+        target_price = request.data.get('target_price')
+
+        if not bid.operator.contact_email:
+            return Response({'detail': 'Operator has no contact email on file.'}, status=400)
+
+        body = message or (
+            f"Dear {bid.operator.name},\n\n"
+            f"Thank you for your bid of USD {bid.operator_price_usd:,.2f} on booking "
+            f"{str(bid.booking.reference)[:8].upper()}. "
+            + (f"We would like to explore a revised price closer to USD {Decimal(str(target_price)):,.2f}. "
+               if target_price else "We would like to discuss the possibility of a revised price. ")
+            + "Please let us know if you are able to accommodate this.\n\nNairobiJetHouse Team"
+        )
+
+        success = _send_and_log(
+            request.user, bid.operator.contact_email, bid.operator.name,
+            f'Price Negotiation — Booking {str(bid.booking.reference)[:8].upper()} | NairobiJetHouse',
+            body, 'general', bid.booking.id,
+        )
+        return Response({'detail': 'Negotiation email sent.' if success else 'Email failed to send.', 'success': success})
     
     
 
