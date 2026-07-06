@@ -610,6 +610,7 @@ class RFQBid(models.Model):
     NJH admin selects the winning bid and uses it to create the quote for the client.
     """
     STATUS_CHOICES = [
+        ('invited', 'Invited'),
         ('submitted', 'Submitted'),
         ('shortlisted', 'Shortlisted'),
         ('accepted',  'Accepted'),
@@ -644,10 +645,10 @@ class RFQBid(models.Model):
 
     class Meta:
         ordering = ['operator_price_usd']
+        unique_together = [('booking', 'operator')]
 
     def __str__(self):
         return f"Bid by {self.operator.name} on {self.booking} — ${self.operator_price_usd}"
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # V1  YACHT CHARTER (enhanced)

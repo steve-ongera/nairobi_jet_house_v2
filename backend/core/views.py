@@ -1204,7 +1204,7 @@ class AdminFlightBookingViewSet(viewsets.ModelViewSet):
             RFQBid.objects.get_or_create(
                 booking=booking,
                 operator=op,
-                defaults={'operator_price_usd': 0, 'status': 'submitted'}
+                defaults={'operator_price_usd': 0, 'status': 'invited'}
             )
             body = (...)
             _send_and_log(request.user, op.contact_email, op.name, ..., 'rfq', booking.id)
