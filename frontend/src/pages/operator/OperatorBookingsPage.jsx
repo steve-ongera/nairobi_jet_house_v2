@@ -97,6 +97,49 @@ function Modal({ open, onClose, title, children }) {
   )
 }
 
+// ── Print a simple operator receipt/invoice for a confirmed booking ──────────
+function printReceipt(bk, formatCurrency, formatDate) {
+  const route = bk.route || {}
+  const win = window.open('', '_blank', 'width=700,height=900')
+  if (!win) return
+
+  const html = `<!DOCTYPE html>
+  <html><head><meta charset="UTF-8"><title>Receipt ${bk.booking_reference_short || bk.reference}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; }
+    body { padding: 40px; color: #0a2540; }
+    .header { text-align:center; border-bottom: 3px solid #c8a245; padding-bottom: 16px; margin-bottom: 24px; }
+    .header h1 { font-size: 20px; letter-spacing: 1px; }
+    .header p { font-size: 11px; color: #6b7c93; margin-top: 4px; }
+    .row { display:flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e8edf2; font-size: 13px; }
+    .label { color: #6b7c93; font-weight: 600; }
+    .value { color: #0a2540; font-weight: 600; text-align: right; }
+    .total { margin-top: 16px; padding: 14px; background: #0a2540; color: #fff; border-radius: 8px; display:flex; justify-content: space-between; font-size: 15px; font-weight: 700; }
+    .footer { margin-top: 30px; text-align:center; font-size: 10px; color: #94a3b8; }
+    @media print { body { padding: 20px; } }
+  </style></head>
+  <body>
+    <div class="header">
+      <h1>NAIROBIJETHOUSE — OPERATOR RECEIPT</h1>
+      <p>Booking Reference: ${bk.booking_reference_short || '—'} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()}</p>
+    </div>
+    <div class="row"><span class="label">Client</span><span class="value">${bk.guest_name_masked || '—'}</span></div>
+    <div class="row"><span class="label">Client Email</span><span class="value">${bk.guest_email_masked || '—'}</span></div>
+    <div class="row"><span class="label">Route</span><span class="value">${route.origin_code || '—'} → ${route.destination_code || '—'}</span></div>
+    <div class="row"><span class="label">Departure</span><span class="value">${formatDate(bk.departure_date)}</span></div>
+    ${bk.return_date ? `<div class="row"><span class="label">Return</span><span class="value">${formatDate(bk.return_date)}</span></div>` : ''}
+    <div class="row"><span class="label">Passengers</span><span class="value">${bk.passenger_count ?? '—'}</span></div>
+    <div class="row"><span class="label">Aircraft</span><span class="value">${bk.asset_label || '—'}</span></div>
+    <div class="row"><span class="label">Status</span><span class="value">${STATUS_LABEL[bk.status] || bk.status}</span></div>
+    <div class="total"><span>Your Payout</span><span>${formatCurrency(bk.operator_payout_usd)}</span></div>
+    <div class="footer">This receipt is generated for the operator's records. NairobiJetHouse — Private Aviation, Nairobi, Kenya.</div>
+    <script>window.onload = () => window.print();</script>
+  </body></html>`
+
+  win.document.write(html)
+  win.document.close()
+}
+
 export default function OperatorBookingsPage() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -305,14 +348,16 @@ export default function OperatorBookingsPage() {
               }}>
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem', marginBottom: '0.15rem' }}>
-                    Booking {String(bk.reference).slice(0, 8).toUpperCase()}
+                    Booking {bk.booking_reference_short || String(bk.reference).slice(0, 8).toUpperCase()}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
-                    {bk.asset_label || bk.asset_type} · Payout: {formatCurrency(bk.operator_payout_usd)}
+                    {bk.guest_name_masked ? `${bk.guest_name_masked} · ` : ''}{bk.asset_label || bk.asset_type} · Payout: {formatCurrency(bk.operator_payout_usd)}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--color-mid-gray)' }}>
-                    Created: {formatDate(bk.created_at)}
-                  </div>
+                  {bk.route && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--color-mid-gray)' }}>
+                      {bk.route.origin_code} → {bk.route.destination_code} · {formatDate(bk.departure_date)}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   <Badge status={bk.status} />
@@ -381,6 +426,89 @@ export default function OperatorBookingsPage() {
         </div>
       )}
 
+      {/* Confirmed Bookings Section (accepted / in_service / completed) — masked client details + receipt */}
+      {(acceptedBookings.length > 0 || completedBookings.length > 0 || otherBookings.length > 0) && (
+        <div style={{ marginBottom: '1.5rem', background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-navy)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <i className="bi bi-check-circle" style={{ color: '#22c55e' }}></i> Confirmed Bookings ({acceptedBookings.length + completedBookings.length + otherBookings.length})
+            </h4>
+          </div>
+          <div>
+            {[...acceptedBookings, ...otherBookings, ...completedBookings].map(bk => (
+              <div key={bk.id} style={{
+                padding: '1rem 1.5rem',
+                borderBottom: '1px solid var(--color-light-gray)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem' }}>
+                      Booking {bk.booking_reference_short || String(bk.reference).slice(0, 8).toUpperCase()}
+                    </span>
+                    <Badge status={bk.status} />
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                    Client: {bk.guest_name_masked || '—'} · {bk.guest_email_masked || '—'}
+                  </div>
+                  {bk.route && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                      {bk.route.origin_code} → {bk.route.destination_code} · {formatDate(bk.departure_date)}
+                      {bk.return_date ? ` – ${formatDate(bk.return_date)}` : ''}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
+                    Aircraft: {bk.asset_label || '—'} · Payout: <strong style={{ color: 'var(--color-navy)' }}>{formatCurrency(bk.operator_payout_usd)}</strong>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => printReceipt(bk, formatCurrency, formatDate)}
+                    style={{
+                      padding: '0.3rem 0.8rem',
+                      background: '#0f2d5e',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <i className="bi bi-printer"></i> Print Receipt
+                  </button>
+                  <button
+                    onClick={() => openDetail(bk)}
+                    style={{
+                      padding: '0.3rem 0.8rem',
+                      background: 'transparent',
+                      color: 'var(--color-navy)',
+                      border: '1px solid var(--color-navy)',
+                      borderRadius: '6px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <i className="bi bi-eye"></i> Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* All Bookings Section */}
       <div style={{ background: 'var(--color-white)', border: '1px solid var(--color-light-gray)', borderRadius: '10px', overflow: 'hidden' }}>
         <div style={{ padding: '1rem 1.5rem', background: 'var(--color-off-white)', borderBottom: '1px solid var(--color-light-gray)' }}>
@@ -413,7 +541,7 @@ export default function OperatorBookingsPage() {
               >
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--color-navy)', fontSize: '0.85rem', marginBottom: '0.15rem' }}>
-                    Booking {String(bk.reference).slice(0, 8).toUpperCase()}
+                    Booking {bk.booking_reference_short || String(bk.reference).slice(0, 8).toUpperCase()}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--color-mid-gray)' }}>
                     {bk.asset_label || bk.asset_type} · {formatCurrency(bk.operator_payout_usd)} · {formatDate(bk.created_at)}
@@ -440,11 +568,35 @@ export default function OperatorBookingsPage() {
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
               <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Reference</div>
-              <div style={{ fontFamily: 'monospace', color: 'var(--color-dark-gray)' }}>{selectedBooking.reference}</div>
+              <div style={{ fontFamily: 'monospace', color: 'var(--color-dark-gray)' }}>{selectedBooking.booking_reference_short || selectedBooking.reference}</div>
             </div>
+            {selectedBooking.guest_name_masked && (
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Client</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{selectedBooking.guest_name_masked} · {selectedBooking.guest_email_masked}</div>
+              </div>
+            )}
+            {selectedBooking.route && (
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Route</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{selectedBooking.route.origin_code} → {selectedBooking.route.destination_code}</div>
+              </div>
+            )}
+            {selectedBooking.departure_date && (
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Departure Date</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{formatDate(selectedBooking.departure_date)}</div>
+              </div>
+            )}
+            {selectedBooking.return_date && (
+              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
+                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Return Date</div>
+                <div style={{ color: 'var(--color-dark-gray)' }}>{formatDate(selectedBooking.return_date)}</div>
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
-              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Asset Type</div>
-              <div style={{ color: 'var(--color-dark-gray)' }}>{selectedBooking.asset_label || selectedBooking.asset_type || '—'}</div>
+              <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Asset</div>
+              <div style={{ color: 'var(--color-dark-gray)' }}>{selectedBooking.asset_label || '—'}</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
               <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Payout Amount</div>
@@ -458,12 +610,6 @@ export default function OperatorBookingsPage() {
               <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Created</div>
               <div style={{ color: 'var(--color-dark-gray)' }}>{new Date(selectedBooking.created_at).toLocaleString()}</div>
             </div>
-            {selectedBooking.departure_date && (
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
-                <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Departure Date</div>
-                <div style={{ color: 'var(--color-dark-gray)' }}>{formatDate(selectedBooking.departure_date)}</div>
-              </div>
-            )}
             {selectedBooking.operator_reference && (
               <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0', borderBottom: '1px solid var(--color-light-gray)' }}>
                 <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Your Reference</div>
@@ -476,7 +622,8 @@ export default function OperatorBookingsPage() {
                 <div style={{ color: '#ef4444' }}>{selectedBooking.rejection_reason}</div>
               </div>
             )}
-            {selectedBooking.status === 'sent' && (
+
+            {selectedBooking.status === 'sent' ? (
               <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-light-gray)' }}>
                 <div style={{ fontWeight: 600, color: 'var(--color-navy)' }}>Quick Actions</div>
                 <div>
@@ -519,6 +666,27 @@ export default function OperatorBookingsPage() {
                     </button>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-light-gray)', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => printReceipt(selectedBooking, formatCurrency, formatDate)}
+                  style={{
+                    padding: '0.4rem 1rem',
+                    background: '#0f2d5e',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                >
+                  <i className="bi bi-printer"></i> Print Receipt
+                </button>
               </div>
             )}
           </div>

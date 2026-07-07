@@ -782,6 +782,21 @@ class RFQBidViewSet(viewsets.ModelViewSet):
             booking.status = 'quoted'
         booking.save()
 
+        # Create or update the operator-facing dispatch record so it shows on
+        # the operator's Bookings page once NJH confirms the client quote.
+        OperatorBooking.objects.update_or_create(
+            flight_booking=booking,
+            defaults={
+                'operator': bid.operator,
+                'asset_type': 'aircraft',
+                'operator_aircraft': bid.aircraft,
+                'operator_payout_usd': bid.operator_price_usd,
+                'njh_margin_usd': bid.njh_margin_usd or Decimal('0'),
+                'total_client_usd': bid.njh_client_price or Decimal('0'),
+                'status': 'sent',
+            }
+        )
+
         # Notify the winning operator
         if bid.operator.contact_email:
             _send_and_log(
