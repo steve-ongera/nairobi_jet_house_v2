@@ -759,7 +759,7 @@ function buildInvoiceHTML(booking, invoiceNo, invoiceDate, extraNotes, bankDetai
       </thead>
       <tbody>
         <tr>
-          <td class="highlight"><i class="bi bi-airplane-fill"></i> ${booking.aircraft_detail?.name || booking.aircraft || 'TBC'}</td>
+          <td class="highlight"> ${booking.aircraft_detail?.name || booking.aircraft || 'TBC'}</td>
           <td>${booking.aircraft_detail?.registration_number || '—'}</td>
           <td><i class="bi bi-star-fill"></i> ${booking.aircraft_detail?.category_display || 'Private Jet'}</td>
           <td><i class="bi bi-people-fill"></i> ${booking.passenger_count || 1} Pax</td>
@@ -1021,7 +1021,7 @@ function AircraftBadge({ booking, operatorAircraftMap, catalogAircraftMap, opera
       return (
         <div>
           <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#0a2540', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <i className="bi bi-airplane-fill" style={{ color: '#c8a245' }}></i>
+            
             {ac.name}
             <span style={{ color: '#94a3b8', fontWeight: 400 }}>({ac.registration_number})</span>
           </div>
@@ -1036,7 +1036,7 @@ function AircraftBadge({ booking, operatorAircraftMap, catalogAircraftMap, opera
     return (
       <div>
         <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#0a2540', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-          <i className="bi bi-airplane-fill" style={{ color: '#c8a245' }}></i>
+          
           Operator Aircraft #{booking.operator_aircraft}
         </div>
         {operatorName && (
