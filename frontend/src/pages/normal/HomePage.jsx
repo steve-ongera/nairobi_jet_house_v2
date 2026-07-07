@@ -1398,7 +1398,7 @@ export default function HomePage() {
               textTransform: 'uppercase', color: '#C9A84C', marginBottom: '1.25rem',
             }}>
               <i className="bi bi-patch-check" style={{ fontSize: '0.9rem' }} />
-              Travel across hidden lands
+              Global Aircraft Charter
             </div>
             <h1 style={{
               fontFamily: 'Georgia, serif',
