@@ -127,7 +127,7 @@ export default function PublicFooter() {
                       <Link to="/air-cargo" className="footer-link">
                         <i className="bi bi-chevron-right"></i>Air Cargo
                       </Link>
-                      <Link to="/contact" className="footer-link">
+                      <Link to="/group-charter" className="footer-link">
                         <i className="bi bi-chevron-right"></i>Group Charter
                       </Link>
                       <Link to="/contact" className="footer-link">
