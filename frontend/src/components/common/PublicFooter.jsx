@@ -115,7 +115,7 @@ export default function PublicFooter() {
                   <div>
                     <h4 className="footer-col-title">Services</h4>
                     <div className="footer-links-list">
-                      <Link to="/book-flight" className="footer-link">
+                      <Link to="/private-jet-charter" className="footer-link">
                         <i className="bi bi-chevron-right"></i>Private Jet Charter
                       </Link>
                       <Link to="/book-yacht" className="footer-link">

@@ -26,7 +26,7 @@ const SERVICES = [
     title: 'Private Jet Charter',
     tagline: 'Airport to airport, worldwide',
     description: 'Charter a private jet to any destination worldwide — the right aircraft, the right price, instantly.',
-    link: '/book-flight',
+    link: '/private-jet-charter',
     cta: 'Book a Flight',
     images: [
       'https://plus.unsplash.com/premium_photo-1682142182464-3be6161b3a42?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJpdmF0ZSUyMGpldCUyMGNoYXJ0ZXJ8ZW58MHx8MHx8fDA%3D',
@@ -1419,7 +1419,7 @@ export default function HomePage() {
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <Link
-                to="/book-flight"
+                to="/private-jet-charter"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                   padding: '0.875rem 2rem', background: '#C9A84C', color: '#0B1D3A',
@@ -1713,7 +1713,7 @@ export default function HomePage() {
                       }}>
                         <button
                           className="btn btn-navy btn-sm"
-                          onClick={() => open('book-flight', ac)}
+                          onClick={() => open('private-jet-charter', ac)}
                           style={{ flex: 1, justifyContent: 'center' }}
                         >
                           <i className="bi bi-airplane" /> Book
@@ -1845,7 +1845,7 @@ export default function HomePage() {
               ))}
             </div>
             <div className="text-center" style={{ marginTop: '3rem' }}>
-              <Link to="/book-flight" className="btn btn-navy btn-lg">
+              <Link to="/private-jet-charter" className="btn btn-navy btn-lg">
                 <i className="bi bi-airplane" /> Begin Your Journey
               </Link>
             </div>
@@ -1928,7 +1928,7 @@ export default function HomePage() {
               days a week.
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/book-flight" className="btn btn-gold btn-lg">
+              <Link to="/private-jet-charter" className="btn btn-gold btn-lg">
                 <i className="bi bi-airplane" /> Book a Flight
               </Link>
               <Link to="/contact" className="btn btn-outline-gold btn-lg"
@@ -1943,7 +1943,7 @@ export default function HomePage() {
 
         {/* ══ MODALS ════════════════════════════════════════════════════════════ */}
         <BookFlightModal
-          open={modal?.type === 'book-flight'}
+          open={modal?.type === 'private-jet-charter'}
           onClose={close}
           aircraft={modal?.asset}
         />

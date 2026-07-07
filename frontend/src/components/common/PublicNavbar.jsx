@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 
 // Services dropdown data
 const SERVICES_DROPDOWN = [
-  { path: '/book-flight', label: 'Private Jet Charter', icon: 'bi-airplane', desc: 'Airport to airport, worldwide' },
+  { path: '/private-jet-charter', label: 'Private Jet Charter', icon: 'bi-airplane', desc: 'Airport to airport, worldwide' },
   { path: '/book-yacht',  label: 'Superyacht Charter',  icon: 'bi-water', desc: 'Mediterranean, Caribbean & beyond' },
   { path: '/lease',       label: 'Long-Term Leasing',   icon: 'bi-file-earmark-text', desc: 'Dedicated aircraft & yacht programs' },
   { path: '/air-cargo',   label: 'Air Cargo',           icon: 'bi-boxes', desc: 'Gold, minerals, pharma & freight' },
@@ -23,7 +23,7 @@ const SUBNAV_LINKS = [
 // Main nav links
 const NAV_LINKS = [
   { path: '/',              label: 'Home',             icon: 'bi-house-door' },
-  { path: '/book-flight',   label: 'Private Charter',  icon: 'bi-airplane' },
+  { path: '/private-jet-charter',   label: 'Private Charter',  icon: 'bi-airplane' },
   { path: '/group-charter', label: 'Group Charter',    icon: 'bi-people' },
   { path: '/air-cargo',     label: 'Air Cargo',        icon: 'bi-boxes' },
   { path: '/lease',         label: 'Aircraft Leasing', icon: 'bi-file-earmark-text' },
@@ -281,7 +281,7 @@ export default function PublicNavbar() {
                 <i className="bi bi-box-arrow-in-right"></i>
                 <span className="nav-lang-text">Sign In</span>
               </Link>
-              <Link to="/book-flight" className="nav-cta">
+              <Link to="/private-jet-charter" className="nav-cta">
                 <i className="bi bi-airplane" aria-hidden="true"></i>
                 <span className="nav-cta-text">Request Quote</span>
               </Link>
@@ -432,7 +432,7 @@ export default function PublicNavbar() {
 
         {/* Drawer footer */}
         <div className="drawer-footer">
-          <Link to="/book-flight" className="drawer-cta" onClick={closeDrawer}>
+          <Link to="/private-jet-charter" className="drawer-cta" onClick={closeDrawer}>
             <i className="bi bi-airplane" aria-hidden="true"></i>
             Request a Quote
           </Link>

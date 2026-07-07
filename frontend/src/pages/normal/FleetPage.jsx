@@ -622,7 +622,7 @@ export default function FleetPage() {
               <Link to="/contact" className="btn-gold">
                 <i className="bi bi-envelope"></i> Contact Our Team
               </Link>
-              <Link to="/book-flight" className="btn-outline-white">
+              <Link to="/private-jet-charter" className="btn-outline-white">
                 <i className="bi bi-send"></i> Open Full Request Form
               </Link>
             </div>

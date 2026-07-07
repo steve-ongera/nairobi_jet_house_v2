@@ -227,7 +227,7 @@ export default function ContactPage() {
 
               {/* Quick Links */}
               <div className="contact-quick-links">
-                <Link to="/book-flight" className="btn-primary-gov btn-sm">
+                <Link to="/private-jet-charter" className="btn-primary-gov btn-sm">
                   <i className="bi bi-airplane"></i> Book a Flight
                 </Link>
                 <Link to="/careers" className="btn-outline-gov btn-sm">

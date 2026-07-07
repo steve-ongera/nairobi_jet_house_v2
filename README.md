@@ -574,7 +574,7 @@ npm run build
 | Route | Component | Auth Required |
 |---|---|---|
 | `/` | `HomePage` | No |
-| `/book-flight` | `BookFlightPage` | No |
+| `/private-jet-charter` | `BookFlightPage` | No |
 | `/book-yacht` | `BookYachtPage` | No |
 | `/fleet` | `FleetPage` | No |
 | `/yachts` | `YachtsPage` | No |

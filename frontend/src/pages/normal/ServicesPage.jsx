@@ -5,10 +5,10 @@ import { Link } from 'react-router-dom';
 
 export default function ServicesPage() {
   const services = [
-    { id:'charter', icon:'✈', title:'Private Jet Charter', desc:'Point-to-point jet charter with 100+ aircraft across Africa and globally. Light jets, heavy jets, VIP airliners — all available on demand.', cta:'/book-flight', ctaLabel:'Book Charter' },
+    { id:'charter', icon:'✈', title:'Private Jet Charter', desc:'Point-to-point jet charter with 100+ aircraft across Africa and globally. Light jets, heavy jets, VIP airliners — all available on demand.', cta:'/private-jet-charter', ctaLabel:'Book Charter' },
     { id:'yacht',   icon:'⛵', title:'Yacht Charter', desc:'Luxury sailing and motor yachts for day trips, week-long island-hopping, or extended expeditions across the Indian Ocean.', cta:'/book-yacht', ctaLabel:'Book Yacht' },
     { id:'cargo',   icon:'📦', title:'Air Cargo', desc:'Time-critical freight specialists — from pharmaceuticals and live animals to gold and oversized machinery. AOG same-day capability.', cta:'/contact', ctaLabel:'Get Quote' },
-    { id:'group',   icon:'👥', title:'Group Charter', desc:'Dedicated group solutions for sports teams, corporate incentives, government delegations, and wedding parties.', cta:'/book-flight', ctaLabel:'Enquire' },
+    { id:'group',   icon:'👥', title:'Group Charter', desc:'Dedicated group solutions for sports teams, corporate incentives, government delegations, and wedding parties.', cta:'/private-jet-charter', ctaLabel:'Enquire' },
     { id:'sales',   icon:'🛩', title:'Aircraft Sales', desc:'Buy, sell, or trade-in private aircraft with access to global listings and our experienced aviation advisory team.', cta:'/contact', ctaLabel:'Enquire' },
     { id:'lease',   icon:'📋', title:'Aircraft Leasing', desc:'Short-term to multi-year dry and wet leases, with competitive rates and AOC support for operators.', cta:'/contact', ctaLabel:'Get Quote' },
   ];

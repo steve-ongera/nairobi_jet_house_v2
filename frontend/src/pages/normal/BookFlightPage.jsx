@@ -1043,7 +1043,7 @@ export default function BookFlightPage() {
         <title>Book a Private Jet | NairobiJetHouse - Charter Request</title>
         <meta name="description" content="Request a private jet charter quote. Fill out our simple form and receive a personalised quote within 2–4 hours. Worldwide private aviation." />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://www.nairobijethouse.com/book-flight" />
+        <link rel="canonical" href="https://www.nairobijethouse.com/private-jet-charter" />
         <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA)}</script>
       </Helmet>
 
@@ -1590,7 +1590,7 @@ export default function BookFlightPage() {
           <h2 className="section-title text-center">Popular Destinations</h2>
           <div className="destinations-grid">
             {DESTINATIONS.map((d, i) => (
-              <Link to="/book-flight" key={i} className="destination-card" onClick={scrollToForm}>
+              <Link to="/private-jet-charter" key={i} className="destination-card" onClick={scrollToForm}>
                 <img src={d.img} alt={`${d.city}, ${d.country}`} />
                 <div className="destination-card__overlay" />
                 <div className="destination-card__content">

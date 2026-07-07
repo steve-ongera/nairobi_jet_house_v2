@@ -20,7 +20,7 @@ export default function NotFoundPage() {
           </Link>
         </div>
         <div style={{ marginTop: '3rem', display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {[['Book a Flight', '/book-flight'], ['Track Booking', '/track'], ['Contact Us', '/contact']].map(([label, path]) => (
+          {[['Book a Flight', '/private-jet-charter'], ['Track Booking', '/track'], ['Contact Us', '/contact']].map(([label, path]) => (
             <Link key={path} to={path} style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', textDecoration: 'none' }}>
               {label}
             </Link>

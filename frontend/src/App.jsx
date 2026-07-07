@@ -95,7 +95,7 @@ function WhatsAppButton() {
   const getInquiryMessage = () => {
     const currentPath = window.location.pathname;
     const pageName = currentPath === '/' ? 'Homepage' 
-      : currentPath === '/book-flight' ? 'Flight Booking Page'
+      : currentPath === '/private-jet-charter' ? 'Flight Booking Page'
       : currentPath === '/book-yacht' ? 'Yacht Charter Page'
       : currentPath === '/fleet' ? 'Fleet Page'
       : currentPath === '/yachts' ? 'Yachts Page'
@@ -394,7 +394,7 @@ export default function App() {
         <Routes>
           {/* ── Public ─────────────────────────────────────────── */}
           <Route path="/"                  element={<HomePage />} />
-          <Route path="/book-flight"       element={<BookFlightPage />} />
+          <Route path="/private-jet-charter"       element={<BookFlightPage />} />
           <Route path="/book-yacht"        element={<BookYachtPage />} />
           <Route path="/fleet"             element={<FleetPage />} />
           <Route path="/fleet/:id"         element={<FleetDetailPage />} /> 

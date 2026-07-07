@@ -296,7 +296,7 @@ export default function AboutPage() {
               <p>Whether you're flying for business or leisure, we're here to make every journey seamless, safe, and exceptional.</p>
             </div>
             <div className="cta-actions">
-              <Link to="/book-flight" className="btn-gold btn-lg">
+              <Link to="/private-jet-charter" className="btn-gold btn-lg">
                 <i className="bi bi-airplane"></i> Book a Flight
               </Link>
               <Link to="/contact" className="btn-outline-white btn-lg">
