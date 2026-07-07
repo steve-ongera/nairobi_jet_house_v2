@@ -955,11 +955,39 @@ class OperatorBookingSerializer(serializers.ModelSerializer):
     operator_name  = serializers.CharField(source='operator.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     asset_label    = serializers.SerializerMethodField()
+    guest_name_masked  = serializers.SerializerMethodField()
+    guest_email_masked = serializers.SerializerMethodField()
+    route          = serializers.SerializerMethodField()
+    departure_date = serializers.SerializerMethodField()
+    return_date    = serializers.SerializerMethodField()
+    passenger_count = serializers.SerializerMethodField()
+    booking_reference_short = serializers.SerializerMethodField()
 
     class Meta:
         model  = OperatorBooking
         fields = '__all__'
         read_only_fields = ['reference', 'created_at', 'updated_at']
+
+    @staticmethod
+    def _mask_name(name):
+        if not name:
+            return ''
+        return ' '.join(
+            (p[0] + '*' * (len(p) - 1)) if len(p) > 1 else p
+            for p in name.strip().split()
+        )
+
+    @staticmethod
+    def _mask_email(email):
+        if not email or '@' not in email:
+            return ''
+        local, domain = email.split('@', 1)
+        masked_local = local[0] + '*' * (len(local) - 1) if len(local) > 1 else local
+        return f"{masked_local}@{domain}"
+
+    def _source(self, obj):
+        """Return whichever underlying booking this operator booking is linked to."""
+        return obj.flight_booking or obj.yacht_charter
 
     def get_asset_label(self, obj):
         if obj.operator_aircraft:
@@ -968,12 +996,62 @@ class OperatorBookingSerializer(serializers.ModelSerializer):
             return obj.operator_yacht.name
         return None
 
+    def get_guest_name_masked(self, obj):
+        src = self._source(obj)
+        return self._mask_name(src.guest_name) if src else None
+
+    def get_guest_email_masked(self, obj):
+        src = self._source(obj)
+        return self._mask_email(src.guest_email) if src else None
+
+    def get_route(self, obj):
+        fb = obj.flight_booking
+        if fb and fb.origin and fb.destination:
+            return {
+                'origin_code': fb.origin.code, 'origin_city': fb.origin.city,
+                'destination_code': fb.destination.code, 'destination_city': fb.destination.city,
+            }
+        yc = obj.yacht_charter
+        if yc:
+            return {'origin_code': yc.departure_port, 'destination_code': yc.destination_port or '—'}
+        return None
+
+    def get_departure_date(self, obj):
+        fb = obj.flight_booking
+        if fb:
+            return fb.departure_date
+        yc = obj.yacht_charter
+        if yc:
+            return yc.charter_start
+        return None
+
+    def get_return_date(self, obj):
+        fb = obj.flight_booking
+        if fb:
+            return fb.return_date
+        yc = obj.yacht_charter
+        if yc:
+            return yc.charter_end
+        return None
+
+    def get_passenger_count(self, obj):
+        fb = obj.flight_booking
+        if fb:
+            return fb.passenger_count
+        yc = obj.yacht_charter
+        if yc:
+            return yc.guest_count
+        return None
+
+    def get_booking_reference_short(self, obj):
+        src = self._source(obj)
+        return str(src.reference)[:8].upper() if src else None
+
 
 class OperatorBookingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model   = OperatorBooking
         exclude = ['reference', 'accepted_at', 'rejected_at', 'created_at', 'updated_at']
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # V2 — OPERATOR PAYOUT LOG
